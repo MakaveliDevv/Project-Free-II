@@ -110,8 +110,22 @@ public class JumpTest : MonoBehaviour
             case JumpState.Hovering:
                 hoverTimer += Time.deltaTime;
 
+                // Calculate target height (hover anchor point)
+                float hoverAnchorY = baseY + currentHeight; // lock to where hover started
+
+                // Calculate the difference between current Y and the anchor
+                float heightDelta = hoverAnchorY - rb.transform.position.y;
+
+                // Apply a smooth pull towards the anchor height (simulate "magnetic" hover pull)
+                float pullForce = heightDelta * 10f; // the '10f' is like spring stiffness — tweak as needed
+
+                // Add wobble as an offset
                 float wobble = Mathf.Sin(hoverTimer * hoverWobbleFrequency) * hoverWobbleAmplitude;
-                rb.linearVelocity = new Vector3(xVelocity, wobble, rb.linearVelocity.z);
+
+                // Total vertical velocity = hover pull + wobble
+                float hoverVelocityY = pullForce + wobble;
+
+                rb.linearVelocity = new Vector3(0f, hoverVelocityY, rb.linearVelocity.z); // xVelocity = 0 during hover
 
                 if (hoverTimer >= hoverDuration)
                 {
@@ -119,6 +133,19 @@ public class JumpTest : MonoBehaviour
                     state = JumpState.Descending;
                 }
                 break;
+            
+            // case JumpState.Hovering:
+            //     hoverTimer += Time.deltaTime;
+
+            //     float wobble = Mathf.Sin(hoverTimer * hoverWobbleFrequency) * hoverWobbleAmplitude;
+            //     rb.linearVelocity = new Vector3(xVelocity, wobble, rb.linearVelocity.z);
+
+            //     if (hoverTimer >= hoverDuration)
+            //     {
+            //         rb.useGravity = true;
+            //         state = JumpState.Descending;
+            //     }
+            //     break;
 
             case JumpState.Descending:
                 rb.linearVelocity = new Vector3(xVelocity, rb.linearVelocity.y, rb.linearVelocity.z);
