@@ -1109,12 +1109,15 @@ MonoBehaviour:
   jumpUpSpeed: 10
   maxHeight: 10
   fallSpeed: -10
+  sideMoveSpeed: 5
+  hoverDuration: 0.5
   hoverWobbleAmplitude: 0.2
-  hoverWobbleFrequency: 2
+  hoverWobbleFrequency: 1
   groundLayer:
     serializedVersion: 2
     m_Bits: 64
   groundCheckDistance: 0.1
+  state: 0
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
