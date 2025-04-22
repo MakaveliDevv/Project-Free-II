@@ -963,4 +963,119 @@ public class JumpControllerAdvanced : MonoBehaviour
     }
 }
 
+       // if (state == JumpState.Jumping || state == JumpState.Dashing)
+        // {
+        //     distanceTravelled = Vector3.Distance(rb.position, startPos);
 
+        //     // Initial push if stuck
+        //     if (distanceTravelled < 0.01f)
+        //     {
+        //         rb.AddForce(targetVelocity.normalized * 5f, ForceMode.VelocityChange);
+        //     }
+
+        //     float progress = Mathf.Clamp01(distanceTravelled / totalDistance);
+        //     float easedProgress = Mathf.SmoothStep(0f, 1f, progress);
+        //     float minVelocityFactor = 0.5f;
+        //     Vector3 desiredVelocity = Vector3.Lerp(targetVelocity * minVelocityFactor, targetVelocity, easedProgress);
+        //     Vector3 velocityChange = desiredVelocity - rb.linearVelocity;
+        //     velocityChange = Vector3.ClampMagnitude(velocityChange, 20f);
+        //     rb.AddForce(velocityChange, ForceMode.Acceleration);
+
+        //     // Use a more generous threshold - 90% completion or very close to finish
+        //     float completionThreshold = Mathf.Min(totalDistance * 0.9f, totalDistance - 0.5f);
+
+        //     Debug.Log($"Total Distance: {totalDistance}, Distance Travelled: {distanceTravelled}, Threshold: {completionThreshold}");
+            
+        //     if (state == JumpState.Dashing && distanceTravelled >= completionThreshold)
+        //     {
+        //         Debug.Log("Dashing complete, transitioning to Idle");
+        //         TransitionTo(JumpState.Idle);
+        //     }
+        // }
+
+
+      // if (state == JumpState.Dashing)
+        // {
+        //     if (!dashInitialized)
+        //     {
+        //         rb.linearVelocity  = targetVelocity;
+        //         dashInitialized = true;
+        //         Debug.Log("Dash velocity applied: " + targetVelocity);
+        //     }
+
+        //     distanceTravelled = Vector3.Distance(rb.position, startPos);
+        //     float completionThreshold = totalDistance * 0.9f;
+
+        //     if (distanceTravelled >= completionThreshold)
+        //     {
+        //         Debug.Log("Dashing complete, transitioning to Idle");
+        //         TransitionTo(JumpState.Idle);
+        //     }
+
+        //     Debug.Log($"Total Distance: {totalDistance}, Distance Travelled: {distanceTravelled}, Threshold: {completionThreshold}");
+
+        // }
+        // else if (state == JumpState.Jumping)
+        // {
+        //     distanceTravelled = Vector3.Distance(rb.position, startPos);
+
+        //     float progress = Mathf.Clamp01(distanceTravelled / totalDistance);
+        //     float easedProgress = Mathf.SmoothStep(0f, 1f, progress);
+        //     float minVelocityFactor = 0.2f;
+        //     Vector3 desiredVelocity = Vector3.Lerp(targetVelocity * minVelocityFactor, targetVelocity, easedProgress);
+        //     Vector3 velocityChange = desiredVelocity - rb.linearVelocity;
+        //     velocityChange = Vector3.ClampMagnitude(velocityChange, 20f);
+        //     rb.AddForce(velocityChange, ForceMode.Acceleration);
+        // }
+
+
+            // void FixedUpdate()
+    // {
+    //     IsGrounded();
+
+    //     if (state == JumpState.Jumping || state == JumpState.Dashing)
+    //     {
+    //         distanceTravelled = Vector3.Distance(rb.position, startPos);
+
+    //         // Initial push if stuck
+    //         if (distanceTravelled < 0.01f)
+    //         {
+    //             rb.AddForce(targetVelocity.normalized * 5f, ForceMode.VelocityChange);
+    //         }
+
+    //         float progress = Mathf.Clamp01(distanceTravelled / totalDistance);
+    //         // float easedProgress = Mathf.SmoothStep(0f, 1f, progress);
+    //         float minVelocityFactor = 0.5f;
+    //         Vector3 desiredVelocity = Vector3.Lerp(targetVelocity * minVelocityFactor, targetVelocity, progress);
+
+    //         if (state == JumpState.Dashing)
+    //         {
+    //             rb.linearVelocity = targetVelocity;
+    //         }
+    //         else
+    //         {
+    //             Vector3 velocityChange = desiredVelocity - rb.linearVelocity;
+    //             velocityChange = Vector3.ClampMagnitude(velocityChange, 20f);
+    //             rb.AddForce(velocityChange, ForceMode.Acceleration);
+    //         }
+
+
+    //         // Use a more generous threshold - 90% completion or very close to finish
+    //         float completionThreshold = Mathf.Min(totalDistance * 0.9f, totalDistance - 0.5f);
+
+    //         Debug.Log($"Total Distance: {totalDistance}, Distance Travelled: {distanceTravelled}, Threshold: {completionThreshold}");
+            
+    //         if (state == JumpState.Dashing && distanceTravelled >= completionThreshold)
+    //         {
+    //             Debug.Log("Dashing complete, transitioning to Idle");
+    //             TransitionTo(JumpState.Idle);
+    //         }
+    //     }
+
+    //     CheckEnterHover();
+
+    //     if (IsGrounded() && (state == JumpState.Descending))
+    //     {
+    //         TransitionTo(JumpState.Idle);
+    //     }
+    // }
