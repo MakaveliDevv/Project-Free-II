@@ -1055,6 +1055,7 @@ GameObject:
   - component: {fileID: 1669732985}
   - component: {fileID: 1669732987}
   - component: {fileID: 1669732988}
+  - component: {fileID: 1669732989}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -1162,14 +1163,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   state: 0
   inputActions: {fileID: -944628639613478452, guid: 9740b7f8f03c4a749a2e93320c4985da, type: 3}
-  maxJumpRange: 7
-  maxHoldTime: 1
-  maxDashRange: 10
-  dashForceMultiplier: 1
-  jumpForceMultiplier: 1
-  accelerationRate: 20
+  maxJumpRange: 5
+  maxHoldTime: 0.2
+  maxDashRange: 5
+  dashForceMultiplier: 5
+  stopDashAfterDuration: 0.2
+  jumpForceMultiplier: 50
+  accelerationRate: 100
+  clampMagnitudeMaxLength: 75
   hoverDelay: 0.1
-  hoverDuration: 0.5
+  hoverDuration: 0.25
   minHoverHeight: 1
   minJumpHoverDistance: 1
   minDiagonalHoverHeight: 1
@@ -1177,6 +1180,28 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 64
   groundCheckDistance: 0.1
+  gravityScale: 1
+  fastFallMultiplier: 2
+--- !u!114 &1669732989
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1669732983}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9ee5b8f9cb49f1440b722a2bcd813f7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  debugRadius: 2
+  debugDirections: []
+  validColor: {r: 0, g: 1, b: 0, a: 1}
+  invalidColor: {r: 1, g: 0, b: 0, a: 1}
+  stickVisualThreshold: 0.2
+  currentInput: {x: 0, y: 0}
+  showDebug: 1
+  inputActions: {fileID: -944628639613478452, guid: 9740b7f8f03c4a749a2e93320c4985da, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

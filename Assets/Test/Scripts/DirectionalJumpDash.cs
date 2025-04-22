@@ -37,6 +37,11 @@ public class DirectionalJumpDash : MonoBehaviour
     public LayerMask groundLayer;
     public float groundCheckDistance = 0.1f;
 
+    [Header("Gravity Settings")]
+    public float gravityScale = 1f;
+    public float fastFallMultiplier = 2f;
+    private bool hasFastFallenThisJump = false;
+
     private Rigidbody rb;
     private Vector2 lastDirection;
     private float holdTime;
@@ -97,8 +102,17 @@ public class DirectionalJumpDash : MonoBehaviour
         }
     }
 
+    void OnGUI()
+    {
+        Vector2 input = movementAction.ReadValue<Vector2>();
+        GUI.Label(new Rect(10, 10, 300, 30), $"Stick: {input}");
+    }
+
     void Update()
     {
+        Vector2 input = movementAction.ReadValue<Vector2>();
+        Debug.Log($"Raw Stick Input: {input} | Magnitude: {input.magnitude}");
+
         switch (state)
         {
             case JumpState.Charging:
@@ -133,6 +147,8 @@ public class DirectionalJumpDash : MonoBehaviour
     void FixedUpdate()
     {
         IsGrounded();
+    
+        ApplyCustomGravity();
 
         if (state == JumpState.Jumping || state == JumpState.Dashing)
         {
@@ -196,12 +212,48 @@ public class DirectionalJumpDash : MonoBehaviour
         }
     }
 
+    // private void OnStickPerformed(InputAction.CallbackContext ctx)
+    // {
+    //     if (state != JumpState.Charging) return;
+    //     Vector2 input = ctx.ReadValue<Vector2>();
+    //     if (input.magnitude > inputDeadzone) 
+    //     {
+    //         lastDirection = input;
+    //         Debug.Log($"Last Direction: {lastDirection}");
+    //     }
+
+    //     Debug.Log($"Input Value: {input}");
+    // }
+
     private void OnStickPerformed(InputAction.CallbackContext ctx)
     {
         if (state != JumpState.Charging) return;
+
         Vector2 input = ctx.ReadValue<Vector2>();
-        if (input.magnitude > inputDeadzone)
-            lastDirection = input;
+
+        // Skip small inputs (deadzone)
+        if (input.magnitude < inputDeadzone) return;
+
+        // Calculate the angle of the input stick
+        float angle = Vector2.SignedAngle(Vector2.up, input);
+
+        // Normalize angle to be between 0° and 360°
+        if (angle < 0) angle += 360;
+
+        Debug.Log($"Raw Stick Input: {input} | Angle: {angle}");
+
+        // Map the angle to a predefined direction
+        Vector2? snappedDirection = GetDirectionFromAngle(angle);
+        Debug.Log($"Snapped Direction {snappedDirection}");
+        if (snappedDirection.HasValue)
+        {
+            lastDirection = snappedDirection.Value;
+            Debug.Log($"Snapped Direction: {lastDirection}");
+        }
+        else
+        {
+            Debug.Log("Invalid Direction — No valid jump or dash.");
+        }
     }
 
     private void OnStickCanceled(InputAction.CallbackContext ctx)
@@ -212,12 +264,162 @@ public class DirectionalJumpDash : MonoBehaviour
         }
     }
 
+    // private Vector2? GetDirectionFromAngle(float angle)
+    // {
+    //     // Map the angle to a predefined direction
+    //     if (angle >= 0 && angle < 45)
+    //         return new Vector2(0f, 1f); // N
+    //     if (angle >= 45 && angle < 90)
+    //         return new Vector2(0.71f, 0.71f); // NE
+    //     if (angle >= 90 && angle < 135)
+    //         return new Vector2(1f, 0f); // E
+    //     if (angle >= 135 && angle < 180)
+    //         return new Vector2(0.71f, -0.71f); // SE
+    //     if (angle >= 180 && angle < 225)
+    //         return new Vector2(0f, -1f); // S
+    //     if (angle >= 225 && angle < 270)
+    //         return new Vector2(-0.71f, -0.71f); // SW
+    //     if (angle >= 270 && angle < 315)
+    //         return new Vector2(-1f, 0f); // W
+    //     if (angle >= 315 && angle < 360)
+    //         return new Vector2(-0.71f, 0.71f); // NW
+
+    //     return null; // Invalid angle (shouldn't happen)
+    // }
+
+    private Vector2? GetDirectionFromAngle(float angle)
+    {
+        // Map the angle to a predefined direction (now using 16 directions)
+        if (angle >= 0 && angle < 22.5f)
+            return new Vector2(0f, 1f); // N
+        if (angle >= 22.5f && angle < 45f)
+            return new Vector2(0.38f, 0.92f); // NNE
+        if (angle >= 45f && angle < 67.5f)
+            return new Vector2(0.71f, 0.71f); // NE
+        if (angle >= 67.5f && angle < 90f)
+            return new Vector2(0.92f, 0.38f); // ENE
+        if (angle >= 90f && angle < 112.5f)
+            return new Vector2(1f, 0f); // E
+        if (angle >= 112.5f && angle < 135f)
+            return new Vector2(0.92f, -0.38f); // ESE
+        if (angle >= 135f && angle < 157.5f)
+            return new Vector2(0.71f, -0.71f); // SE
+        if (angle >= 157.5f && angle < 180f)
+            return new Vector2(0.38f, -0.92f); // SSE
+        if (angle >= 180f && angle < 202.5f)
+            return new Vector2(0f, -1f); // S
+        if (angle >= 202.5f && angle < 225f)
+            return new Vector2(-0.38f, -0.92f); // SSW
+        if (angle >= 225f && angle < 247.5f)
+            return new Vector2(-0.71f, -0.71f); // SW
+        if (angle >= 247.5f && angle < 270f)
+            return new Vector2(-0.92f, -0.38f); // WSW
+        if (angle >= 270f && angle < 292.5f)
+            return new Vector2(-1f, 0f); // W
+        if (angle >= 292.5f && angle < 315f)
+            return new Vector2(-0.92f, 0.38f); // WNW
+        if (angle >= 315f && angle < 337.5f)
+            return new Vector2(-0.71f, 0.71f); // NW
+        if (angle >= 337.5f && angle < 360f)
+            return new Vector2(-0.38f, 0.92f); // NNW
+
+        return null; // Invalid angle (shouldn't happen)
+    }
+
+
+    private void ApplyCustomGravity()
+    {
+        if (rb == null || state == JumpState.Dashing)
+            return;
+
+        Vector2 input = movementAction.ReadValue<Vector2>();
+        bool wantsFastFall = input.y < -0.5f && !IsGrounded();
+
+        float appliedGravity = gravityScale * Physics.gravity.y;
+
+        if (state == JumpState.Hovering)
+        {
+            if (wantsFastFall)
+            {
+                Debug.Log("🔻 Fast Fall: Cancelling hover");
+                ExitHover();
+                hasFastFallenThisJump = true;
+                appliedGravity *= fastFallMultiplier;
+                rb.AddForce(Vector3.up * appliedGravity, ForceMode.Acceleration);
+            }
+
+            return;
+        }
+
+        if (state == JumpState.Descending)
+        {
+            if (wantsFastFall)
+            {
+                appliedGravity *= fastFallMultiplier;
+                hasFastFallenThisJump = true;
+            }
+
+            rb.AddForce(Vector3.up * appliedGravity, ForceMode.Acceleration);
+        }
+    }
+
+    private Vector2? SnapDirectionToPredefined(Vector2 input)
+    {
+        if (input.magnitude < inputDeadzone)
+            return null;
+
+        Vector2 normalized = input.normalized;
+
+        // Reject any downward-facing directions (S, SE, SW)
+        if (normalized.y < 0f)
+            return null;
+
+        // Dash Left/Right allowed separately, let BeginAction handle it
+        float angle = Mathf.Atan2(normalized.y, normalized.x) * Mathf.Rad2Deg;
+        if ((angle >= -30f && angle <= 30f) || (angle >= 150f || angle <= -150f))
+            return normalized;
+
+        // Snap to one of the defined jump directions
+        int bestIndex = -1;
+        float minAngle = float.MaxValue;
+
+        for (int i = 0; i < jumpDirections.Length; i++)
+        {
+            float angleDiff = Vector2.Angle(normalized, jumpDirections[i]);
+            if (angleDiff < minAngle)
+            {
+                minAngle = angleDiff;
+                bestIndex = i;
+            }
+        }
+
+        // Snap only if it's reasonably close (within 22.5° sector)
+        if (minAngle <= sectorHalfAngle)
+            return jumpDirections[bestIndex];
+
+        return null;
+    }
+
     private void BeginAction()
     {
         actionPerformed = true;
         holdRatio = holdTime / maxHoldTime;
-        float angle = Mathf.Atan2(lastDirection.y, lastDirection.x) * Mathf.Rad2Deg;
-        Debug.Log($"BeginAction: angle={angle}, jumpRatio={holdRatio}, lastDirection={lastDirection}");
+
+        Vector2? snapped = SnapDirectionToPredefined(lastDirection);
+        if (!snapped.HasValue)
+        {
+            Debug.Log("❌ Invalid direction — No jump or dash will occur.");
+            TransitionTo(JumpState.Idle);
+            return;
+        }
+        
+        Vector2 dir = snapped.Value;
+        
+        // Flip the X direction to invert movement (horizontal direction)
+        dir.x = -dir.x;
+        float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+
+        Debug.Log($"BeginAction: snappedAngle={angle}, jumpRatio={holdRatio}, snappedDirection={dir}");
 
         if (angle >= -30f && angle <= 30f)
         {
@@ -230,23 +432,17 @@ public class DirectionalJumpDash : MonoBehaviour
             return;
         }
 
-        Vector2 norm = lastDirection.normalized;
-        int best = 0; float minA = float.MaxValue;
-        for (int i = 0; i < jumpDirections.Length; i++)
-        {
-            float dA = Vector2.Angle(norm, jumpDirections[i]);
-            if (dA < minA) { minA = dA; best = i; }
-        }
-        Vector2 d = jumpDirections[best];
         startPos = rb.position;
-        isDiagonalJump = Mathf.Abs(d.x) > 0.01f;
-        Vector3 jumpVec = new Vector3(d.x * maxJumpRange * holdRatio, d.y * maxJumpRange * holdRatio, 0f);
+        isDiagonalJump = Mathf.Abs(dir.x) > 0.01f;
+
+        Vector3 jumpVec = new Vector3(dir.x * maxJumpRange * holdRatio, dir.y * maxJumpRange * holdRatio, 0f);
         Jump(jumpVec);
     }
 
+
     private void CheckEnterHover()
     {
-        if (state != JumpState.Jumping) return;
+        if (state != JumpState.Jumping || hasFastFallenThisJump) return;
 
         float height = rb.position.y - startPos.y;
         float horiz = Mathf.Abs(rb.position.x - startPos.x);
@@ -273,8 +469,11 @@ public class DirectionalJumpDash : MonoBehaviour
         rb.useGravity = true;
         TransitionTo(JumpState.Descending);
     }
+
     private void Jump(Vector3 vec)
     {
+        hasFastFallenThisJump = false;
+
         TransitionTo(JumpState.Jumping);
         rb.linearVelocity  = Vector3.zero;  // Reset the velocity at the start of the jump
 
@@ -287,6 +486,8 @@ public class DirectionalJumpDash : MonoBehaviour
 
     private void Dash(Vector3 vec)
     {
+        hasFastFallenThisJump = false;
+
         TransitionTo(JumpState.Dashing);
         rb.useGravity = false; // prevent gravity drag
         rb.linearDamping = 0f; // prevent velocity decay
@@ -316,7 +517,6 @@ public class DirectionalJumpDash : MonoBehaviour
         TransitionTo(JumpState.Idle); // Transition back to idle
     }
 
-
     private void TransitionTo(JumpState newState)
     {
         state = newState;
@@ -324,7 +524,8 @@ public class DirectionalJumpDash : MonoBehaviour
         if (newState == JumpState.Idle)
         {
             rb.useGravity = true;
-            rb.linearDamping  = 0f; 
+            rb.linearDamping = 0f;
+            hasFastFallenThisJump = false;
         }
     }
 
