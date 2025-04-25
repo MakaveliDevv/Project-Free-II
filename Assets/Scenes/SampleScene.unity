@@ -1054,6 +1054,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1669732985}
   - component: {fileID: 1669732987}
+  - component: {fileID: 1669732988}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -1084,7 +1085,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1669732983}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c531db6cb5c1aa949bbaa1764e948c52, type: 3}
   m_Name: 
@@ -1102,6 +1103,39 @@ MonoBehaviour:
     m_Bits: 64
   groundCheckDistance: 0.1
   state: 0
+--- !u!114 &1669732988
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1669732983}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3e6131c1974cd1e4ea854e9f5f29a0de, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  state: 0
+  inputActions: {fileID: -944628639613478452, guid: 9740b7f8f03c4a749a2e93320c4985da, type: 3}
+  maxJumpRange: 10
+  maxHoldTime: 1
+  maxDashRange: 10
+  dashForceMultiplier: 1
+  stopDashAfterDuration: 0.5
+  jumpForceMultiplier: 1
+  accelerationRate: 20
+  clampMagnitudeMaxLength: 20
+  hoverDelay: 0.1
+  hoverDuration: 0.5
+  minHoverHeight: 1
+  minJumpHoverDistance: 1
+  minDiagonalHoverHeight: 1
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 0
+  groundCheckDistance: 0.1
+  gravityScale: 1
+  fastFallMultiplier: 2
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
