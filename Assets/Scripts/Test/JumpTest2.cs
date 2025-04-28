@@ -4,6 +4,8 @@ using UnityEngine.InputSystem;
 [RequireComponent(typeof(Rigidbody))]
 public class JumpTest2 : MonoBehaviour
 {
+    public enum JumpState { Idle, Charging, Ascending, Hovering, Descending, Dashing, Stucked, WallDescending }
+
     #region Enums
     public enum Direction
     {
@@ -22,7 +24,8 @@ public class JumpTest2 : MonoBehaviour
         Ground,
         LeftWall,
         RightWall,
-        Ceiling
+        Ceiling,
+        Air
     }
     #endregion
 
@@ -51,6 +54,7 @@ public class JumpTest2 : MonoBehaviour
     public float gizmosLength;
     public SurfaceState currentSurfaceState = SurfaceState.Ground;
     public Direction directionState;
+    public float checkDistance;
 
     [Header("Air Movement")]
     public bool allowedToMoveInAir = false;
@@ -145,6 +149,16 @@ public class JumpTest2 : MonoBehaviour
         CheckAirState();
         HandleActionTimeout();
         CheckSurfaceContact();
+
+        if(isInAir) 
+        {
+            currentSurfaceState = SurfaceState.Air;
+
+            if(inputDirection.y < 0)  
+            {
+                Debug.Log("Drop player");
+            }
+        }
     }
 
     private void OnCollisionEnter(Collision collision)
@@ -340,79 +354,93 @@ public class JumpTest2 : MonoBehaviour
 
     private void HandleSurfaceState(Collision collision)
     {
-        // Reset contact timer
         lastContactTime = Time.time;
+        bool foundGround = false;
+        bool foundCeiling = false;
+        bool foundWallRight = false;
+        bool foundWallLeft = false;
         
-        // Get the most vertical normal from all contact points
-        Vector3 mostSignificantNormal = Vector3.zero;
-        float bestDot = -1f;
-
         foreach (ContactPoint contact in collision.contacts)
         {
-            // Find the most significant alignment with any axis
-            float upDot = Mathf.Abs(Vector3.Dot(contact.normal, Vector3.up));
-            float rightDot = Mathf.Abs(Vector3.Dot(contact.normal, Vector3.right));
-            float forwardDot = Mathf.Abs(Vector3.Dot(contact.normal, Vector3.forward));
-            
-            float maxDot = Mathf.Max(upDot, rightDot, forwardDot);
-            
-            if (maxDot > bestDot)
+            Vector3 normal = contact.normal;
+            if (Vector3.Dot(normal, Vector3.up) > 0.7f)
             {
-                bestDot = maxDot;
-                mostSignificantNormal = contact.normal;
+                foundGround = true;
+            }
+            else if (Vector3.Dot(normal, Vector3.down) > 0.7f)
+            {
+                foundCeiling = true;
+            }
+            else if (Vector3.Dot(normal, Vector3.right) > 0.7f)
+            {
+                foundWallLeft = true;
+            }
+            else if (Vector3.Dot(normal, Vector3.left) > 0.7f)
+            {
+                foundWallRight = true;
             }
         }
         
-        // Determine surface state from the most significant normal
-        if (bestDot > 0.7f && !stateChanged) // Threshold for alignment
+        SurfaceState previousState = currentSurfaceState;
+        
+        // Priority-based state determination with stickiness for ground and ceiling
+        if (foundGround)
         {
-            SurfaceState previousState = currentSurfaceState;
-            
-            if (Vector3.Dot(mostSignificantNormal, Vector3.up) > 0.7f)
-            {
-                currentSurfaceState = SurfaceState.Ground;
-            }
-            else if (Vector3.Dot(mostSignificantNormal, Vector3.down) > 0.7f)
-            {
-                currentSurfaceState = SurfaceState.Ceiling;
-            }
-            else if (Vector3.Dot(mostSignificantNormal, Vector3.left) > 0.7f)
-            {
-                currentSurfaceState = SurfaceState.RightWall;
-            }
-            else if (Vector3.Dot(mostSignificantNormal, Vector3.right) > 0.7f)
+            // Always prioritize ground
+            currentSurfaceState = SurfaceState.Ground;
+        }
+        else if (foundCeiling)
+        {
+            // Always prioritize ceiling second
+            currentSurfaceState = SurfaceState.Ceiling;
+        }
+        else if ((foundWallLeft || foundWallRight) && currentSurfaceState == SurfaceState.Air 
+                /*previousState != SurfaceState.Ground && previousState != SurfaceState.Ceiling*/)
+        {
+            // Only switch to wall state if we weren't on ground or ceiling
+            if (foundWallLeft)
             {
                 currentSurfaceState = SurfaceState.LeftWall;
             }
-            else if ((Vector3.Dot(mostSignificantNormal, Vector3.up) > 0.7f || 
-                  Vector3.Dot(mostSignificantNormal, Vector3.right) > 0.7f || 
-                  Vector3.Dot(mostSignificantNormal, Vector3.left) > 0.7f) && rb.linearVelocity.y == 0) 
+            else
             {
-                Debug.Log("Player is against wall but also grounded");
-                currentSurfaceState = SurfaceState.Ground;
+                currentSurfaceState = SurfaceState.RightWall;
             }
-    
-            // If state changed, force action reset
-            if (previousState != currentSurfaceState)
-            {
-                Debug.Log($"Surface State changed from {previousState} to {currentSurfaceState}");
-                ForceResetAllActions();
-                stateChanged = true;
-            }
+        }
+        // Keep previous state if nothing else detected and still in contact
+        else if (collision.contactCount == 0)
+        {
+            // No surface contact logic
+            // You might want to handle this case differently
+        }
+        
+        if (previousState != currentSurfaceState)
+        {
+            Debug.Log($"Surface State changed from {previousState} to {currentSurfaceState}");
+            ForceResetAllActions();
+            stateChanged = true;
         }
     }
 
     private GameObject CheckWallCollision(float checkDistance) 
     {
-        Vector2 checkDirection = new Vector2(lastSnappedDirection.x, 0).normalized;
-        
-        if (Mathf.Abs(checkDirection.x) > 0.1f) 
+        Vector2 checkDirection = Vector2.zero;
+
+        if(isEastDirection) 
         {
-            RaycastHit hit;
-            if (Physics.Raycast(rb.position, new Vector3(checkDirection.x, 0, 0), out hit, checkDistance, wallLayer))
-            {
-                return hit.collider.gameObject;
-            }
+            checkDirection = Vector2.right;
+        }
+        else if(isWestDirection) 
+        {
+            checkDirection = Vector2.left;
+        }
+
+        Debug.DrawRay(rb.position, checkDirection * checkDistance, Color.red, 0.1f);
+
+        if (Physics.Raycast(rb.position, checkDirection, out RaycastHit hit, checkDistance, wallLayer))
+        {
+            Debug.Log($"Collision with wall: {hit.transform.gameObject.name}");
+            return hit.collider.gameObject;
         }
         
         return null;
@@ -676,11 +704,11 @@ public class JumpTest2 : MonoBehaviour
         }
 
         // Prevent actions while falling from ceiling
-        if (isFalling)
-        {
-            Debug.Log("Ignoring action input while falling from ceiling");
-            return;
-        }
+        // if (isFalling)
+        // {
+        //     Debug.Log("Ignoring action input while falling from ceiling");
+        //     return;
+        // }
 
         holdRatio = Mathf.Clamp01(holdTime / maxHoldTime);
         if (holdRatio < 0.1f)
@@ -735,7 +763,7 @@ public class JumpTest2 : MonoBehaviour
         // Air dash takes priority when in air
         if (isInAir && allowedToMoveInAir && !hasUsedAirDash)
         {
-            SetupForce(maxDashDistance, jumpHeight, 1f, airDashForce, "Dash");
+            SetupMovement(maxDashDistance, jumpHeight, 1f, airDashForce, "AirDash");
 
             hasUsedAirDash = true;
             lastAirDashTime = Time.time;
@@ -745,7 +773,9 @@ public class JumpTest2 : MonoBehaviour
         {
             isEastDirection = majorDirection == Direction.East;
             isWestDirection = majorDirection == Direction.West;
-            SetupDash();
+            // SetupDash();
+            SetupMovement(maxDashDistance, 0f, 1f, dashForce, "Dash");
+
         }
         // On walls, check for vertical dash (North/South)
         else if (isDashAllowed && 
@@ -755,67 +785,54 @@ public class JumpTest2 : MonoBehaviour
             // For vertical dash on walls
             isEastDirection = false;
             isWestDirection = false;
-            SetupDash();
+            // SetupDash();
+            SetupMovement(maxDashDistance, 0f, 1f, dashForce, "Dash");
+
         }
         // Default to jump if dash is not applicable but jump is allowed
         else if (isJumpAllowed)
         {
-            SetupForce(maxJumpDistance, jumpHeight, 1f, jumpForce, "Jump");
+            SetupMovement(maxJumpDistance, jumpHeight, 1f, jumpForce, "Jump");
         }
     }
 
-    private void SetupForce(float maxTravelDistance, float forceHeight, float gravityMultiplier, float forcePower, string action)
+    private void SetupMovement(float maxTravelDistance, float forceHeight, float gravityMultiplier, float forcePower, string action)
     {
-        if(action.Contains("Jump")) 
-        {
-            isJumping = true;
-            isDashing = false;
-        }
-        else if(action.Contains("Dash")) 
+        float targetDistance = maxTravelDistance * holdRatio;
+
+        if(action == "Dash") 
         {
             isJumping = false;
             isDashing = true;
+
+            // Determine dash direction based on surface state and major direction
+            Direction majorDirection = GetMajorDirection(angle);
+
+            moveDirection = currentSurfaceState switch
+            {
+                SurfaceState.Ground or SurfaceState.Ceiling => isEastDirection ? Vector3.right : Vector3.left, // Horizontal dash on ground or ceiling
+                SurfaceState.LeftWall or SurfaceState.RightWall => majorDirection == Direction.North ? Vector3.up : Vector3.down, // Vertical dash on walls
+                _ => isEastDirection ? Vector3.right : Vector3.left, // Fallback to horizontal
+            };
+
+        }
+        else 
+        {
+            isJumping = true;
+            isDashing = false;
+
+            // Calculate jump physics
+            float gravity = Mathf.Abs(Physics.gravity.y) * gravityMultiplier;
+            float verticalVelocity = Mathf.Sqrt(2 * gravity * forceHeight);
+            float horizontalSpeed = Mathf.Sqrt(targetDistance * gravity / Mathf.Sin(2 * Mathf.Deg2Rad * 45));
+            moveDirection = lastSnappedDirection * horizontalSpeed;
+            lastSnappedDirection.y = verticalVelocity;
         }
 
-        float targetDistance = maxTravelDistance * holdRatio;
-        
-        // Calculate jump physics
-        float gravity = Mathf.Abs(Physics.gravity.y) * gravityMultiplier;
-        float verticalVelocity = Mathf.Sqrt(2 * gravity * forceHeight);
-
-        float horizontalSpeed = Mathf.Sqrt(targetDistance * gravity / Mathf.Sin(2 * Mathf.Deg2Rad * 45));
-
-        moveDirection = lastSnappedDirection * horizontalSpeed;
-        lastSnappedDirection.y = verticalVelocity;
-
         // Set force magnitude
-        forceMagnitude = forcePower * holdRatio;
+        forceMagnitude = forcePower * targetDistance;
 
         Debug.Log($"{action} setup - Direction: {moveDirection}, Force: {forceMagnitude}");
-    }
-
-    private void SetupDash()
-    {
-        isJumping = false;
-        isDashing = true;
-        
-        // Calculate the distance based on hold ratio
-        float targetDistance = maxDashDistance * holdRatio;
-        
-        // Determine dash direction based on surface state and major direction
-        Direction majorDirection = GetMajorDirection(angle);
-
-        moveDirection = currentSurfaceState switch
-        {
-            SurfaceState.Ground or SurfaceState.Ceiling => isEastDirection ? Vector3.right : Vector3.left, // Horizontal dash on ground or ceiling
-            SurfaceState.LeftWall or SurfaceState.RightWall => majorDirection == Direction.North ? Vector3.up : Vector3.down, // Vertical dash on walls
-            _ => isEastDirection ? Vector3.right : Vector3.left, // Fallback to horizontal
-        };
-
-        // Set force magnitude
-        forceMagnitude = dashForce * targetDistance;
-        
-        Debug.Log($"Dash setup - Direction: {moveDirection}, Force: {forceMagnitude}, Surface: {currentSurfaceState}");
     }
     #endregion
 

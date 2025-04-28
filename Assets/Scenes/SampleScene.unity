@@ -469,11 +469,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a370859e633045c4f91467e0325f26b9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  jumpForce: 10
-  maxJumpDistance: 10
-  jumpHeight: 3
-  dashForce: 8.02
-  maxDashDistance: 4
+  jumpForce: 2
+  maxJumpDistance: 5
+  jumpHeight: 2
+  dashForce: 6
+  maxDashDistance: 6
   maxHoldTime: 1.5
   deadzone: 0.2
   horizontalThreshold: 30
@@ -481,19 +481,21 @@ MonoBehaviour:
   dashForceMode: 1
   airDashForceMode: 1
   numberOfDirections: 8
-  inputActions: {fileID: -944628639613478452, guid: 9740b7f8f03c4a749a2e93320c4985da, type: 3}
   gizmosLength: 10
   currentSurfaceState: 0
   directionState: 0
-  lastContactTime: 0
+  checkDistance: 0.5
   allowedToMoveInAir: 1
   isInAir: 0
-  airDashForce: 20
+  airDashForce: 5
   airDashCooldown: 0.5
-  maxAirDashDistance: 10
+  maxAirDashDistance: 5
   mode: 0
-  Bool: 0
-  stateBuffer: 2
+  stateBuffer: 0.5
+  wallLayer:
+    serializedVersion: 2
+    m_Bits: 128
+  inputActions: {fileID: -944628639613478452, guid: 9740b7f8f03c4a749a2e93320c4985da, type: 3}
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0
