@@ -406,3 +406,61 @@ public class JumpTest : MonoBehaviour
     //         }
     //     }
     // }
+
+    // public bool CanMoveInAir(bool allowDuringActions = false, bool overrideFalling = false, bool consumeResource = false)
+    // {
+    //     // Basic in-air check
+    //     bool isInAir = Time.time - lastContactTime > NO_CONTACT_THRESHOLD;
+    //     if (!isInAir) return false;
+        
+    //     // Action in progress check
+    //     if (actionInProgress && !allowDuringActions) return false;
+        
+    //     // Falling override
+    //     if (isFalling && currentSurfaceState == SurfaceState.Ceiling && !overrideFalling) return false;
+        
+    //     // Resource consumption for air movement (future feature)
+    //     if (consumeResource)
+    //     {
+    //         // Example implementation
+    //         // if (airControlResource <= 0) return false;
+    //         // airControlResource -= Time.deltaTime * airControlCost;
+    //     }
+        
+    //     return true;
+    // }
+    
+   // private Vector3 GetSnappedDirection(Vector2 input)
+    // {
+    //     if (input.magnitude < deadzone)
+    //         return Vector3.zero;
+
+    //     Vector2 normalizedInput = input.normalized;
+    //     float inputAngle = Mathf.Atan2(normalizedInput.y, normalizedInput.x) * Mathf.Rad2Deg;
+    //     inputAngle = (inputAngle + 360f) % 360f;
+
+    //     // Snap based on sectors instead of closest angle
+    //     float sectorSize = 360f / allowedAngles.Length;
+    //     float halfSector = sectorSize / 2f;
+
+    //     foreach (float allowedAngle in allowedAngles)
+    //     {
+    //         float lowerBound = (allowedAngle - halfSector + 360f) % 360f;
+    //         float upperBound = (allowedAngle + halfSector) % 360f;
+
+    //         bool inSector = lowerBound < upperBound
+    //             ? inputAngle >= lowerBound && inputAngle < upperBound
+    //             : inputAngle >= lowerBound || inputAngle < upperBound;
+
+    //         if (inSector)
+    //         {
+    //             Vector2 snapped2D = new Vector2(
+    //                 Mathf.Cos(allowedAngle * Mathf.Deg2Rad),
+    //                 Mathf.Sin(allowedAngle * Mathf.Deg2Rad)
+    //             );
+    //             return new Vector3(snapped2D.x, snapped2D.y, 0f);
+    //         }
+    //     }
+
+    //     return Vector3.zero;
+    // }

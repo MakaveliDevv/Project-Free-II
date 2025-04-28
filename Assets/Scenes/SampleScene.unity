@@ -479,16 +479,21 @@ MonoBehaviour:
   horizontalThreshold: 30
   jumpForceMode: 2
   dashForceMode: 1
+  airDashForceMode: 1
   numberOfDirections: 8
   inputActions: {fileID: -944628639613478452, guid: 9740b7f8f03c4a749a2e93320c4985da, type: 3}
   gizmosLength: 10
   currentSurfaceState: 0
   directionState: 0
   lastContactTime: 0
-  allowedToMoveInAir: 0
+  allowedToMoveInAir: 1
   isInAir: 0
-  airDashForce: 15
+  airDashForce: 20
   airDashCooldown: 0.5
+  maxAirDashDistance: 10
+  mode: 0
+  Bool: 0
+  stateBuffer: 2
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0

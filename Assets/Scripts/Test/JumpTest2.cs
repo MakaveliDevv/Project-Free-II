@@ -1,4 +1,3 @@
-using System.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -43,15 +42,11 @@ public class JumpTest2 : MonoBehaviour
     [Header("Force Settings")]
     public ForceMode jumpForceMode = ForceMode.Impulse;
     public ForceMode dashForceMode = ForceMode.Impulse;
-
-    // [Header("Allowed Jump Angles (degrees)")]
-    // public float[] allowedAngles = { 0f, 45f, 90f, 135f, 180f, 225f, 270f, 315f };
+    public ForceMode airDashForceMode = ForceMode.Impulse;
 
     [Header("Allowed Jump Angles (degrees)")]
     public int numberOfDirections = 8; // 8 = N, NE, E, SE, S, SW, W, NW
     private float[] allowedAngles;
-
-
 
     private Vector2 inputDirection = Vector2.zero;
     private Vector2 lastSnappedDirection = Vector2.zero;
@@ -95,7 +90,14 @@ public class JumpTest2 : MonoBehaviour
     public float airDashCooldown = 0.5f;
     private float lastAirDashTime = 0f;
     private bool hasUsedAirDash = false;
-    
+    public float maxAirDashDistance;
+    public ForceMode mode;
+    private float inputWaitTimer = 0f;
+    private const float baseInputWaitTime = 0.05f; 
+    public float stateBuffer = 0.25f;
+    private float stateTimer = 0f;
+    private bool stateChanged = false;
+
     void Awake()
     {
         allowedAngles = new float[numberOfDirections];
@@ -229,6 +231,17 @@ public class JumpTest2 : MonoBehaviour
         {
             isFalling = false;
         }
+
+        // Prevent state transition bug
+        if(stateChanged) 
+        {
+            stateTimer += Time.deltaTime;
+            if(stateTimer >= stateBuffer) 
+            {
+                stateChanged = false;
+                stateTimer = 0f;
+            }
+        }
     }
 
     void FixedUpdate()
@@ -239,7 +252,20 @@ public class JumpTest2 : MonoBehaviour
             {
                 if (rb.linearVelocity .magnitude < 0.1f)
                 {
-                    ForceMode mode = isJumping ? jumpForceMode : dashForceMode;
+                    // ForceMode mode = isJumping ? jumpForceMode : dashForceMode;
+                    if(isJumping && isInAir) 
+                    {
+                        mode = airDashForceMode;
+                    }
+                    else if(isJumping) 
+                    {
+                        mode = jumpForceMode;
+                    }
+                    else if (isDashing) 
+                    {
+                        mode = dashForceMode;
+                    }
+
                     rb.AddForce(moveDirection * forceMagnitude, mode);
 
                     Debug.Log($"Applied {(isJumping ? "jump" : "dash")} force: {moveDirection * forceMagnitude}");
@@ -309,29 +335,6 @@ public class JumpTest2 : MonoBehaviour
         lastContactTime = Time.time;
     }
 
-    public bool CanMoveInAir(bool allowDuringActions = false, bool overrideFalling = false, bool consumeResource = false)
-    {
-        // Basic in-air check
-        bool isInAir = Time.time - lastContactTime > NO_CONTACT_THRESHOLD;
-        if (!isInAir) return false;
-        
-        // Action in progress check
-        if (actionInProgress && !allowDuringActions) return false;
-        
-        // Falling override
-        if (isFalling && currentSurfaceState == SurfaceState.Ceiling && !overrideFalling) return false;
-        
-        // Resource consumption for air movement (future feature)
-        if (consumeResource)
-        {
-            // Example implementation
-            // if (airControlResource <= 0) return false;
-            // airControlResource -= Time.deltaTime * airControlCost;
-        }
-        
-        return true;
-    }
-
     private void HandleSurfaceState(Collision collision)
     {
         // Reset contact timer
@@ -356,34 +359,43 @@ public class JumpTest2 : MonoBehaviour
                 mostSignificantNormal = contact.normal;
             }
         }
-
+        
         // Determine surface state from the most significant normal
         if (bestDot > 0.7f) // Threshold for alignment
         {
-            SurfaceState previousState = currentSurfaceState;
-            
-            if (Vector3.Dot(mostSignificantNormal, Vector3.up) > 0.7f)
+            if(!stateChanged) 
             {
-                currentSurfaceState = SurfaceState.Ground;
-            }
-            else if (Vector3.Dot(mostSignificantNormal, Vector3.down) > 0.7f)
-            {
-                currentSurfaceState = SurfaceState.Ceiling;
-            }
-            else if (Vector3.Dot(mostSignificantNormal, Vector3.left) > 0.7f)
-            {
-                currentSurfaceState = SurfaceState.RightWall;
-            }
-            else if (Vector3.Dot(mostSignificantNormal, Vector3.right) > 0.7f)
-            {
-                currentSurfaceState = SurfaceState.LeftWall;
-            }
-            
-            // If state changed, force action reset
-            if (previousState != currentSurfaceState)
-            {
-                Debug.Log($"Surface State changed from {previousState} to {currentSurfaceState}");
-                ForceResetAllActions();
+                SurfaceState previousState = currentSurfaceState;
+                
+                if (Vector3.Dot(mostSignificantNormal, Vector3.up) > 0.7f)
+                {
+                    currentSurfaceState = SurfaceState.Ground;
+                }
+                else if (Vector3.Dot(mostSignificantNormal, Vector3.down) > 0.7f)
+                {
+                    currentSurfaceState = SurfaceState.Ceiling;
+                }
+                else if (Vector3.Dot(mostSignificantNormal, Vector3.left) > 0.7f)
+                {
+                    currentSurfaceState = SurfaceState.RightWall;
+                }
+                else if (Vector3.Dot(mostSignificantNormal, Vector3.right) > 0.7f)
+                {
+                    currentSurfaceState = SurfaceState.LeftWall;
+                }
+                else if((Vector3.Dot(mostSignificantNormal, Vector3.up) > 0.7f || (Vector3.Dot(mostSignificantNormal, Vector3.right) > 0.7f) || Vector3.Dot(mostSignificantNormal, Vector3.left) > 0.7f) && rb.linearVelocity.y == 0) 
+                {
+                    Debug.Log("Player is against wall but also grounded");
+                    currentSurfaceState = SurfaceState.Ground;
+                }
+                
+                // If state changed, force action reset
+                if (previousState != currentSurfaceState)
+                {
+                    Debug.Log($"Surface State changed from {previousState} to {currentSurfaceState}");
+                    ForceResetAllActions();
+                    stateChanged = true;
+                }
             }
         }
     }
@@ -401,13 +413,11 @@ public class JumpTest2 : MonoBehaviour
         // Clear any pending invokes
         CancelInvoke(nameof(ResetActionState));
         
-        // Make sure these are reset too
         southButtonPressed = false;
         lastSnappedDirection = Vector2.zero;
         
         Debug.Log("Forced complete action reset due to surface change");
     }
-
 
     private void PerformAction()
     {
@@ -486,7 +496,8 @@ public class JumpTest2 : MonoBehaviour
         // Air dash takes priority when in air
         if (isInAir && allowedToMoveInAir && !hasUsedAirDash)
         {
-            SetupAirDash();
+            SetupForce(maxDashDistance, jumpHeight, 1f, airDashForce, "Dash");
+
             hasUsedAirDash = true;
             lastAirDashTime = Time.time;
         }
@@ -510,7 +521,8 @@ public class JumpTest2 : MonoBehaviour
         // Default to jump if dash is not applicable but jump is allowed
         else if (isJumpAllowed)
         {
-            SetupJump();
+            // SetupJump(jumpForce);
+            SetupForce(maxJumpDistance, jumpHeight, 1f, jumpForce, "Jump");
         }
 
         actionInProgress = true;
@@ -518,56 +530,34 @@ public class JumpTest2 : MonoBehaviour
         lastActionTime = Time.time; // Track when action started
     }
 
-    // Add new method for air dash
-    private void SetupAirDash()
+    private void SetupForce(float maxTravelDistance, float forceHeight, float gravityMultiplier, float forcePower, string action)
     {
-        isJumping = false;
-        isDashing = true;
-        
-        // Calculate dash vector based on input direction
-        Vector3 dashDirection = new Vector3(lastSnappedDirection.x, 0, lastSnappedDirection.y).normalized;
-        
-        // For up/down directions, add vertical component
-        if (lastSnappedDirection.y > 0.5f) // Going up
+        if(action.Contains("Jump")) 
         {
-            dashDirection.y = 0.7f;
+            isJumping = true;
+            isDashing = false;
         }
-        else if (lastSnappedDirection.y < -0.5f) // Going down
+        else if(action.Contains("Dash")) 
         {
-            dashDirection.y = -0.7f;
+            isJumping = false;
+            isDashing = true;
         }
-        
-        dashDirection.Normalize();
-        
-        // Set movement parameters
-        moveDirection = dashDirection;
-        forceMagnitude = airDashForce * holdRatio;
-        
-        Debug.Log($"Air Dash setup - Direction: {moveDirection}, Force: {forceMagnitude}");
-    }
 
-
-    private void SetupJump()
-    {
-        isJumping = true;
-        isDashing = false;
-
-        float targetDistance = maxJumpDistance * holdRatio;
+        float targetDistance = maxTravelDistance * holdRatio;
         
-        // Calculate horizontal direction
-        Vector3 horizontalDirection = new Vector3(lastSnappedDirection.x, 0f, lastSnappedDirection.y).normalized;
-        
-        // Calculate jump physics
-        float gravity = Mathf.Abs(Physics.gravity.y);
-        float verticalVelocity = Mathf.Sqrt(2 * gravity * jumpHeight);
+        // // Calculate jump physics
+        float gravity = Mathf.Abs(Physics.gravity.y) * gravityMultiplier;
+        float verticalVelocity = Mathf.Sqrt(2 * gravity * forceHeight);
 
         float horizontalSpeed = Mathf.Sqrt(targetDistance * gravity / Mathf.Sin(2 * Mathf.Deg2Rad * 45));
-        moveDirection = horizontalDirection * horizontalSpeed;
-        moveDirection.y = verticalVelocity;
 
-        forceMagnitude = jumpForce * holdRatio;
+        moveDirection = lastSnappedDirection * horizontalSpeed;
+        lastSnappedDirection.y = verticalVelocity;
 
-        Debug.Log($"Jump setup -> Horizontal: {horizontalDirection}, Vertical Velocity: {verticalVelocity}, Force: {forceMagnitude}");
+        // Set force magnitude (you can tune airDashForce separately if you want)
+        forceMagnitude = forcePower * holdRatio;
+
+        Debug.Log($"Air Dash setup - Direction: {moveDirection}, Force: {forceMagnitude}");
     }
 
     private void SetupDash()
@@ -580,27 +570,14 @@ public class JumpTest2 : MonoBehaviour
         
         // Determine dash direction based on surface state and major direction
         Direction majorDirection = GetMajorDirection(angle);
-        
-        switch (currentSurfaceState)
+
+        moveDirection = currentSurfaceState switch
         {
-            case SurfaceState.Ground:
-            case SurfaceState.Ceiling:
-                // Horizontal dash on ground or ceiling
-                moveDirection = isEastDirection ? Vector3.right : Vector3.left;
-                break;
-                
-            case SurfaceState.LeftWall:
-            case SurfaceState.RightWall:
-                // Vertical dash on walls
-                moveDirection = majorDirection == Direction.North ? Vector3.up : Vector3.down;
-                break;
-                
-            default:
-                // Fallback to horizontal
-                moveDirection = isEastDirection ? Vector3.right : Vector3.left;
-                break;
-        }
-        
+            SurfaceState.Ground or SurfaceState.Ceiling => isEastDirection ? Vector3.right : Vector3.left,// Horizontal dash on ground or ceiling
+            SurfaceState.LeftWall or SurfaceState.RightWall => majorDirection == Direction.North ? Vector3.up : Vector3.down,// Vertical dash on walls
+            _ => isEastDirection ? Vector3.right : Vector3.left,// Fallback to horizontal
+        };
+
         // Set force magnitude
         forceMagnitude = dashForce * targetDistance;
         
@@ -649,35 +626,65 @@ public class JumpTest2 : MonoBehaviour
 
     public void OnStickStarted(InputAction.CallbackContext ctx)
     {
+        // Set a small timer
+        inputWaitTimer = baseInputWaitTime;
+
+        // If in air, increase timer by 2
+        if (isInAir)
+        {
+            inputWaitTimer += 2f;
+        }
+
+        if (inputWaitTimer > 0f)
+        {
+            inputWaitTimer -= Time.deltaTime;
+        }
+
         inputDirection = ctx.ReadValue<Vector2>();
     }
 
     public void OnStickPerformed(InputAction.CallbackContext ctx)
-    {    
-        inputDirection = ctx.ReadValue<Vector2>(); 
-
-        // Debug.Log($"Raw input: {inputDirection}");
-
-        if (inputDirection.magnitude < deadzone) inputDirection = Vector2.zero;
-
-        // Only update the direction if we're not currently performing an action
-        if (!actionInProgress)
+    {
+        // Wait for the timer to finish before proceeding
+        if (inputWaitTimer > 0f)
         {
-            lastSnappedDirection = GetSnappedDirection(inputDirection).normalized;
-            
-            // if (lastSnappedDirection != Vector2.zero)
-            // {
-            //     Debug.Log($"Snapped Direction: {lastSnappedDirection}");
-            // }
-            
-            // Reset action state if we have a new direction
-            if (lastSnappedDirection != Vector2.zero && actionCompleted)
+            inputWaitTimer = 0f;
+            return;
+        }
+        else if(inputWaitTimer <= 0) 
+        {
+            if (inputDirection.magnitude < deadzone) inputDirection = Vector2.zero;
+
+            if (!actionInProgress)
             {
-                ResetActionState();
+                if (!isInAir)
+                {
+                    lastSnappedDirection = GetSnappedDirection(inputDirection).normalized;
+
+                    if (lastSnappedDirection != Vector2.zero)
+                    {
+                        Debug.Log($"Snapped Direction: {lastSnappedDirection}");
+                    }
+                }
+                else
+                {
+                    lastSnappedDirection = GetSnappedDirection(inputDirection).normalized;
+
+                    if (lastSnappedDirection != Vector2.zero)
+                    {
+                        Debug.Log($"In Air Free Direction: {lastSnappedDirection}");
+                    }
+                }
+
+                // Reset action state if we have a new direction
+                if (lastSnappedDirection != Vector2.zero && actionCompleted)
+                {
+                    ResetActionState();
+                }
             }
         }
     }
-
+    
     public void OnStickCanceled(InputAction.CallbackContext ctx)
     {
         if (!actionInProgress)
@@ -691,6 +698,13 @@ public class JumpTest2 : MonoBehaviour
         if (input.magnitude < deadzone)
             return Vector3.zero;
 
+        // When airborne, allow free movement (no snapping to allowed angles)
+        if (isInAir)
+        {
+            return new Vector3(input.normalized.x, input.normalized.y, 0f);
+        }
+
+        // On ground, continue to snap to allowed angles
         Vector2 normalizedInput = input.normalized;
         float inputAngle = Mathf.Atan2(normalizedInput.y, normalizedInput.x) * Mathf.Rad2Deg;
         inputAngle = (inputAngle + 360f) % 360f;
