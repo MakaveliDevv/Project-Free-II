@@ -4,212 +4,227 @@ using UnityEngine.InputSystem;
 [RequireComponent(typeof(Rigidbody))]
 public class JumpTest2 : MonoBehaviour
 {
+   #region Enums
     public enum MovementState { Idle, Charging, Ascending, Hovering, Descending, Dashing, AirDashing, WallDashing, Stucked, WallDescending }
+    public enum Direction { North, NorthEast, East, SouthEast, South, SouthWest, West, NorthWest }
+    public enum SurfaceState { Ground, LeftWall, RightWall, Ceiling, Air }
+
     public MovementState state;
-
-    #region Enums
-    public enum Direction
-    {
-        North,
-        NorthEast,
-        East,
-        SouthEast,
-        South,
-        SouthWest,
-        West,
-        NorthWest
-    }
-
-    public enum SurfaceState
-    {
-        Ground,
-        LeftWall,
-        RightWall,
-        Ceiling,
-        Air
-    }
-    #endregion
-
-    #region Inspector Variables
-    // Jump Settings
-    [Header("Jump Settings")]
-    [Tooltip("Force applied to execute a jump.")]
-    [Range(0, 100f)]
-    public float jumpForce = .5f;
-
-    [Tooltip("Maximum horizontal distance achievable by a jump.")]
-    public float maxJumpDistance = 10f;
-
-    [Tooltip("Maximum vertical height achievable by a jump.")]
-    public float jumpHeight = 3f;
-
-    // Dash Settings
-    [Header("Dash Settings")]
-    [Tooltip("Force applied during a dash action.")]
-    [Range(0, 100f)]
-    public float dashForce = 20f;
-
-    [Tooltip("Maximum horizontal distance achievable by a dash.")]
-    public float maxDashDistance = 8f;
-
-    // Control Settings
-    [Header("Control Settings")]
-    [Tooltip("Maximum duration the jump/dash button can be held down.")]
-    public float maxHoldTime = 1.5f;
-
-    [Tooltip("Minimum input threshold to consider valid input.")]
-    public float deadzone = 0.2f;
-
-    // Force Settings
-    [Header("Force Settings")]
-    [Tooltip("Type of force applied during a jump.")]
-    public ForceMode jumpForceMode = ForceMode.Impulse;
-
-    [Tooltip("Type of force applied during a dash.")]
-    public ForceMode dashForceMode = ForceMode.Impulse;
-
-    [Tooltip("Type of force applied during an air dash.")]
-    public ForceMode airDashForceMode = ForceMode.Impulse;
-
-    // Direction Settings
-    [Header("Directional Settings")]
-    [Tooltip("Number of possible directional inputs.")]
-    public int numberOfDirections = 8; // 8 = N, NE, E, SE, S, SW, W, NW
-
-    [Tooltip("Length of visualized direction gizmos.")]
-    public float gizmosLength;
-
-    [Tooltip("Current surface state the player is interacting with.")]
     public SurfaceState currentSurfaceState = SurfaceState.Ground;
-
-    [Tooltip("Layer mask for detecting walls.")]
-    public LayerMask wallLayer;
-
-    [Tooltip("Distance checked to detect wall collisions.")]
-    public float checkDistance;
-
-    // Air Movement
-    [Header("Air Movement")]
-    [Tooltip("Determines if the player can move while airborne.")]
-    public bool allowedToMoveInAir = false;
-    private bool isInAir = false;
-
-    [Tooltip("Force applied during an air dash.")]
-    [Range(0, 100f)]
-    public float airDashForce = 15f;
-
-    [Tooltip("Cooldown period before another air dash can be performed.")]
-    public float airDashCooldown = 0.5f;
-    
-    [Tooltip("Maximum distance achievable with an air dash.")]
-    public float maxAirDashDistance;
-
-    [Tooltip("Type of force applied generally for movement.")]
-    public ForceMode mode;
-
-    [Tooltip("Buffer time for transitions between movement states.")]
-    public float stateBuffer = 0.25f;
-
-    // Hover Settings
-    [Header("Hover Settings")]
-    [Tooltip("Duration for which the player can hover in the air.")]
-    public float hoverDuration = 0.5f;
-
-    [Tooltip("Delay before the player begins to hover after ascending.")]
-    public float hoverStartDelay = 0.1f;
-    private float hoverTimer = 0f;
-    public float minHoverHeight = 2.0f;
-    public float minDiagonalDistance = 1.5f;
-    private bool hasTriggeredHover = false;
-
-    private float jumpStartHeight;
-
-    // Gravity Settings
-    [Header("Gravity Settings")]
-    [Tooltip("Strength of the custom gravity applied to the player.")]
-    public float customGravityStrength = 20f;
-
-    [Tooltip("Multiplier applied to gravity when the player is falling.")]
-    public float fallMultiplier = 2.5f;
-    private float currentFallMultiplier;
-
-    [Tooltip("Multiplier applied when performing low jumps.")]
-    public float lowJumpMultiplier = 2.0f;
-
-    [Tooltip("Multiplier applied when dropping through stick input")]
-    public float dropMultiplier;
-
-    [Tooltip("Determines whether to use custom gravity or Unity's default.")]
-    public bool useCustomGravity = true;
-
-    [Tooltip("Direction in which gravity is applied.")]
-    public Vector3 gravityDirection = Vector3.down;
-
-    [Tooltip("Maximum speed at which the player can fall.")]
-    public float maxFallSpeed = 40f;
     #endregion
 
-    #region Private Variables
-    // Input variables
-    private Vector2 inputDirection = Vector2.zero;
-    private Vector2 lastSnappedDirection = Vector2.zero;
-    private Vector2 newDir = Vector2.zero;
-    private Vector3 predictedTargetPosition;
-    private bool southButtonPressed;
-    private bool stickStarted = false;
+    #region ░░ INSPECTOR VARIABLES ░░
 
-    // Component references
-    private Rigidbody rb;
-    private Transform camTransform;
-    
-    // Action state
-    private bool actionInProgress;
-    private bool actionCompleted;
-    private float holdTime;
-    private float holdRatio;
-    private float lastActionTime;
-    
-    // Movement state
-    private float angle;
-    private bool isEastDirection;
-    private bool isWestDirection;
-    private bool isAscending;
-    private bool isDashing;
-    private bool isFalling = false;
-    private bool hasUsedAirDash = false;
-    private float lastAirDashTime = 0f;
-    private float lastContactTime;
-    
-    // Target values
-    private Vector3 moveDirection;
-    private float forceMagnitude;
-    private float targetDistance;
+        #region ➤ Jump Settings
+            [Header("Jump Settings")]
+            [Tooltip("Force applied to execute a jump.")]
+            [Range(0, 100f)] public float jumpForce = 0.5f;
 
-    // Direction calculation
-    private float[] allowedAngles;
-    private bool isDiagonalJump;
+            [Tooltip("Maximum horizontal distance achievable by a jump.")]
+            public float maxJumpDistance = 10f;
 
-    // Gravity
-    private bool isApplyingCustomGravity = false;
-    private bool hasAppliedForce = false;
+            [Tooltip("Maximum vertical height achievable by a jump.")]
+            public float jumpHeight = 3f;
 
-    // Input system
-    public InputActionAsset inputActions;
-    private InputAction leftAnalogStickInput;
-    private InputAction southButtonInput;
+            [Tooltip("Toggle between arced and straight-line diagonal jumps.")]
+            public bool useArcForDiagonalJumps = true;
 
-    // Timers and thresholds
-    private const float NO_CONTACT_THRESHOLD = 0.2f;
-    private float inputWaitTimer = 0f;
-    private const float baseInputWaitTime = 0.05f;
-    private float stateTimer = 0f;
-    private bool stateChanged = false;
+            [Tooltip("Controls how pronounced the arc is (affects arc-based jumps).")]
+            [Range(1, 10)] public float arcMultiplier = 5f;
+        #endregion
 
-    private bool showPredictedSphere = false;
-    private string currentPredictionMode = "None";
-    private bool fastFalling;
+        #region ➤ Dash Settings
+            [Header("Dash Settings")]
+            [Tooltip("Force applied during a dash action.")]
+            [Range(0, 100f)] public float dashForce = 20f;
+
+            [Tooltip("Maximum horizontal distance achievable by a dash.")]
+            public float maxDashDistance = 8f;
+        #endregion
+
+        #region ➤ Air Movement
+            [Header("Air Movement")]
+            [Tooltip("Determines if the player can move while airborne.")]
+            public bool allowedToMoveInAir = false;
+
+            [Tooltip("Force applied during an air dash.")]
+            [Range(0, 100f)] public float airDashForce = 15f;
+
+            [Tooltip("Cooldown period before another air dash can be performed.")]
+            public float airDashCooldown = 0.5f;
+
+            [Tooltip("Maximum distance achievable with an air dash.")]
+            public float maxAirDashDistance;
+
+            [Tooltip("Type of force applied generally for movement.")]
+            public ForceMode mode;
+
+            [Tooltip("Buffer time for transitions between movement states.")]
+            public float stateBuffer = 0.25f;
+        #endregion
+
+        #region ➤ Hover Settings
+            [Header("Hover Settings")]
+            [Tooltip("Duration for which the player can hover in the air.")]
+            public float hoverDuration = 0.5f;
+
+            [Tooltip("Delay before the player begins to hover after ascending.")]
+            public float hoverStartDelay = 0.1f;
+
+            [Tooltip("Minimum height gain required to trigger hover.")]
+            public float minHoverHeight = 2.0f;
+
+            [Tooltip("Minimum horizontal distance for diagonal hover eligibility.")]
+            public float minDiagonalDistance = 1.5f;
+
+            [Tooltip("Enable wobble effect during hover.")]
+            public bool useHoverWobble = true;
+
+            [Tooltip("Amplitude of the vertical wobble during hover.")]
+            public float hoverWobbleHeight = 0.2f;
+
+            [Tooltip("Speed of the vertical wobble oscillation.")]
+            public float hoverWobbleSpeed = 2f;
+        #endregion
+
+        #region ➤ Gravity Settings
+            [Header("Gravity Settings")]
+            [Tooltip("Strength of the custom gravity applied to the player.")]
+            public float customGravityStrength = 20f;
+
+            [Tooltip("Multiplier applied to gravity when the player is falling.")]
+            public float fallMultiplier = 2.5f;
+
+            [Tooltip("Multiplier applied when performing low jumps.")]
+            public float lowJumpMultiplier = 2.0f;
+
+            [Tooltip("Multiplier applied when dropping through stick input.")]
+            public float dropMultiplier;
+
+            [Tooltip("Determines whether to use custom gravity or Unity's default.")]
+            public bool useCustomGravity = true;
+
+            [Tooltip("Direction in which gravity is applied.")]
+            public Vector3 gravityDirection = Vector3.down;
+
+            [Tooltip("Maximum speed at which the player can fall.")]
+            public float maxFallSpeed = 40f;
+        #endregion
+
+        #region ➤ Control Settings
+            [Header("Control Settings")]
+            [Tooltip("Maximum duration the jump/dash button can be held down.")]
+            public float maxHoldTime = 1.5f;
+
+            [Tooltip("Minimum input threshold to consider valid input.")]
+            public float deadzone = 0.2f;
+        #endregion
+
+        #region ➤ Force Settings
+            [Header("Force Settings")]
+            [Tooltip("Type of force applied during a jump.")]
+            public ForceMode jumpForceMode = ForceMode.Impulse;
+
+            [Tooltip("Type of force applied during a dash.")]
+            public ForceMode dashForceMode = ForceMode.Impulse;
+
+            [Tooltip("Type of force applied during an air dash.")]
+            public ForceMode airDashForceMode = ForceMode.Impulse;
+        #endregion
+
+        #region ➤ Direction & Wall Settings
+            [Header("Directional Settings")]
+            [Tooltip("Number of possible directional inputs.")]
+            public int numberOfDirections = 8; // 8 = N, NE, E, SE, S, SW, W, NW
+
+            [Tooltip("Length of visualized direction gizmos.")]
+            public float gizmosLength;
+
+            [Tooltip("Layer mask for detecting walls.")]
+            public LayerMask wallLayer;
+
+            [Tooltip("Distance checked to detect wall collisions.")]
+            public float checkDistance;
+        #endregion
 
     #endregion
+
+    #region ░░ PRIVATE VARIABLES ░░
+
+        #region ➤ Input
+            private Vector2 inputDirection = Vector2.zero;
+            private Vector2 lastSnappedDirection = Vector2.zero;
+            private Vector2 newDir = Vector2.zero;
+            private bool stickStarted = false;
+            private bool southButtonPressed;
+        #endregion
+
+        #region ➤ References
+            private Rigidbody rb;
+            private Transform camTransform;
+        #endregion
+
+        #region ➤ Input System
+            public InputActionAsset inputActions;
+            private InputAction leftAnalogStickInput;
+            private InputAction southButtonInput;
+        #endregion
+
+        #region ➤ State Control
+            private float holdTime;
+            private float holdRatio;
+            private float angle;
+            private bool actionInProgress;
+            private bool actionCompleted;
+            private bool isAscending;
+            private bool isDashing;
+            private bool isFalling;
+            private bool isEastDirection;
+            private bool isWestDirection;
+            private bool hasUsedAirDash;
+            private bool hasAppliedForce;
+            private bool stateChanged;
+            private bool isApplyingCustomGravity;
+            private bool isDiagonalJump;
+            private bool isInAir = false;
+            private bool fastFalling;
+        #endregion
+
+        #region ➤ Timers
+            private float lastActionTime;
+            private float lastAirDashTime;
+            private float lastContactTime;
+            private float jumpStartHeight;
+            private float hoverTimer = 0f;
+            private float hoverWobbleTimer = 0f;
+            private float inputWaitTimer = 0f;
+            private float stateTimer = 0f;
+            private const float baseInputWaitTime = 0.05f;
+            private const float NO_CONTACT_THRESHOLD = 0.2f;
+        #endregion
+
+        #region ➤ Movement
+            private Vector3 moveDirection;
+            private Vector3 predictedTargetPosition;
+            private Vector3 originalHoverPosition;
+            private float forceMagnitude;
+            private float targetDistance;
+            private float currentFallMultiplier;
+
+        #endregion
+
+        #region ➤ Direction Calculation
+            private float[] allowedAngles;
+        #endregion
+
+        #region ➤ Debug & Gizmos
+            private bool showPredictedSphere = false;
+            private string currentPredictionMode = "None";
+            private bool hasTriggeredHover = false;
+        #endregion
+
+    #endregion
+
 
     #region Unity Lifecycle Methods
     void Awake()
@@ -251,6 +266,23 @@ public class JumpTest2 : MonoBehaviour
         //     }
         // }
 
+        if (state == MovementState.Hovering)
+        {
+            hoverTimer += Time.deltaTime;
+
+            if (hoverTimer > hoverDuration)
+            {
+                ExitHover();
+            }
+            else if (useHoverWobble)
+            {
+                hoverWobbleTimer += Time.deltaTime;
+                float wobbleOffset = Mathf.Sin(hoverWobbleTimer * hoverWobbleSpeed) * hoverWobbleHeight;
+                Vector3 newPosition = originalHoverPosition + new Vector3(0f, wobbleOffset, 0f);
+                rb.MovePosition(newPosition);
+            }
+        }
+
         // To contineously update the inputDirection sinc it bugs out sometimes
         // Need to find a way to do it differently and clean
         inputDirection = leftAnalogStickInput.ReadValue<Vector2>();
@@ -269,10 +301,10 @@ public class JumpTest2 : MonoBehaviour
             UpdatePredictedTargetPosition();
         }
 
-        if(state == MovementState.Charging) 
-        {
-            rb.useGravity = false;
-        }
+        // if(state == MovementState.Charging) 
+        // {
+        //     rb.useGravity = false;
+        // }
 
     }
 
@@ -552,7 +584,8 @@ public class JumpTest2 : MonoBehaviour
 
         // Diagonal boost factor
         float tolerance = Mathf.Max(0.15f, rb.linearVelocity .magnitude * Time.fixedDeltaTime);
-        if (Mathf.Abs(lastSnappedDirection.x) > 0 && Mathf.Abs(lastSnappedDirection.y) > 0)
+
+        if (isDiagonalJump)
         {
             tolerance *= 2.0f; // Diagonal jumps need more tolerance
         }
@@ -564,6 +597,11 @@ public class JumpTest2 : MonoBehaviour
 
             actionCompleted = true;
             Invoke(nameof(ResetActionState), 0.1f);
+
+            if (state == MovementState.Ascending && !hasTriggeredHover)
+            {
+                TryStartHover();
+            }
 
             Debug.Log("✅ Action complete — reached or passed target.");
         }
@@ -892,7 +930,7 @@ public class JumpTest2 : MonoBehaviour
 
         currentPredictionMode = GetPredictedActionType(lastSnappedDirection);
 
-        float travelDistance = 0f;
+        float travelDistance;
 
         switch (currentPredictionMode)
         {
@@ -1001,37 +1039,38 @@ public class JumpTest2 : MonoBehaviour
         return gravityDir;
     }
 
-    // Check eligibility for hover
-    // private bool CheckHoverEligibility()
-    // {
-    //     float height = rb.position.y - jumpStartHeight;
-    //     bool isHighEnough = height > minHoverHeight;
-    //     bool isFarEnough = Mathf.Abs(rb.position.x - (jumpStartHeight + minDiagonalDistance)) > 0; 
-    //     return isHighEnough && isFarEnough;
-    // }
-
     private void TryStartHover()
     {
         float height = rb.position.y - jumpStartHeight;
-        bool isHighEnough = height > minHoverHeight;
-        bool isFarEnough = Mathf.Abs(rb.position.x - (jumpStartHeight + minDiagonalDistance)) > 0; // adjust as needed
+        float distanceToTarget = Vector3.Distance(rb.position, predictedTargetPosition);
 
-        if (isHighEnough && isFarEnough)
+        bool isHighEnough = height >= minHoverHeight;
+        bool isCloseEnough = distanceToTarget <= 0.75f;
+
+        if (isHighEnough && isCloseEnough)
         {
             state = MovementState.Hovering;
             rb.useGravity = false;
-            rb.linearVelocity  = new Vector3(rb.linearVelocity .x, 0, rb.linearVelocity .z); // stop vertical motion
+            rb.linearVelocity = Vector3.zero;
+            rb.linearDamping = 5f;
+
             hoverTimer = 0f;
+            hoverWobbleTimer = 0f;
+            originalHoverPosition = rb.position;
+
             hasTriggeredHover = true;
-            Debug.Log("🛸 Entered Hover State");
+            Debug.Log("🛸 Hover Started — Smooth Floating");
         }
     }
+
 
     private void ExitHover()
     {
         state = MovementState.Descending;
         rb.useGravity = true;
         hoverTimer = 0f; // Reset hover timer
+        rb.linearDamping  = 0f; 
+
         hasTriggeredHover = false; // Reset hover trigger for next jump
         Debug.Log("⬇️ Exiting Hover – Starting to Descend");
     }
@@ -1184,6 +1223,10 @@ public class JumpTest2 : MonoBehaviour
         if (!actionInProgress)
         {
             stickStarted = false;
+            inputDirection = Vector2.zero;
+            lastSnappedDirection = Vector2.zero;
+            newDir = Vector2.zero;
+            predictedTargetPosition = Vector2.zero;
         }
     }
     #endregion
@@ -1277,6 +1320,7 @@ public class JumpTest2 : MonoBehaviour
     /// Related to: PerformAction, HandleActionForces.
     /// </summary>
     
+    public float estimatedTimeThreshold = .25f;
     private void SetupMovement(float maxTravelDistance, float forceHeight, float gravityMultiplier, float forcePower, string action)
     {
         targetDistance = maxTravelDistance * holdRatio;
@@ -1308,28 +1352,96 @@ public class JumpTest2 : MonoBehaviour
         }
         else // Jump
         {
+            jumpStartHeight = rb.position.y;
             isAscending = true;
             isDashing = false;
 
-            // --- Optimized Jump Trajectory ---
-            float angleDegrees = 45f;
-            float angleRadians = angleDegrees * Mathf.Deg2Rad;
-            float gravity = Mathf.Abs(Physics.gravity.y) * gravityMultiplier;
+            // Check if diagonal
+            isDiagonalJump = Mathf.Abs(lastSnappedDirection.x) > 0 && Mathf.Abs(lastSnappedDirection.y) > 0;
 
-            float initialVelocity = Mathf.Sqrt(gravity * targetDistance / Mathf.Sin(2 * angleRadians));
-            Vector3 horizontalDir = new Vector3(lastSnappedDirection.x, 0f, 0f).normalized;
+            if (isDiagonalJump)
+            {
+                if(!useArcForDiagonalJumps) 
+                {
+                    // ✅ Straight-line jump (skip arc)
+                    // newDir = new Vector3(lastSnappedDirection.x, lastSnappedDirection.y, 0f).normalized;
+                    // forceMagnitude = forcePower;
 
-            float vx = initialVelocity * Mathf.Cos(angleRadians);
-            float vy = initialVelocity * Mathf.Sin(angleRadians);
+                    // Debug.Log("🟧 Straight-Line Diagonal Jump");
 
-            moveDirection = horizontalDir * vx;
-            lastSnappedDirection.y = vy;
+                    Vector3 directionToTarget = (predictedTargetPosition - rb.position).normalized;
+                    float distance = Vector3.Distance(rb.position, predictedTargetPosition);
+                    float estimatedTime = estimatedTimeThreshold; // ⚠️ Tune this to feel right
 
-            newDir = new Vector3(moveDirection.x, lastSnappedDirection.y, 0f).normalized;
-            forceMagnitude = forcePower;
+                    newDir = directionToTarget;
+                    forceMagnitude = distance / estimatedTime * forcePower;
+                    Debug.DrawLine(rb.position, predictedTargetPosition, Color.magenta, 1.5f);
 
-            // Smooth out any janky direction change
-            newDir = Vector3.Slerp(rb.linearVelocity .normalized, newDir, 0.9f);
+                    Debug.Log("🟧 Straight-Line Diagonal Jump to Exact Target");
+                }
+                else
+                {
+                    Vector3 displacement = predictedTargetPosition - rb.position;
+                    float gravity = Mathf.Abs(Physics.gravity.y) * gravityMultiplier; // Or use your customGravityStrength
+                    float heightDifference = displacement.y;
+                    // float arcHeight = Mathf.Max(jumpHeight, heightDifference + 0.1f); // Ensure arcHeight > heightDifference
+                    float arcHeight = Mathf.Max(jumpHeight, heightDifference + 0.1f) * (arcMultiplier / 5f);
+
+                    // ✅ Guard against division by zero or invalid values
+                    if (gravity <= 0f)
+                    {
+                        Debug.LogWarning("⛔ Gravity must be greater than zero for arc jump.");
+                        return;
+                    }
+
+                    float timeToApex = Mathf.Sqrt(2f * arcHeight / gravity);
+                    float timeToDescend = Mathf.Sqrt(2f * Mathf.Max(0.1f, arcHeight - heightDifference) / gravity);
+                    float totalFlightTime = timeToApex + timeToDescend;
+
+                    if (totalFlightTime <= 0f || float.IsNaN(totalFlightTime))
+                    {
+                        Debug.LogWarning("⚠️ Invalid total flight time.");
+                        return;
+                    }
+
+                    Vector3 horizontalDisplacement = new Vector3(displacement.x, 0f, displacement.z);
+                    float horizontalDistance = horizontalDisplacement.magnitude;
+
+                    Vector3 horizontalDir = horizontalDisplacement.normalized;
+
+                    float vx = horizontalDistance / totalFlightTime;
+                    float vy = Mathf.Sqrt(2f * gravity * arcHeight);
+
+                    Vector3 launchVelocity = horizontalDir * vx + Vector3.up * vy;
+
+                    newDir = launchVelocity.normalized;
+                    forceMagnitude = launchVelocity.magnitude * forcePower;
+
+                    Debug.Log($"🟢 Arc Setup → Velocity: {launchVelocity}, Magnitude: {forceMagnitude}");
+
+                    // // ✅ Arc-based diagonal or vertical jump
+                    // float angleDegrees = 45f;
+                    // float angleRadians = angleDegrees * Mathf.Deg2Rad;
+                    // float gravity = Mathf.Abs(Physics.gravity.y) * gravityMultiplier;
+
+                    // float initialVelocity = Mathf.Sqrt(gravity * targetDistance / Mathf.Sin(2 * angleRadians));
+                    // Vector3 horizontalDir = new Vector3(lastSnappedDirection.x, 0f, 0f).normalized;
+
+                    // float vx = initialVelocity * Mathf.Cos(angleRadians);
+                    // float vy = initialVelocity * Mathf.Sin(angleRadians);
+
+                    // moveDirection = horizontalDir * vx;
+                    // lastSnappedDirection.y = vy;
+
+                    // newDir = new Vector3(moveDirection.x, vy, 0f).normalized;
+                    // forceMagnitude = forcePower;
+
+                    // // Smooth out any janky direction change
+                    newDir = Vector3.Slerp(rb.linearVelocity .normalized, newDir, 0.9f);
+
+                    // Debug.Log("🌀 Arc-Based Jump");
+                }
+            }
         }
 
         Debug.Log($"{action} ➤ Optimized Direction: {newDir}, Force: {forceMagnitude}");

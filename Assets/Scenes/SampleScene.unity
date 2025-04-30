@@ -470,10 +470,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   state: 0
-  jumpForce: 2.74
-  maxJumpDistance: 7
-  jumpHeight: 10
-  dashForce: 1.99
+  jumpForce: 23.6
+  maxJumpDistance: 15
+  jumpHeight: 1
+  dashForce: 20.6
   maxDashDistance: 6
   maxHoldTime: 0.5
   deadzone: 0.2
@@ -483,21 +483,24 @@ MonoBehaviour:
   numberOfDirections: 8
   gizmosLength: 10
   currentSurfaceState: 0
+  wallLayer:
+    serializedVersion: 2
+    m_Bits: 128
   checkDistance: 0.5
   allowedToMoveInAir: 1
-  airDashForce: 2.4
+  airDashForce: 20.6
   airDashCooldown: 0.5
   maxAirDashDistance: 5
   mode: 0
   stateBuffer: 0.5
-  wallLayer:
-    serializedVersion: 2
-    m_Bits: 128
   hoverDuration: 0.5
   hoverStartDelay: 0.1
+  minHoverHeight: 2
+  minDiagonalDistance: 1.5
   customGravityStrength: 9.81
   fallMultiplier: 0.5
   lowJumpMultiplier: 1
+  dropMultiplier: 2
   useCustomGravity: 1
   gravityDirection: {x: 0, y: -1, z: 0}
   maxFallSpeed: 20
