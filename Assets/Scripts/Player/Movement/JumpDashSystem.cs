@@ -757,19 +757,11 @@ public class JumpDashSystem
         new Vector2(-0.7071f,  0.7071f), // NW
         new Vector2(0f,        1f),      // N
         new Vector2(0.7071f,   0.7071f), // NE
-        // new Vector2(-0.9239f,  0.3827f), // WNW
-        // new Vector2(-0.3827f,  0.9239f), // NNW
-        // new Vector2(0.3827f,   0.9239f), // NNE
-        // new Vector2(0.9239f,   0.3827f), // ENE
 
            // Downward directions
         new Vector2(-0.7071f,  -0.7071f), // SW
         new Vector2(0f,        -1f),      // S
         new Vector2(0.7071f,   -0.7071f), // SE
-        // new Vector2(-0.9239f,  -0.3827f), // SSW
-        // new Vector2(-0.3827f,  -0.9239f), // SW
-        // new Vector2(0.3827f,   -0.9239f), // SSE
-        // new Vector2(0.9239f,   -0.3827f), // ESE
     };    
 
     public JumpDashSystem(MonoBehaviour mono, InputAction movementAction) 
@@ -842,32 +834,6 @@ public class JumpDashSystem
         }
     }
 
-    private void JumpFromWall() 
-    {
-        if(playerController.mode == PlayerController.Mode.Default) 
-        {
-            // Make the player stay against the wall for a certain amount of time. So freeze the position at point of collision
-
-            // If the timer ran out, transition to descending state to glide down the wall
-
-            // If the player is stucked and not descending yet, transition the state to stucked
-
-            // Allow control to jump if in stucked state
-
-            // Allow control to jump if in descending state while being stucked against the wall
-        }
-    }
-
-    private void BounceFromWall() 
-    {
-       
-    }
-
-    private void StuckPlayerAgainstWall() 
-    {
-        
-    }
-
     // Also update the FixedUpdate method to prioritize dash handling
     public void FixedUpdate()
     {
@@ -880,22 +846,6 @@ public class JumpDashSystem
         
 
         bool isGrounded = shouldDoPhysicsChecks ? IsGrounded() : cachedGroundedState;
-
-        // Only check walls when necessary
-        if (shouldDoPhysicsChecks && 
-            (playerController.state == PlayerController.JumpState.Jumping || 
-            playerController.state == PlayerController.JumpState.Dashing))
-        {
-            if(WallCheck() && playerController.state == PlayerController.JumpState.Jumping) 
-            {
-                // Jump from wall
-                JumpFromWall();
-            }
-            else if(WallCheck() && playerController.state == PlayerController.JumpState.Dashing) 
-            {
-                // Bounce away from wall
-            }
-        }
 
         // Handle transition to idle state - only if minimum action time has passed
         if (isGrounded && playerController.state == PlayerController.JumpState.Descending)
@@ -1067,31 +1017,12 @@ public class JumpDashSystem
         bool isRightDash = angle >= -horizontalRightAngleThreshold && angle <= horizontalRightAngleThreshold;
         bool isLeftDash = angle >= horizontalLeftAngleThreshold || angle <= -horizontalLeftAngleThreshold;
 
-        // Check if there's a wall in the direction we want to go
-        // Vector2 checkDirection = new Vector2(dir.x, 0).normalized;
-        // bool wallInWay = false;
-        
-        // Only check for wall if we're moving horizontally
-        // if (Mathf.Abs(dir.x) > 0.1f)
-        // {
-        //     wallInWay = Physics.Raycast(rb.position, new Vector3(checkDirection.x, 0, 0), wallCheckDistance, wallLayer);
-        // }
-
         // For dashing, we allow dashing away from walls but not into them
         if (isRightDash || isLeftDash)
         {
-            // Allow dash if not against wall or dashing away from it
-            // if (!wallInWay || (isRightDash && dir.x < 0) || (isLeftDash && dir.x > 0))
-            // {
-                Vector3 direction = isRightDash ? Vector3.right : Vector3.left;
-                Dash(holdRatio * maxDashRange * direction);
-                // return;
-            // }
-            // else
-            // {
-                // TransitionTo(PlayerController.JumpState.Idle);
-                // return;
-            // }
+            Vector3 direction = isRightDash ? Vector3.right : Vector3.left;
+            Dash(holdRatio * maxDashRange * direction);
+      
         }
 
         // If it's not a horizontal dash and y is <= 0, reject it
@@ -1102,14 +1033,6 @@ public class JumpDashSystem
             return;
         }
 
-        // For jumps, check if there's wall in the way of the horizontal component
-        // but still allow vertical jumps even near walls
-        // if (wallInWay && Mathf.Abs(dir.x) > 0.5f)
-        // {
-        //     // Adjust the direction to be more vertical
-        //     dir = new Vector2(dir.x * 0.2f, dir.y);
-        // }
-        
         targetVelocity = GetClosestJumpDirection(dir).normalized;
         startPos = rb.position;
         isDiagonalJump = Mathf.Abs(targetVelocity.x) > 0.01f;
@@ -1364,59 +1287,6 @@ public class JumpDashSystem
         return grounded;
     }
 
-    private bool WallCheck()
-    {
-        // Determine direction based on movement not position
-        Vector2 checkDirection;
-        
-        // Use last movement direction or targetVelocity for more accurate direction
-        if (targetVelocity.x != 0)
-        {
-            checkDirection = new Vector2(Mathf.Sign(targetVelocity.x), 0);
-        }
-        else
-        {
-            checkDirection = rb.position.x < 0 ? Vector2.left : Vector2.right;
-        }
-
-        // Check for wall collision
-        Vector3 raycastOrigin = rb.position;
-        bool wallInFront = Physics.Raycast(raycastOrigin, checkDirection, wallCheckDistance, wallLayer);
-        bool wallAbove = Physics.Raycast(raycastOrigin + Vector3.up * 0.5f, checkDirection, wallCheckDistance, wallLayer);
-        
-        // Cache the wall state
-        cachedWallState = wallInFront;
-        cachedWallDirection = new Vector3(checkDirection.x, 0, 0);
-        
-        // Only transition if actually moving toward the wall (not just standing by it)
-        if (wallInFront && playerController.state == PlayerController.JumpState.Jumping && 
-            Vector3.Dot(targetVelocity, new Vector3(checkDirection.x, 0, 0)) > 0)
-        {
-            // TransitionTo(PlayerController.JumpState.Descending);
-            if(playerController.mode == PlayerController.Mode.Default) 
-            {
-                StuckPlayerAgainstWall();
-            }
-
-            return true;
-        }
-
-        return false;
-    }
-
-    private string GetDirectionName(float angleDegrees)
-    {
-        if (angleDegrees >= -22.5f && angleDegrees < 22.5f) return "E";
-        if (angleDegrees >= 22.5f && angleDegrees < 67.5f) return "NE";
-        if (angleDegrees >= 67.5f && angleDegrees < 112.5f) return "N";
-        if (angleDegrees >= 112.5f && angleDegrees < 157.5f) return "NW";
-        if (angleDegrees >= 157.5f || angleDegrees < -157.5f) return "W";
-        if (angleDegrees >= -157.5f && angleDegrees < -112.5f) return "SW";
-        if (angleDegrees >= -112.5f && angleDegrees < -67.5f) return "S";
-        if (angleDegrees >= -67.5f && angleDegrees < -22.5f) return "SE";
-        return "Unknown";
-    }
-
     // Clean up resources
     public void OnDestroy()
     {
@@ -1427,3 +1297,252 @@ public class JumpDashSystem
         }
     }
 }
+
+    // private void HandleActionCompletion()
+    // {
+    //     if (!actionInProgress || actionCompleted) return;
+
+    //     float acceptableDistance = Mathf.Max(0.1f, rb.linearVelocity.magnitude * Time.fixedDeltaTime);
+    //     if (Mathf.Abs(lastSnappedDirection.x) > 0 && Mathf.Abs(lastSnappedDirection.y) > 0)
+    //     {
+    //         acceptableDistance *= 1.75f; // boost threshold for diagonals
+    //     }
+        
+    //     float distanceToTarget = Vector3.Distance(rb.position, predictedTargetPosition);
+
+    //     if (distanceToTarget <= acceptableDistance)
+    //     {
+    //         rb.useGravity = true;
+    //         // Debug.Log("✅ Player reached the predicted target position.");
+            
+    //         // rb.position = predictedTargetPosition; // Optional snap
+    //         // rb.linearVelocity = Vector3.zero;
+
+    //         actionCompleted = true;
+    //         Invoke(nameof(ResetActionState), 0.1f);
+    //         Debug.Log("✅ Action complete — continuing natural motion.");
+    //     }
+    // }
+
+    /// <summary>
+    /// Determines the action type based on input and surface states.
+    /// Related to: PerformAction, SetupMovement.
+    /// </summary>
+    // private void DetermineActionType(bool isJumpAllowed, bool isDashAllowed, Direction majorDirection)
+    // {
+    //     // Air dash takes priority when in air
+    //     if (isInAir && allowedToMoveInAir && !hasUsedAirDash)
+    //     {
+    //         state = MovementState.AirDashing;
+
+    //         SetupMovement(maxAirDashDistance, jumpHeight, 1f, airDashForce, "AirDash");
+
+    //         hasUsedAirDash = true;
+    //         lastAirDashTime = Time.time;
+    //     }
+    //     // Prioritize dash for horizontal movement (East/West) if it's allowed
+    //     else if (isDashAllowed && (majorDirection == Direction.East || majorDirection == Direction.West))
+    //     {
+    //         state = MovementState.Dashing;
+
+    //         isEastDirection = majorDirection == Direction.East;
+    //         isWestDirection = majorDirection == Direction.West;
+    //         // SetupDash();
+    //         SetupMovement(maxDashDistance, 0f, 1f, dashForce, "Dash");
+
+    //     }
+    //     // On walls, check for vertical dash (North/South)
+    //     else if (isDashAllowed && 
+    //             (currentSurfaceState == SurfaceState.LeftWall || currentSurfaceState == SurfaceState.RightWall) &&
+    //             (majorDirection == Direction.North || majorDirection == Direction.South))
+    //     {
+    //         state = MovementState.WallDashing;
+
+    //         // For vertical dash on walls
+    //         isEastDirection = false;
+    //         isWestDirection = false;
+    //         // SetupDash();
+    //         SetupMovement(maxDashDistance, 0f, 1f, dashForce, "Dash");
+
+    //     }
+    //     // Default to jump if dash is not applicable but jump is allowed
+    //     else if (isJumpAllowed)
+    //     {
+    //         state = MovementState.Ascending;
+
+    //         SetupMovement(maxJumpDistance, jumpHeight, 1f, jumpForce, "Jump");
+    //     }
+    // }
+
+    // private void SetupMovement(float maxTravelDistance, float forceHeight, float gravityMultiplier, float forcePower, string action)
+    // {
+    //     targetDistance = maxTravelDistance * holdRatio;
+
+    //     if (action == "Dash" || action == "WallDash" || action == "AirDash")
+    //     {
+    //         isAscending = false;
+    //         isDashing = true;
+
+    //         Direction majorDirection = GetMajorDirection(angle);
+
+    //         // Use world-space vectors for movement
+    //         moveDirection = currentSurfaceState switch
+    //         {
+    //             SurfaceState.Ground or SurfaceState.Ceiling => isEastDirection ? Vector3.right : Vector3.left,
+    //             SurfaceState.LeftWall or SurfaceState.RightWall => majorDirection == Direction.North ? Vector3.up : Vector3.down,
+    //             _ => new Vector3(lastSnappedDirection.x, lastSnappedDirection.y, 0f)
+    //         };
+
+    //         newDir = moveDirection.normalized;
+    //         forceMagnitude = forcePower;
+
+    //         // Slight smoothing by blending normalized vector with a fraction of previous movement
+    //         newDir = Vector3.Slerp(rb.linearVelocity .normalized, newDir, 0.85f);
+    //     }
+    //     else // Jump
+    //     {
+    //         isAscending = true;
+    //         isDashing = false;
+
+    //         // --- Trajectory Optimizer ---
+    //         float angleDegrees = 45f;
+    //         float angleRadians = angleDegrees * Mathf.Deg2Rad;
+    //         float gravity = Mathf.Abs(Physics.gravity.y) * gravityMultiplier;
+
+    //         float initialVelocity = Mathf.Sqrt(gravity * targetDistance / Mathf.Sin(2 * angleRadians));
+    //         Vector3 horizontalDir = new Vector3(lastSnappedDirection.x, 0f, 0f).normalized;
+
+    //         float vx = initialVelocity * Mathf.Cos(angleRadians);
+    //         float vy = initialVelocity * Mathf.Sin(angleRadians);
+
+    //         moveDirection = horizontalDir * vx;
+    //         lastSnappedDirection.y = vy;
+
+    //         // Combine horizontal + vertical into a smooth vector
+    //         newDir = new Vector3(moveDirection.x, lastSnappedDirection.y, 0f).normalized;
+    //         forceMagnitude = forcePower;
+
+    //         // Smoothing – avoid sharp direction change
+    //         newDir = Vector3.Slerp(rb.linearVelocity .normalized, newDir, 0.9f);
+    //     }
+
+    //     Debug.Log($"{action} ➤ Optimized Direction: {newDir}, Force: {forceMagnitude}");
+    //     showPredictedSphere = true;
+    // }
+
+    // private void SetupMovement(float maxTravelDistance, float forceHeight, float gravityMultiplier, float forcePower, string action)
+    // {
+    //     targetDistance = maxTravelDistance * holdRatio;
+
+    //     if(action == "Dash") 
+    //     {
+    //         isAscending = false;
+    //         isDashing = true;
+
+    //         // Determine dash direction based on surface state and major direction
+    //         Direction majorDirection = GetMajorDirection(angle);
+
+    //         moveDirection = currentSurfaceState switch
+    //         {
+    //             SurfaceState.Ground or SurfaceState.Ceiling => isEastDirection ? Vector3.right : Vector3.left, // Horizontal dash on ground or ceiling
+    //             SurfaceState.LeftWall or SurfaceState.RightWall => majorDirection == Direction.North ? Vector3.up : Vector3.down, // Vertical dash on walls
+    //             _ => isEastDirection ? Vector3.right : Vector3.left, // Fallback to horizontal
+    //         };
+
+    //     }
+    //     else 
+    //     {
+    //         isAscending = true;
+    //         isDashing = false;
+
+    //         // Calculate jump physics
+    //         float gravity = Mathf.Abs(Physics.gravity.y) * gravityMultiplier;
+    //         float verticalVelocity = Mathf.Sqrt(2 * gravity * forceHeight);
+    //         float horizontalSpeed = Mathf.Sqrt(targetDistance * gravity / Mathf.Sin(2 * Mathf.Deg2Rad * 45));
+    //         moveDirection = lastSnappedDirection * horizontalSpeed;
+    //         // moveDirection = lastSnappedDirection * lastSnappedDirection * horizontalSpeed;
+    //         lastSnappedDirection.y = verticalVelocity;
+    //     }
+
+    //     // Set force magnitude
+    //     // forceMagnitude = forcePower * targetDistance;
+    //     forceMagnitude = forcePower;
+    //     newDir =  (moveDirection * forceMagnitude).normalized;
+    //     Debug.Log($"{action} setup - Direction: {moveDirection}, Force: {forceMagnitude}");
+
+    //     showPredictedSphere = true; // flag to draw it
+    // }
+
+        // private void PerformAction()
+    // {
+    //     if (lastSnappedDirection == Vector2.zero || actionInProgress)
+    //         return;
+
+    //     // Fallback to refresh snapped direction
+    //     Vector2 input = leftAnalogStickInput.ReadValue<Vector2>();
+    //     lastSnappedDirection = GetSnappedDirection(input).normalized;
+    //     if (lastSnappedDirection == Vector2.zero) return;
+
+    //     // Clamp hold ratio
+    //     holdRatio = Mathf.Clamp01(holdTime / maxHoldTime);
+    //     if (holdRatio < 0.1f) holdRatio = 0.1f;
+
+    //     // Get angle + major direction
+    //     angle = Mathf.Atan2(lastSnappedDirection.y, lastSnappedDirection.x) * Mathf.Rad2Deg;
+    //     angle = (angle + 360f) % 360f;
+    //     Direction majorDirection = GetMajorDirection(angle);
+
+    //     // Check angle validity
+    //     var (jumpMin, jumpMax) = GetAllowedJumpRange();
+    //     var (dashMin, dashMax) = GetAllowedDashRange();
+
+    //     bool isJumpAllowed = IsAngleWithinRange(angle, jumpMin, jumpMax);
+    //     bool isDashAllowed = IsAngleWithinRange(angle, dashMin, dashMax);
+
+    //     // ✅ AIR DASH OVERRIDE
+    //     if (isInAir && allowedToMoveInAir && !hasUsedAirDash)
+    //     {
+    //         state = MovementState.AirDashing;
+    //         SetupMovement(maxAirDashDistance, 0f, 1f, airDashForce, "AirDash");
+    //         hasUsedAirDash = true;
+    //         lastAirDashTime = Time.time;
+    //     }
+    //     // ✅ WALL DASH (North/South)
+    //     else if (isDashAllowed &&
+    //         (currentSurfaceState == SurfaceState.LeftWall || currentSurfaceState == SurfaceState.RightWall) &&
+    //         (majorDirection == Direction.North || majorDirection == Direction.South))
+    //     {
+    //         state = MovementState.WallDashing;
+    //         isEastDirection = false;
+    //         isWestDirection = false;
+    //         SetupMovement(maxDashDistance, 0f, 1f, dashForce, "WallDash");
+    //     }
+    //     // ✅ GROUND DASH (East/West)
+    //     else if (isDashAllowed && (majorDirection == Direction.East || majorDirection == Direction.West))
+    //     {
+    //         state = MovementState.Dashing;
+    //         isEastDirection = majorDirection == Direction.East;
+    //         isWestDirection = majorDirection == Direction.West;
+    //         SetupMovement(maxDashDistance, 0f, 1f, dashForce, "Dash");
+    //     }
+    //     // ✅ JUMP
+    //     else if (isJumpAllowed)
+    //     {
+    //         state = MovementState.Ascending;
+    //         SetupMovement(maxJumpDistance, jumpHeight, 1f, jumpForce, "Jump");
+    //     }
+    //     else
+    //     {
+    //         Debug.LogWarning("No valid action could be performed.");
+    //         return;
+    //     }
+
+    //     // ✅ Common logic
+    //     actionInProgress = true;
+    //     actionCompleted = false;
+    //     hasAppliedForce = false;
+    //     southButtonPressed = false;
+    //     lastActionTime = Time.time;
+
+    //     Debug.Log($"▶️ Action Started: {state}, Dir: {lastSnappedDirection}, Angle: {angle:F1}°");
+    // }
