@@ -80,6 +80,9 @@ public class JumpTest2 : MonoBehaviour
             [Tooltip("Enable wobble effect during hover.")]
             public bool useHoverWobble = true;
 
+            [Tooltip("If true, the hover wobble only moves upward, not downward.")]
+            public bool wobbleUpwardOnly = false;
+
             [Tooltip("Amplitude of the vertical wobble during hover.")]
             public float hoverWobbleHeight = 0.2f;
 
@@ -331,7 +334,10 @@ public class JumpTest2 : MonoBehaviour
             else if (useHoverWobble)
             {
                 hoverWobbleTimer += Time.deltaTime;
-                float wobbleOffset = Mathf.Sin(hoverWobbleTimer * hoverWobbleSpeed) * hoverWobbleHeight;
+                // float wobbleOffset = Mathf.Sin(hoverWobbleTimer * hoverWobbleSpeed) * hoverWobbleHeight;
+                float sine = Mathf.Sin(hoverWobbleTimer * hoverWobbleSpeed);
+                float wobbleOffset = wobbleUpwardOnly ? Mathf.Abs(sine) * hoverWobbleHeight : sine * hoverWobbleHeight;
+
                 Vector3 newPosition = originalHoverPosition + new Vector3(0f, wobbleOffset, 0f);
                 rb.MovePosition(newPosition);
             }
@@ -932,7 +938,6 @@ public class JumpTest2 : MonoBehaviour
     /// Manages gravity effects on the player.
     /// Related to: DetermineGravityDirection.
     /// </summary>
-  
     private void ApplyCustomGravity()
     {
         if ((actionInProgress && !actionCompleted) || state == MovementState.Hovering) return;
@@ -970,46 +975,6 @@ public class JumpTest2 : MonoBehaviour
             isApplyingCustomGravity = true;
         }
     }
-
-    // private void ApplyCustomGravity()
-    // {
-    //     // Skip gravity when an action is in progress
-    //     if ((actionInProgress && !actionCompleted) || state == MovementState.Hovering) return;
-
-    //     // Determine gravity direction based on surface state
-    //     Vector3 currentGravityDir = DetermineGravityDirection();
-        
-    //     // Calculate gravity force based on velocity and state
-    //     float gravityForce = customGravityStrength;
-        
-    //     // Apply stronger gravity when falling
-    //     if (Vector3.Dot(rb.linearVelocity , currentGravityDir) > 0)
-    //     {
-    //         gravityForce *= currentFallMultiplier;
-    //     }
-    //     // Apply weaker gravity when jumping but button released early
-    //     else if (Vector3.Dot(rb.linearVelocity , -currentGravityDir) > 0 && !southButtonPressed)
-    //     {
-    //         gravityForce *= lowJumpMultiplier;
-    //     }
-        
-    //     // Apply the gravity force
-    //     Vector3 gravityVector = currentGravityDir * gravityForce;
-        
-    //     // Check if we're exceeding max fall speed
-    //     float currentFallSpeed = Vector3.Project(rb.linearVelocity , currentGravityDir).magnitude;
-    //     if (currentFallSpeed < maxFallSpeed)
-    //     {
-    //         rb.AddForce(gravityVector, ForceMode.Acceleration);
-    //         isApplyingCustomGravity = true;
-    //     }
-        
-    //     // // Debug info
-    //     // if (isApplyingCustomGravity)
-    //     // {
-    //     //     Debug.DrawRay(transform.position, gravityVector.normalized * 2f, Color.red);
-    //     // }
-    // }
 
     /// <summary>
     /// Determines correct gravity direction based on surface state.
@@ -1053,7 +1018,6 @@ public class JumpTest2 : MonoBehaviour
         return gravityDir;
     }
 
-    private bool isClose = false;
     private void TryStartHover()
     {
         float totalTravelled = Vector3.Distance(jumpStartPosition, rb.position);
@@ -1079,8 +1043,6 @@ public class JumpTest2 : MonoBehaviour
             Debug.Log("❌ Hover skipped – not within range or overshoot buffer");
             return;
         }
-
-        isClose = true;
 
         // ✅ Passed all checks – trigger hover
         state = MovementState.Hovering;
