@@ -486,15 +486,15 @@ MonoBehaviour:
   stateBuffer: 0.5
   hoverDuration: 0.5
   hoverStartDelay: 0.1
-  minHoverHeight: 2
+  minHoverHeight: 5
   minDiagonalDistance: 1.5
   useHoverWobble: 1
   hoverWobbleHeight: 0.2
   hoverWobbleSpeed: 2
   customGravityStrength: 9.81
-  fallMultiplier: 0.5
-  lowJumpMultiplier: 1
-  dropMultiplier: 2
+  fallMultiplier: 10
+  lowJumpMultiplier: 8
+  dropMultiplier: 3
   useCustomGravity: 1
   toggleGravity: 1
   gravityDirection: {x: 0, y: -1, z: 0}

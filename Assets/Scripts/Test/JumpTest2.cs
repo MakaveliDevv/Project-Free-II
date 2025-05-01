@@ -114,6 +114,25 @@ public class JumpTest2 : MonoBehaviour
             public float maxFallSpeed = 40f;
         #endregion
 
+        #region ➤ Wall Stick Settings
+            [Header("Wall Stick Settings")]
+            public float wallStickDuration = 0.5f;
+            public float ceilingStickDuration = 0.3f;
+            public float wallSlideStartDelay = 0.5f;
+            public float wallSlideAcceleration = 0.5f; // control how fast slide gets faster
+
+            private float surfaceStickTimer = 0f;
+            private bool isStuckToWall = false;
+            private bool isStuckToCeiling = false;
+            private float wallSlideSpeed = 0f;
+
+            [Tooltip("How much wall friction to apply when stuck to wall.")]
+            public float wallFrictionDamping = 5f;
+
+            [Tooltip("How much damping remains during wall slide (lower = faster fall).")]
+        public float wallSlideDamping = 1f;
+        #endregion
+
         #region ➤ Control Settings
             [Header("Control Settings")]
             [Tooltip("Maximum duration the jump/dash button can be held down.")]
@@ -286,6 +305,22 @@ public class JumpTest2 : MonoBehaviour
             }
         }
 
+        // if(isInAir && hasUsedAirDash) 
+        // {
+
+        // }
+
+        // Reset Charging state if we're not allowed to act mid-air
+        if (isInAir && state == MovementState.Charging && !allowedToMoveInAir)
+        {
+            state = MovementState.Descending;
+            holdTime = 0f;
+            southButtonPressed = false;
+            lastSnappedDirection = Vector2.zero;
+            Debug.Log("🔻 Reset Charging – airborne & blocked from acting");
+        }
+
+
         if (state == MovementState.Hovering)
         {
             hoverTimer += Time.deltaTime;
@@ -335,12 +370,15 @@ public class JumpTest2 : MonoBehaviour
         {
             isFalling = false;
         }
-
-        
     }
 
     void FixedUpdate()
     {
+        if (useCustomGravity && toggleGravity)
+        {
+            ApplyCustomGravity();
+        }
+
         isInAir = !IsCollidingWithSurface();
 
         HandleActionForces();
@@ -357,6 +395,11 @@ public class JumpTest2 : MonoBehaviour
             isFalling = true;
         }
 
+        if (!actionInProgress && !isInAir && rb.linearVelocity.magnitude < 0.1f)
+        {
+            state = MovementState.Idle;
+        }
+
         if (isInAir)
         {
             currentSurfaceState = SurfaceState.Air;
@@ -369,23 +412,45 @@ public class JumpTest2 : MonoBehaviour
             }
         }
 
-        // if (useCustomGravity) ApplyCustomGravity();
-        if (useCustomGravity && toggleGravity)
+        if (isStuckToWall)
         {
-            ApplyCustomGravity();
+            surfaceStickTimer += Time.fixedDeltaTime;
+
+            if (surfaceStickTimer < wallSlideStartDelay)
+            {
+                // Stick phase — friction is high
+                rb.linearVelocity = Vector3.zero;
+                rb.linearDamping = wallFrictionDamping;
+            }
+            else
+            {
+                // Slide phase — friction reduced, speed increases
+                rb.linearDamping = wallSlideDamping;
+
+                wallSlideSpeed += wallSlideAcceleration * Time.fixedDeltaTime;
+                wallSlideSpeed = Mathf.Min(wallSlideSpeed, maxFallSpeed * 0.75f);
+
+                rb.linearVelocity = new Vector3(0f, -wallSlideSpeed, 0f);
+                state = MovementState.WallDescending;
+            }
         }
 
 
-        if (!actionInProgress && !isInAir && rb.linearVelocity.magnitude < 0.1f)
+        if (isStuckToCeiling)
         {
-            state = MovementState.Idle;
-        }
+            surfaceStickTimer += Time.fixedDeltaTime;
 
-        // Recovery fix: if damping is still active while not hovering, reset it
-        if (state != MovementState.Hovering && rb.linearDamping != 0f)
-        {
-            rb.linearDamping = 0f;
-            Debug.LogWarning("🛠 Damping reset — was lingering after hover.");
+            if (surfaceStickTimer >= ceilingStickDuration)
+            {
+                isStuckToCeiling = false;
+                state = MovementState.Descending;
+                rb.linearVelocity = new Vector3(0f, -fallMultiplier * customGravityStrength, 0f);
+                Debug.Log("⬇️ Released from Ceiling");
+            }
+            else
+            {
+                rb.linearVelocity = Vector3.zero;
+            }
         }
     }
 
@@ -397,6 +462,11 @@ public class JumpTest2 : MonoBehaviour
 
         if (currentSurfaceState == SurfaceState.Ground && !actionInProgress)
         {
+            isStuckToWall = false;
+            isStuckToCeiling = false;
+            wallSlideSpeed = 0f;    
+            rb.linearDamping = 0f;
+
             fastFalling = false;
             state = MovementState.Idle;
         }
@@ -651,6 +721,26 @@ public class JumpTest2 : MonoBehaviour
             // No surface contact logic
             // You might want to handle this case differently
         }
+
+        if (!actionInProgress && rb.linearVelocity.magnitude > 0.5f)
+        {
+            if (currentSurfaceState == SurfaceState.LeftWall || currentSurfaceState == SurfaceState.RightWall)
+            {
+                isStuckToWall = true;
+                surfaceStickTimer = 0f;
+                rb.linearVelocity = Vector3.zero;
+                Debug.Log("🧱 Stuck to Wall");
+                state = MovementState.Stucked;
+            }
+            else if (currentSurfaceState == SurfaceState.Ceiling)
+            {
+                isStuckToCeiling = true;
+                surfaceStickTimer = 0f;
+                rb.linearVelocity = Vector3.zero;
+                Debug.Log("🧢 Stuck to Ceiling");
+                state = MovementState.Stucked;
+            }
+        }
         
         if (previousState != currentSurfaceState)
         {
@@ -842,45 +932,84 @@ public class JumpTest2 : MonoBehaviour
     /// Manages gravity effects on the player.
     /// Related to: DetermineGravityDirection.
     /// </summary>
+  
     private void ApplyCustomGravity()
     {
-        // Skip gravity when an action is in progress
         if ((actionInProgress && !actionCompleted) || state == MovementState.Hovering) return;
 
-        // Determine gravity direction based on surface state
-        Vector3 currentGravityDir = DetermineGravityDirection();
-        
-        // Calculate gravity force based on velocity and state
+        Vector3 gravityDir = DetermineGravityDirection();
         float gravityForce = customGravityStrength;
-        
-        // Apply stronger gravity when falling
-        if (Vector3.Dot(rb.linearVelocity , currentGravityDir) > 0)
+
+        float verticalVelocity = Vector3.Dot(rb.linearVelocity, gravityDir);
+        float upwardVelocity = Vector3.Dot(rb.linearVelocity, -gravityDir);
+
+        float jumpHeightSoFar = Vector3.Project(rb.position - jumpStartPosition, -gravityDir).magnitude;
+        bool isDropping = leftAnalogStickInput.ReadValue<Vector2>() == Vector2.down;
+
+        if (jumpHeightSoFar < minHoverHeight && upwardVelocity > 0.1f && !southButtonPressed)
         {
-            gravityForce *= currentFallMultiplier;
-        }
-        // Apply weaker gravity when jumping but button released early
-        else if (Vector3.Dot(rb.linearVelocity , -currentGravityDir) > 0 && !southButtonPressed)
-        {
+            // Low Jump - released early
             gravityForce *= lowJumpMultiplier;
         }
-        
-        // Apply the gravity force
-        Vector3 gravityVector = currentGravityDir * gravityForce;
-        
-        // Check if we're exceeding max fall speed
-        float currentFallSpeed = Vector3.Project(rb.linearVelocity , currentGravityDir).magnitude;
+        else if (verticalVelocity > 0.1f)
+        {
+            // Normal Falling
+            gravityForce *= fallMultiplier;
+
+            if (isDropping)
+            {
+                gravityForce *= dropMultiplier;
+                fastFalling = true;
+            }
+        }
+
+        float currentFallSpeed = verticalVelocity;
         if (currentFallSpeed < maxFallSpeed)
         {
-            rb.AddForce(gravityVector, ForceMode.Acceleration);
+            rb.AddForce(gravityDir * gravityForce, ForceMode.Acceleration);
             isApplyingCustomGravity = true;
         }
-        
-        // // Debug info
-        // if (isApplyingCustomGravity)
-        // {
-        //     Debug.DrawRay(transform.position, gravityVector.normalized * 2f, Color.red);
-        // }
     }
+
+    // private void ApplyCustomGravity()
+    // {
+    //     // Skip gravity when an action is in progress
+    //     if ((actionInProgress && !actionCompleted) || state == MovementState.Hovering) return;
+
+    //     // Determine gravity direction based on surface state
+    //     Vector3 currentGravityDir = DetermineGravityDirection();
+        
+    //     // Calculate gravity force based on velocity and state
+    //     float gravityForce = customGravityStrength;
+        
+    //     // Apply stronger gravity when falling
+    //     if (Vector3.Dot(rb.linearVelocity , currentGravityDir) > 0)
+    //     {
+    //         gravityForce *= currentFallMultiplier;
+    //     }
+    //     // Apply weaker gravity when jumping but button released early
+    //     else if (Vector3.Dot(rb.linearVelocity , -currentGravityDir) > 0 && !southButtonPressed)
+    //     {
+    //         gravityForce *= lowJumpMultiplier;
+    //     }
+        
+    //     // Apply the gravity force
+    //     Vector3 gravityVector = currentGravityDir * gravityForce;
+        
+    //     // Check if we're exceeding max fall speed
+    //     float currentFallSpeed = Vector3.Project(rb.linearVelocity , currentGravityDir).magnitude;
+    //     if (currentFallSpeed < maxFallSpeed)
+    //     {
+    //         rb.AddForce(gravityVector, ForceMode.Acceleration);
+    //         isApplyingCustomGravity = true;
+    //     }
+        
+    //     // // Debug info
+    //     // if (isApplyingCustomGravity)
+    //     // {
+    //     //     Debug.DrawRay(transform.position, gravityVector.normalized * 2f, Color.red);
+    //     // }
+    // }
 
     /// <summary>
     /// Determines correct gravity direction based on surface state.
@@ -924,38 +1053,90 @@ public class JumpTest2 : MonoBehaviour
         return gravityDir;
     }
 
+    private bool isClose = false;
     private void TryStartHover()
     {
-        float totalDistanceMoved = Vector3.Distance(rb.position, jumpStartPosition);
-        float distanceToTarget = Vector3.Distance(rb.position, predictedTargetPosition);
-
-        bool isFarEnough = totalDistanceMoved >= minHoverHeight;
-        bool isCloseEnough = distanceToTarget <= 0.9f;
-
-        if (isFarEnough && isCloseEnough)
+        float totalTravelled = Vector3.Distance(jumpStartPosition, rb.position);
+        if (totalTravelled < minHoverHeight)
         {
-            state = MovementState.Hovering;
-            rb.linearVelocity = Vector3.zero;
-            rb.linearDamping = 5f;
-
-            hoverTimer = 0f;
-            hoverWobbleTimer = 0f;
-            originalHoverPosition = rb.position;
-
-            hasTriggeredHover = true;
-            Debug.Log("🛸 Hover Started — Smooth Floating");
+            Debug.Log("🛑 Hover skipped – movement too small");
+            return;
         }
-        else
+
+        Vector3 toTarget = predictedTargetPosition - rb.position;
+        float forwardDot = Vector3.Dot(rb.linearVelocity.normalized, toTarget.normalized);
+        float distanceToTarget = toTarget.magnitude;
+
+        float hoverTriggerRadius = 2f;       // standard success zone
+        float hoverForgivenessDistance = 4.0f;  // fallback overshoot buffer
+
+        bool isCloseEnough = distanceToTarget <= hoverTriggerRadius;
+        bool hasPassedTarget = forwardDot < 0f;
+        bool isInForgivenessZone = hasPassedTarget && distanceToTarget <= hoverForgivenessDistance;
+
+        if (!(isCloseEnough || isInForgivenessZone))
         {
-            Debug.Log("❌ Hover failed – not far or close enough");
-
-            if (state == MovementState.Ascending)
-            {
-                state = MovementState.Descending;
-                Debug.Log("⬇️ Transitioned to Descending – Hover skipped");
-            }
+            Debug.Log("❌ Hover skipped – not within range or overshoot buffer");
+            return;
         }
+
+        isClose = true;
+
+        // ✅ Passed all checks – trigger hover
+        state = MovementState.Hovering;
+        rb.linearVelocity = Vector3.zero;
+        rb.linearDamping = 5f;
+
+        hoverTimer = 0f;
+        hoverWobbleTimer = 0f;
+        originalHoverPosition = rb.position;
+
+        hasTriggeredHover = true;
+        Debug.Log("🛸 Hover Started — Triggered by " + (isCloseEnough ? "target proximity" : "forgiveness zone"));
     }
+
+
+    // private void TryStartHover()
+    // {
+    //     Vector3 gravityDir = DetermineGravityDirection();
+    //     float jumpHeightSoFar = Vector3.Project(rb.position - jumpStartPosition, -gravityDir).magnitude;
+    //     float distanceToTarget = Vector3.Distance(rb.position, predictedTargetPosition);
+
+    //     if (jumpHeightSoFar < minHoverHeight)
+    //     {
+    //         Debug.Log("🛑 Hover skipped – not enough height gained (low jump)");
+    //         return;
+    //     }
+
+    //     float totalDistanceMoved = Vector3.Distance(rb.position, jumpStartPosition);
+
+    //     bool isFarEnough = totalDistanceMoved >= minHoverHeight;
+    //     bool isCloseEnough = distanceToTarget <= 0.9f;
+
+    //     if (isFarEnough && isCloseEnough)
+    //     {
+    //         state = MovementState.Hovering;
+    //         rb.linearVelocity = Vector3.zero;
+    //         rb.linearDamping = 5f;
+
+    //         hoverTimer = 0f;
+    //         hoverWobbleTimer = 0f;
+    //         originalHoverPosition = rb.position;
+
+    //         hasTriggeredHover = true;
+    //         Debug.Log("🛸 Hover Started — Smooth Floating");
+    //     }
+    //     else
+    //     {
+    //         Debug.Log("❌ Hover failed – not far or close enough");
+
+    //         if (state == MovementState.Ascending)
+    //         {
+    //             state = MovementState.Descending;
+    //             Debug.Log("⬇️ Transitioned to Descending – Hover skipped");
+    //         }
+    //     }
+    // }
 
     private void ExitHover()
     {
@@ -1077,6 +1258,13 @@ public class JumpTest2 : MonoBehaviour
         if (lastSnappedDirection == Vector2.zero || fastFalling)
             return;
 
+        if (state == MovementState.Stucked || state == MovementState.WallDescending)
+        {
+            isStuckToWall = false;
+            surfaceStickTimer = 0f;
+            rb.linearDamping = 0f;
+            Debug.Log("🚪 Unstuck from wall – preparing to jump");
+        }
 
         if (state == MovementState.Hovering)
         {
@@ -1113,7 +1301,7 @@ public class JumpTest2 : MonoBehaviour
         // 🚫 Block ALL other actions unless player is touching a surface
         if (isInAir)
         {
-            Debug.Log("⛔ Blocked: Can't act while airborne (except AirDash)");
+            Debug.Log("⛔ Blocked: Can't act while airborne");
             return;
         }
 
