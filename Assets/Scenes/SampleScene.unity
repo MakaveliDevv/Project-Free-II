@@ -452,7 +452,7 @@ Rigidbody:
     m_Bits: 0
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
-  m_UseGravity: 1
+  m_UseGravity: 0
   m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 120
@@ -496,13 +496,14 @@ MonoBehaviour:
   lowJumpMultiplier: 1
   dropMultiplier: 2
   useCustomGravity: 1
+  toggleGravity: 1
   gravityDirection: {x: 0, y: -1, z: 0}
   maxFallSpeed: 20
   maxHoldTime: 0.5
   deadzone: 0.2
   jumpForceMode: 2
   dashForceMode: 1
-  airDashForceMode: 2
+  airDashForceMode: 1
   numberOfDirections: 8
   gizmosLength: 10
   wallLayer:

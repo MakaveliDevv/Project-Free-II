@@ -104,6 +104,9 @@ public class JumpTest2 : MonoBehaviour
             [Tooltip("Determines whether to use custom gravity or Unity's default.")]
             public bool useCustomGravity = true;
 
+            [Tooltip("If true, gravity is applied. If false, gravity is ignored.")]
+            public bool toggleGravity = true;
+
             [Tooltip("Direction in which gravity is applied.")]
             public Vector3 gravityDirection = Vector3.down;
 
@@ -157,7 +160,6 @@ public class JumpTest2 : MonoBehaviour
             private Vector2 lastSnappedDirection = Vector2.zero;
             private Vector3 moveDirection;
             private Vector3 predictedTargetPosition;
-            private bool stickStarted = false;
             private bool southButtonPressed;
         #endregion
 
@@ -194,15 +196,11 @@ public class JumpTest2 : MonoBehaviour
 
         #region ➤ Timers
             private float lastActionTime;
-            private float lastAirDashTime;
             private float lastContactTime;
-            private float jumpStartHeight;
             private float hoverTimer = 0f;
             private float hoverWobbleTimer = 0f;
-            private float inputWaitTimer = 0f;
             private float stateTimer = 0f;
             public float estimatedTimeThreshold = .25f;
-            private const float baseInputWaitTime = 0.05f;
             private const float NO_CONTACT_THRESHOLD = 0.2f;
         #endregion
 
@@ -255,6 +253,12 @@ public class JumpTest2 : MonoBehaviour
 
     void Update()
     {
+        if (Keyboard.current.gKey.wasPressedThisFrame)
+        {
+            toggleGravity = !toggleGravity;
+            Debug.Log("Gravity Toggled: " + toggleGravity);
+        }
+        
         Vector2 inputDirection = leftAnalogStickInput.ReadValue<Vector2>();
 
         if (!actionInProgress && inputDirection.magnitude > deadzone)
@@ -300,10 +304,17 @@ public class JumpTest2 : MonoBehaviour
 
         if(isInAir && state == MovementState.Charging) 
         {
-            // rb.useGravity = false;
             rb.linearVelocity = Vector2.zero;
+            toggleGravity = false;
         }
-        // else if (isInAir && state == MovementState.AirDashing) rb.useGravity = false;
+        else if(isInAir && state == MovementState.AirDashing) 
+        {
+            toggleGravity = false;
+        }
+        else 
+        {
+            toggleGravity = true;
+        }
 
         if (stateChanged)
         {
@@ -324,122 +335,9 @@ public class JumpTest2 : MonoBehaviour
         {
             isFalling = false;
         }
+
+        
     }
-
-    // void Update()
-    // {
-    //     HandleButtonHold();
-    //     DetectFallingState();
-    //     HandleStateTransitionBuffer();
-
-    //     // Handle exiting hover state
-    //     // if (state == MovementState.Hovering)
-    //     // {
-    //     //     hoverTimer += Time.deltaTime;
-    //     //     if (hoverTimer > hoverDuration)
-    //     //     {
-    //     //         ExitHover();
-    //     //     }
-    //     // }
-
-    //     if (state == MovementState.Hovering)
-    //     {
-    //         hoverTimer += Time.deltaTime;
-
-    //         if (hoverTimer > hoverDuration)
-    //         {
-    //             ExitHover();
-    //         }
-    //         else if (useHoverWobble)
-    //         {
-    //             hoverWobbleTimer += Time.deltaTime;
-    //             float wobbleOffset = Mathf.Sin(hoverWobbleTimer * hoverWobbleSpeed) * hoverWobbleHeight;
-    //             Vector3 newPosition = originalHoverPosition + new Vector3(0f, wobbleOffset, 0f);
-    //             rb.MovePosition(newPosition);
-    //         }
-    //     }
-
-    //     // To contineously update the inputDirection sinc it bugs out sometimes
-    //     // Need to find a way to do it differently and clean
-    //     inputDirection = leftAnalogStickInput.ReadValue<Vector2>();
-
-    //     if (!actionInProgress && inputDirection.magnitude > deadzone)
-    //     {
-    //         Vector2 snapped = GetSnappedDirection(inputDirection).normalized;
-    //         if (snapped != Vector2.zero)
-    //         {
-    //             lastSnappedDirection = snapped;
-    //         }
-    //     }
-
-    //     if (!actionInProgress && southButtonPressed && lastSnappedDirection != Vector2.zero)
-    //     {
-    //         UpdatePredictedTargetPosition();
-    //     }
-
-    //     // if(state == MovementState.Charging) 
-    //     // {
-    //     //     rb.useGravity = false;
-    //     // }
-
-    // }
-
-    // void FixedUpdate()
-    // {
-    //     HandleActionForces();
-    //     CheckAirState();
-    //     HandleActionTimeout();
-    //     CheckSurfaceContact();
-    //     HandleActionCompletion();
-
-    //     if(isInAir) 
-    //     {
-    //         currentSurfaceState = SurfaceState.Air;
-
-    //         bool stickDown = inputDirection == Vector2.down;
-
-    //         if (stickDown &&
-    //         (
-    //             !allowedToMoveInAir ||
-    //             hasUsedAirDash ||
-    //             state == MovementState.Ascending ||
-    //             state == MovementState.Descending ||
-    //             state == MovementState.AirDashing
-    //         )
-    //         )
-    //         {
-    //             DropPlayerStraightDown();
-    //         }
-    //     }
-
-    //     // Apply hover logic
-    //     // if (state == MovementState.Ascending && !hasTriggeredHover)
-    //     // {
-    //     //     hoverTimer += Time.fixedDeltaTime;
-    //     //     if (hoverTimer >= hoverStartDelay)
-    //     //     {
-    //     //         if (CheckHoverEligibility())
-    //     //         {
-    //     //             state = MovementState.Hovering;
-    //     //             rb.useGravity = false;
-    //     //             rb.linearVelocity  = new Vector3(rb.linearVelocity .x, 0, rb.linearVelocity .z); // Neutralize vertical velocity
-    //     //             hasTriggeredHover = true;
-    //     //         }
-    //     //     }
-    //     // }
-
-    //     // if (state == MovementState.Ascending && !hasTriggeredHover)
-    //     // {
-    //     //     TryStartHover();
-    //     // }
-
-    //     if (useCustomGravity) ApplyCustomGravity();
-
-    //     if (!actionInProgress && !isInAir && rb.linearVelocity .magnitude < 0.1f)
-    //     {
-    //         state = MovementState.Idle;
-    //     }
-    // }
 
     void FixedUpdate()
     {
@@ -471,7 +369,12 @@ public class JumpTest2 : MonoBehaviour
             }
         }
 
-        if (useCustomGravity) ApplyCustomGravity();
+        // if (useCustomGravity) ApplyCustomGravity();
+        if (useCustomGravity && toggleGravity)
+        {
+            ApplyCustomGravity();
+        }
+
 
         if (!actionInProgress && !isInAir && rb.linearVelocity.magnitude < 0.1f)
         {
@@ -484,7 +387,6 @@ public class JumpTest2 : MonoBehaviour
             rb.linearDamping = 0f;
             Debug.LogWarning("🛠 Damping reset — was lingering after hover.");
         }
-
     }
 
 
@@ -571,65 +473,6 @@ public class JumpTest2 : MonoBehaviour
     }
     #endregion
 
-    #region Update Handlers
-    /// <summary>
-    /// Handles button hold logic, auto-triggering actions if max hold time is exceeded.
-    /// Related to: PerformAction (triggers action when conditions are met).
-    /// </summary>
-    private void HandleButtonHold()
-    {
-        if (southButtonPressed && !actionInProgress)
-        {
-            holdTime += Time.deltaTime;
-
-            if (state != MovementState.Charging)
-                state = MovementState.Charging;
-            
-            // Auto-trigger if max hold time is reached
-            if (holdTime >= maxHoldTime && lastSnappedDirection != Vector2.zero)
-            {
-                PerformAction();
-            }
-        }
-    }
-
-    /// <summary>
-    /// Detects and manages player's falling state.
-    /// Related to: ApplyCustomGravity (gravity behavior based on falling).
-    /// </summary>
-    private void DetectFallingState()
-    {
-        if (!isFalling && rb.linearVelocity.y < -0.5f && currentSurfaceState == SurfaceState.Ceiling)
-        {
-            isFalling = true;
-            Debug.Log("Player is falling from ceiling");
-        }
-
-        // Reset falling state when touching ground or other surface
-        if (isFalling && rb.linearVelocity.y >= -0.1f)
-        {
-            isFalling = false;
-        }
-    }
-
-    /// <summary>
-    /// Manages buffer timing for state transitions.
-    /// Related to: stateChanged flag (used to track transitions).
-    /// </summary>
-    private void HandleStateTransitionBuffer()
-    {
-        if(stateChanged) 
-        {
-            stateTimer += Time.deltaTime;
-            if(stateTimer >= stateBuffer) 
-            {
-                stateChanged = false;
-                stateTimer = 0f;
-            }
-        }
-    }
-    #endregion
-
     #region FixedUpdate Handlers
     /// <summary>
     /// Applies calculated forces for jump and dash actions.
@@ -655,11 +498,6 @@ public class JumpTest2 : MonoBehaviour
                 Debug.Log($"🔼 Force applied: {moveDirection * forceMagnitude} (Mode: {mode})");
             }
         }
-
-        // if (state == MovementState.AirDashing)
-        // {
-        //     rb.useGravity = false; // Turn off gravity during air dash
-        // }
     }
 
     /// <summary>
@@ -699,20 +537,6 @@ public class JumpTest2 : MonoBehaviour
     private void CheckAirState()
     {
         isInAir = !IsCollidingWithSurface();
-    }
-
-    /// <summary>
-    /// Handles forced reset when action times out.
-    /// Related to: ForceResetAllActions (forced reset logic).
-    /// </summary>
-    private void HandleActionTimeout()
-    {
-        // Add a failsafe timer to prevent permanent stuck state
-        if (actionInProgress && Time.time - lastActionTime > 2f)
-        {
-            Debug.LogWarning("Action timeout - forcing reset");
-            ForceResetAllActions();
-        }
     }
 
     /// <summary>
@@ -1205,9 +1029,6 @@ public class JumpTest2 : MonoBehaviour
         showPredictedSphere = false;
         hasAppliedForce = false;
         rb.linearDamping = 0f; 
-
-        // rb.linearDamping = 0f; // In case hover/air dash left it on
-        // rb.useGravity = true;  // Restore gravity only once action truly ends
     }
     #endregion
 
@@ -1242,68 +1063,6 @@ public class JumpTest2 : MonoBehaviour
             }
         }
     }
-    
-    // public void OnStickStarted(InputAction.CallbackContext ctx)
-    // {
-    //     if(stickStarted) return;
-
-    //     // Set a small timer
-    //     inputWaitTimer = baseInputWaitTime;
-
-    //     if (inputWaitTimer > 0f)
-    //     {
-    //         inputWaitTimer -= Time.deltaTime;
-    //     }
-
-    //     inputDirection = ctx.ReadValue<Vector2>();
-    // }
-
-    // public void OnStickPerformed(InputAction.CallbackContext ctx)
-    // {
-    //     inputDirection = ctx.ReadValue<Vector2>();
-
-    //     // Wait for the timer to finish before proceeding
-    //     // if (inputWaitTimer > 0f)
-    //     // {
-    //     //     inputWaitTimer = 0f;
-    //     //     return;
-    //     // } 
-    //     // else if(inputWaitTimer <= 0) 
-    //     // {
-    //         if (inputDirection.magnitude < deadzone) inputDirection = Vector2.zero;
-
-    //         stickStarted = true;
-
-    //         if (!actionInProgress && stickStarted)
-    //         {
-    //             // Vector2 inputDirection = ctx.ReadValue<Vector2>();
-    //             lastSnappedDirection = GetSnappedDirection(inputDirection).normalized;
-
-    //             if (lastSnappedDirection != Vector2.zero)
-    //             {
-    //                 Debug.Log($"Snapped Direction: {lastSnappedDirection}");
-    //             }
-      
-    //             // Reset action state if we have a new direction
-    //             if (lastSnappedDirection != Vector2.zero && actionCompleted)
-    //             {
-    //                 ResetActionState();
-    //             }
-    //         }
-    //     // }
-    // }
-    
-    // public void OnStickCanceled(InputAction.CallbackContext ctx)
-    // {
-    //     if (!actionInProgress)
-    //     {
-    //         stickStarted = false;
-    //         inputDirection = Vector2.zero;
-    //         lastSnappedDirection = Vector2.zero;
-    //         // newDir = Vector2.zero;
-    //         predictedTargetPosition = Vector2.zero;
-    //     }
-    // }
     #endregion
 
     #region Action Execution
@@ -1322,7 +1081,6 @@ public class JumpTest2 : MonoBehaviour
         if (state == MovementState.Hovering)
         {
             // Fully exit hover
-            // rb.useGravity = true;
             rb.linearDamping = 0f;
             hoverTimer = 0f;
             hasTriggeredHover = false;
@@ -1338,12 +1096,10 @@ public class JumpTest2 : MonoBehaviour
         if (isInAir && allowedToMoveInAir && !hasUsedAirDash)
         {
             jumpStartPosition = rb.position;
-            jumpStartHeight = jumpStartPosition.y; 
 
             state = MovementState.AirDashing;
             SetupMovement(maxAirDashDistance, jumpHeight, 1f, airDashForce, "AirDash");
             hasUsedAirDash = true;
-            lastAirDashTime = Time.time;
 
             actionInProgress = true;
             hasAppliedForce = false;
@@ -1446,7 +1202,6 @@ public class JumpTest2 : MonoBehaviour
         }
         else // Jump
         {
-            jumpStartHeight = rb.position.y;
             isAscending = true;
             isDashing = false;
 
@@ -1707,22 +1462,6 @@ public class JumpTest2 : MonoBehaviour
                 Gizmos.DrawWireSphere(predictedTargetPosition, debugAcceptableRadius);
             }
         }
-
-        // 🟦 Draw Hover Eligibility Box (min hover height & distance)
-        // if (state == MovementState.Ascending && !hasTriggeredHover)
-        // {
-        //     Gizmos.color = Color.cyan;
-
-        //     Vector3 start = new Vector3(jumpStartHeight + minDiagonalDistance, jumpStartHeight + minHoverHeight, 0);
-        //     Vector3 newCenter = new Vector3(rb.position.x, jumpStartHeight + minHoverHeight / 2f, rb.position.z);
-        //     Vector3 size = new Vector3(minDiagonalDistance * 2, minHoverHeight, 1f);
-
-        //     Gizmos.DrawWireCube(newCenter, size);
-
-        // #if UNITY_EDITOR
-        //     UnityEditor.Handles.Label(newCenter + Vector3.up * 0.5f, "🛸 Hover Zone");
-        // #endif
-        // }
     }
 
     private void DrawAngleArc(Vector3 center, float startAngle, float endAngle, float radius)
