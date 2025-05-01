@@ -271,7 +271,7 @@ GameObject:
   - component: {fileID: 206922468}
   - component: {fileID: 206922473}
   - component: {fileID: 206922472}
-  - component: {fileID: 206922474}
+  - component: {fileID: 206922475}
   m_Layer: 0
   m_Name: PlayerTest
   m_TagString: Untagged
@@ -362,7 +362,7 @@ Transform:
   m_GameObject: {fileID: 206922466}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -4.44, y: 0.64, z: 0}
+  m_LocalPosition: {x: -4.44, y: 6.23, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -457,7 +457,7 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 120
   m_CollisionDetection: 0
---- !u!114 &206922474
+--- !u!114 &206922475
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -466,58 +466,21 @@ MonoBehaviour:
   m_GameObject: {fileID: 206922466}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a370859e633045c4f91467e0325f26b9, type: 3}
+  m_Script: {fileID: 11500000, guid: e73a204e22094714a9f84eacf9c1a916, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  state: 0
-  currentSurfaceState: 0
-  jumpForce: 2
-  maxJumpDistance: 15
-  jumpHeight: 1
-  useArcForDiagonalJumps: 1
-  arcMultiplier: 2
-  dashForce: 15
-  maxDashDistance: 6
-  allowedToMoveInAir: 1
-  airDashForce: 20.6
-  airDashCooldown: 0.5
-  maxAirDashDistance: 5
-  mode: 0
-  stateBuffer: 0.5
-  hoverDuration: 0.5
-  hoverStartDelay: 0.1
-  minHoverHeight: 5
-  minDiagonalDistance: 1.5
-  useHoverWobble: 1
-  hoverWobbleHeight: 0.2
-  hoverWobbleSpeed: 2
-  customGravityStrength: 9.81
-  fallMultiplier: 10
-  lowJumpMultiplier: 8
-  dropMultiplier: 3
-  useCustomGravity: 1
-  toggleGravity: 1
-  gravityDirection: {x: 0, y: -1, z: 0}
-  maxFallSpeed: 20
-  wallStickDuration: 0.5
-  ceilingStickDuration: 0.3
-  wallSlideStartDelay: 0.5
-  wallSlideAcceleration: 0.5
-  wallFrictionDamping: 5
-  wallSlideDamping: 1
-  maxHoldTime: 0.5
-  deadzone: 0.2
-  jumpForceMode: 2
-  dashForceMode: 1
-  airDashForceMode: 1
-  numberOfDirections: 8
-  gizmosLength: 10
-  wallLayer:
-    serializedVersion: 2
-    m_Bits: 128
-  checkDistance: 0.5
-  inputActions: {fileID: -944628639613478452, guid: 9740b7f8f03c4a749a2e93320c4985da, type: 3}
-  estimatedTimeThreshold: 0.85
+  moveAction:
+    m_Name: Move
+    m_Type: 0
+    m_ExpectedControlType: 
+    m_Id: 6d48e64f-a71b-49f1-affa-e6f1e1343ba3
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings: []
+    m_Flags: 0
+  useRawInput: 1
+  gizmoScale: 6
+  gizmoColor: {r: 0, g: 1, b: 0, a: 1}
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0
