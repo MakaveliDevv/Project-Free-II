@@ -470,23 +470,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   state: 0
-  jumpForce: 23.6
+  currentSurfaceState: 0
+  jumpForce: 2
   maxJumpDistance: 15
   jumpHeight: 1
-  dashForce: 20.6
+  useArcForDiagonalJumps: 1
+  arcMultiplier: 2.5
+  dashForce: 15
   maxDashDistance: 6
-  maxHoldTime: 0.5
-  deadzone: 0.2
-  jumpForceMode: 2
-  dashForceMode: 1
-  airDashForceMode: 2
-  numberOfDirections: 8
-  gizmosLength: 10
-  currentSurfaceState: 0
-  wallLayer:
-    serializedVersion: 2
-    m_Bits: 128
-  checkDistance: 0.5
   allowedToMoveInAir: 1
   airDashForce: 20.6
   airDashCooldown: 0.5
@@ -497,6 +488,9 @@ MonoBehaviour:
   hoverStartDelay: 0.1
   minHoverHeight: 2
   minDiagonalDistance: 1.5
+  useHoverWobble: 1
+  hoverWobbleHeight: 0.2
+  hoverWobbleSpeed: 2
   customGravityStrength: 9.81
   fallMultiplier: 0.5
   lowJumpMultiplier: 1
@@ -504,7 +498,19 @@ MonoBehaviour:
   useCustomGravity: 1
   gravityDirection: {x: 0, y: -1, z: 0}
   maxFallSpeed: 20
+  maxHoldTime: 0.5
+  deadzone: 0.2
+  jumpForceMode: 2
+  dashForceMode: 1
+  airDashForceMode: 2
+  numberOfDirections: 8
+  gizmosLength: 10
+  wallLayer:
+    serializedVersion: 2
+    m_Bits: 128
+  checkDistance: 0.5
   inputActions: {fileID: -944628639613478452, guid: 9740b7f8f03c4a749a2e93320c4985da, type: 3}
+  estimatedTimeThreshold: 0.85
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0

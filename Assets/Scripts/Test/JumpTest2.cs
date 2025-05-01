@@ -152,9 +152,11 @@ public class JumpTest2 : MonoBehaviour
     #region ░░ PRIVATE VARIABLES ░░
 
         #region ➤ Input
-            private Vector2 inputDirection = Vector2.zero;
+            // private Vector2 inputDirection = Vector2.zero;
+            // private Vector2 lastSnappedDirection = Vector2.zero;
             private Vector2 lastSnappedDirection = Vector2.zero;
-            private Vector2 newDir = Vector2.zero;
+            private Vector3 moveDirection;
+            private Vector3 predictedTargetPosition;
             private bool stickStarted = false;
             private bool southButtonPressed;
         #endregion
@@ -199,13 +201,14 @@ public class JumpTest2 : MonoBehaviour
             private float hoverWobbleTimer = 0f;
             private float inputWaitTimer = 0f;
             private float stateTimer = 0f;
+            public float estimatedTimeThreshold = .25f;
             private const float baseInputWaitTime = 0.05f;
             private const float NO_CONTACT_THRESHOLD = 0.2f;
         #endregion
 
         #region ➤ Movement
-            private Vector3 moveDirection;
-            private Vector3 predictedTargetPosition;
+            // private Vector3 moveDirection;
+            // private Vector3 predictedTargetPosition;
             private Vector3 originalHoverPosition;
             private float forceMagnitude;
             private float targetDistance;
@@ -252,24 +255,36 @@ public class JumpTest2 : MonoBehaviour
 
     void Update()
     {
-        HandleButtonHold();
-        DetectFallingState();
-        HandleStateTransitionBuffer();
+        Vector2 inputDirection = leftAnalogStickInput.ReadValue<Vector2>();
 
-        // Handle exiting hover state
-        // if (state == MovementState.Hovering)
-        // {
-        //     hoverTimer += Time.deltaTime;
-        //     if (hoverTimer > hoverDuration)
-        //     {
-        //         ExitHover();
-        //     }
-        // }
+        if (!actionInProgress && inputDirection.magnitude > deadzone)
+        {
+            Vector3 snapped = GetSnappedDirection(inputDirection);
+            if (snapped != Vector3.zero)
+            {
+                lastSnappedDirection = new Vector2(snapped.x, snapped.y);
+            }
+        }
+
+        if (!actionInProgress && southButtonPressed && lastSnappedDirection != Vector2.zero)
+        {
+            UpdatePredictedTargetPosition();
+        }
+
+        if (southButtonPressed && !actionInProgress)
+        {
+            holdTime += Time.deltaTime;
+            if (state != MovementState.Charging) state = MovementState.Charging;
+
+            if (holdTime >= maxHoldTime && lastSnappedDirection != Vector2.zero)
+            {
+                PerformAction();
+            }
+        }
 
         if (state == MovementState.Hovering)
         {
             hoverTimer += Time.deltaTime;
-
             if (hoverTimer > hoverDuration)
             {
                 ExitHover();
@@ -283,87 +298,195 @@ public class JumpTest2 : MonoBehaviour
             }
         }
 
-        // To contineously update the inputDirection sinc it bugs out sometimes
-        // Need to find a way to do it differently and clean
-        inputDirection = leftAnalogStickInput.ReadValue<Vector2>();
-
-        if (!actionInProgress && inputDirection.magnitude > deadzone)
+        if(isInAir && state == MovementState.Charging) 
         {
-            Vector2 snapped = GetSnappedDirection(inputDirection).normalized;
-            if (snapped != Vector2.zero)
+            // rb.useGravity = false;
+            rb.linearVelocity = Vector2.zero;
+        }
+        // else if (isInAir && state == MovementState.AirDashing) rb.useGravity = false;
+
+        if (stateChanged)
+        {
+            stateTimer += Time.deltaTime;
+            if (stateTimer >= stateBuffer)
             {
-                lastSnappedDirection = snapped;
+                stateChanged = false;
+                stateTimer = 0f;
             }
         }
 
-        if (!actionInProgress && southButtonPressed && lastSnappedDirection != Vector2.zero)
+        // Falling detection
+        if (!isFalling && rb.linearVelocity.y < -0.5f && currentSurfaceState == SurfaceState.Ceiling)
         {
-            UpdatePredictedTargetPosition();
+            isFalling = true;
         }
-
-        // if(state == MovementState.Charging) 
-        // {
-        //     rb.useGravity = false;
-        // }
-
+        if (isFalling && rb.linearVelocity.y >= -0.1f)
+        {
+            isFalling = false;
+        }
     }
+
+    // void Update()
+    // {
+    //     HandleButtonHold();
+    //     DetectFallingState();
+    //     HandleStateTransitionBuffer();
+
+    //     // Handle exiting hover state
+    //     // if (state == MovementState.Hovering)
+    //     // {
+    //     //     hoverTimer += Time.deltaTime;
+    //     //     if (hoverTimer > hoverDuration)
+    //     //     {
+    //     //         ExitHover();
+    //     //     }
+    //     // }
+
+    //     if (state == MovementState.Hovering)
+    //     {
+    //         hoverTimer += Time.deltaTime;
+
+    //         if (hoverTimer > hoverDuration)
+    //         {
+    //             ExitHover();
+    //         }
+    //         else if (useHoverWobble)
+    //         {
+    //             hoverWobbleTimer += Time.deltaTime;
+    //             float wobbleOffset = Mathf.Sin(hoverWobbleTimer * hoverWobbleSpeed) * hoverWobbleHeight;
+    //             Vector3 newPosition = originalHoverPosition + new Vector3(0f, wobbleOffset, 0f);
+    //             rb.MovePosition(newPosition);
+    //         }
+    //     }
+
+    //     // To contineously update the inputDirection sinc it bugs out sometimes
+    //     // Need to find a way to do it differently and clean
+    //     inputDirection = leftAnalogStickInput.ReadValue<Vector2>();
+
+    //     if (!actionInProgress && inputDirection.magnitude > deadzone)
+    //     {
+    //         Vector2 snapped = GetSnappedDirection(inputDirection).normalized;
+    //         if (snapped != Vector2.zero)
+    //         {
+    //             lastSnappedDirection = snapped;
+    //         }
+    //     }
+
+    //     if (!actionInProgress && southButtonPressed && lastSnappedDirection != Vector2.zero)
+    //     {
+    //         UpdatePredictedTargetPosition();
+    //     }
+
+    //     // if(state == MovementState.Charging) 
+    //     // {
+    //     //     rb.useGravity = false;
+    //     // }
+
+    // }
+
+    // void FixedUpdate()
+    // {
+    //     HandleActionForces();
+    //     CheckAirState();
+    //     HandleActionTimeout();
+    //     CheckSurfaceContact();
+    //     HandleActionCompletion();
+
+    //     if(isInAir) 
+    //     {
+    //         currentSurfaceState = SurfaceState.Air;
+
+    //         bool stickDown = inputDirection == Vector2.down;
+
+    //         if (stickDown &&
+    //         (
+    //             !allowedToMoveInAir ||
+    //             hasUsedAirDash ||
+    //             state == MovementState.Ascending ||
+    //             state == MovementState.Descending ||
+    //             state == MovementState.AirDashing
+    //         )
+    //         )
+    //         {
+    //             DropPlayerStraightDown();
+    //         }
+    //     }
+
+    //     // Apply hover logic
+    //     // if (state == MovementState.Ascending && !hasTriggeredHover)
+    //     // {
+    //     //     hoverTimer += Time.fixedDeltaTime;
+    //     //     if (hoverTimer >= hoverStartDelay)
+    //     //     {
+    //     //         if (CheckHoverEligibility())
+    //     //         {
+    //     //             state = MovementState.Hovering;
+    //     //             rb.useGravity = false;
+    //     //             rb.linearVelocity  = new Vector3(rb.linearVelocity .x, 0, rb.linearVelocity .z); // Neutralize vertical velocity
+    //     //             hasTriggeredHover = true;
+    //     //         }
+    //     //     }
+    //     // }
+
+    //     // if (state == MovementState.Ascending && !hasTriggeredHover)
+    //     // {
+    //     //     TryStartHover();
+    //     // }
+
+    //     if (useCustomGravity) ApplyCustomGravity();
+
+    //     if (!actionInProgress && !isInAir && rb.linearVelocity .magnitude < 0.1f)
+    //     {
+    //         state = MovementState.Idle;
+    //     }
+    // }
 
     void FixedUpdate()
     {
+        isInAir = !IsCollidingWithSurface();
+
         HandleActionForces();
-        CheckAirState();
-        HandleActionTimeout();
-        CheckSurfaceContact();
         HandleActionCompletion();
 
-        if(isInAir) 
+        if (actionInProgress && Time.time - lastActionTime > 2f)
+        {
+            Debug.LogWarning("Action timeout - forcing reset");
+            ForceResetAllActions();
+        }
+
+        if (Time.time - lastContactTime > NO_CONTACT_THRESHOLD && currentSurfaceState == SurfaceState.Ceiling)
+        {
+            isFalling = true;
+        }
+
+        if (isInAir)
         {
             currentSurfaceState = SurfaceState.Air;
 
-            bool stickDown = inputDirection == Vector2.down;
-
-            if (stickDown &&
-            (
-                !allowedToMoveInAir ||
-                hasUsedAirDash ||
-                state == MovementState.Ascending ||
-                state == MovementState.Descending ||
-                state == MovementState.AirDashing
-            )
-            )
+            if (leftAnalogStickInput.ReadValue<Vector2>() == Vector2.down &&
+                (!allowedToMoveInAir || hasUsedAirDash || state == MovementState.Ascending ||
+                state == MovementState.Descending || state == MovementState.AirDashing))
             {
                 DropPlayerStraightDown();
             }
         }
 
-        // Apply hover logic
-        // if (state == MovementState.Ascending && !hasTriggeredHover)
-        // {
-        //     hoverTimer += Time.fixedDeltaTime;
-        //     if (hoverTimer >= hoverStartDelay)
-        //     {
-        //         if (CheckHoverEligibility())
-        //         {
-        //             state = MovementState.Hovering;
-        //             rb.useGravity = false;
-        //             rb.linearVelocity  = new Vector3(rb.linearVelocity .x, 0, rb.linearVelocity .z); // Neutralize vertical velocity
-        //             hasTriggeredHover = true;
-        //         }
-        //     }
-        // }
-
-        // if (state == MovementState.Ascending && !hasTriggeredHover)
-        // {
-        //     TryStartHover();
-        // }
-
         if (useCustomGravity) ApplyCustomGravity();
 
-        if (!actionInProgress && !isInAir && rb.linearVelocity .magnitude < 0.1f)
+        if (!actionInProgress && !isInAir && rb.linearVelocity.magnitude < 0.1f)
         {
             state = MovementState.Idle;
         }
+
+        // Recovery fix: if damping is still active while not hovering, reset it
+        if (state != MovementState.Hovering && rb.linearDamping != 0f)
+        {
+            rb.linearDamping = 0f;
+            Debug.LogWarning("🛠 Damping reset — was lingering after hover.");
+        }
+
     }
+
 
     private void OnCollisionEnter(Collision collision)
     {
@@ -423,9 +546,9 @@ public class JumpTest2 : MonoBehaviour
     /// </summary>
     private void RegisterInputCallbacks()
     {
-        leftAnalogStickInput.started += OnStickStarted;
-        leftAnalogStickInput.performed += OnStickPerformed;
-        leftAnalogStickInput.canceled += OnStickCanceled;
+        // leftAnalogStickInput.started += OnStickStarted;
+        // leftAnalogStickInput.performed += OnStickPerformed;
+        // leftAnalogStickInput.canceled += OnStickCanceled;
 
         southButtonInput.started += OnSouthButtonStarted;
         southButtonInput.performed += OnSouthButtonPerformed;
@@ -438,9 +561,9 @@ public class JumpTest2 : MonoBehaviour
     /// </summary>
     private void UnregisterInputCallbacks()
     {
-        leftAnalogStickInput.started -= OnStickStarted;
-        leftAnalogStickInput.performed -= OnStickPerformed;
-        leftAnalogStickInput.canceled -= OnStickCanceled;
+        // leftAnalogStickInput.started -= OnStickStarted;
+        // leftAnalogStickInput.performed -= OnStickPerformed;
+        // leftAnalogStickInput.canceled -= OnStickCanceled;
 
         southButtonInput.started -= OnSouthButtonStarted;
         southButtonInput.performed -= OnSouthButtonPerformed;
@@ -525,47 +648,19 @@ public class JumpTest2 : MonoBehaviour
                 mode = isAscending ? (isInAir ? airDashForceMode : jumpForceMode) : dashForceMode;
 
                 rb.linearVelocity  = Vector3.zero; 
-                rb.AddForce(newDir * forceMagnitude, mode);
+                rb.AddForce(moveDirection.normalized * forceMagnitude, mode);
 
                 hasAppliedForce = true;
 
-                Debug.Log($"🔼 Force applied: {newDir * forceMagnitude} (Mode: {mode})");
+                Debug.Log($"🔼 Force applied: {moveDirection * forceMagnitude} (Mode: {mode})");
             }
         }
+
+        // if (state == MovementState.AirDashing)
+        // {
+        //     rb.useGravity = false; // Turn off gravity during air dash
+        // }
     }
-
-    // private void HandleActionForces()
-    // {
-    //     if (actionInProgress && !actionCompleted)
-    //     {
-    //         // rb.useGravity = false;
-
-    //         if (isAscending || isDashing)
-    //         {
-    //             if (rb.linearVelocity.magnitude < 0.1f)
-    //             {
-    //                 // Determine the force mode based on action type
-    //                 if(isAscending && isInAir) 
-    //                 {
-    //                     mode = airDashForceMode;
-    //                 }
-    //                 else if(isAscending) 
-    //                 {
-    //                     mode = jumpForceMode;
-    //                 }
-    //                 else if (isDashing) 
-    //                 {
-    //                     mode = dashForceMode;
-    //                 }
-
-    //                 // rb.AddForce(moveDirection * forceMagnitude, mode);
-    //                 rb.AddForce(newDir * forceMagnitude, mode);
-
-    //                 Debug.Log($"Applied {(isAscending ? "jump" : "dash")} force: {moveDirection * forceMagnitude}");
-    //             }
-    //         }
-    //     }
-    // }
 
     /// <summary>
     /// Checks and finalizes action completion based on player's position.
@@ -575,33 +670,23 @@ public class JumpTest2 : MonoBehaviour
     {
         if (!actionInProgress || actionCompleted) return;
 
-        // Vector from start to predicted target
         Vector3 actionVector = predictedTargetPosition - rb.position;
         float remainingDistance = actionVector.magnitude;
-
-        // Check if we've passed the target in the direction of movement
-        float forwardProgress = Vector3.Dot(rb.linearVelocity .normalized, actionVector.normalized);
-
-        // Diagonal boost factor
-        float tolerance = Mathf.Max(0.15f, rb.linearVelocity .magnitude * Time.fixedDeltaTime);
+        float forwardProgress = Vector3.Dot(rb.linearVelocity.normalized, actionVector.normalized);
+        float tolerance = Mathf.Max(0.15f, rb.linearVelocity.magnitude * Time.fixedDeltaTime);
 
         if (isDiagonalJump)
-        {
-            tolerance *= 2.0f; // Diagonal jumps need more tolerance
-        }
+            tolerance *= 2.0f;
 
-        // If we're close OR we've passed the target directionally
-        if (remainingDistance <= tolerance || forwardProgress < 0f)
-        {
-            rb.useGravity = true;
+        bool hasReachedTarget = remainingDistance <= tolerance || forwardProgress < 0f;
 
+        if (hasReachedTarget)
+        {
             actionCompleted = true;
-            Invoke(nameof(ResetActionState), 0.1f);
 
-            if (state == MovementState.Ascending && !hasTriggeredHover)
-            {
-                TryStartHover();
-            }
+            TryStartHover();
+            
+            Invoke(nameof(ResetActionState), 0.1f); // delay reset so hover has time to trigger
 
             Debug.Log("✅ Action complete — reached or passed target.");
         }
@@ -872,44 +957,19 @@ public class JumpTest2 : MonoBehaviour
     /// </summary>
     private Vector3 GetSnappedDirection(Vector2 input)
     {
-        if (input.magnitude < deadzone)
-            return Vector3.zero;
+        if (input.magnitude < deadzone) return Vector3.zero;
 
-        // When airborne, allow free movement (no snapping to allowed angles)
-        if (isInAir)
-        {
-            return new Vector3(input.normalized.x, input.normalized.y, 0f);
-        }
+        if (isInAir) return new Vector3(input.x, input.y, 0f).normalized;
 
-        // On ground, continue to snap to allowed angles
-        Vector2 normalizedInput = input.normalized;
-        float inputAngle = Mathf.Atan2(normalizedInput.y, normalizedInput.x) * Mathf.Rad2Deg;
+        float inputAngle = Mathf.Atan2(input.y, input.x) * Mathf.Rad2Deg;
         inputAngle = (inputAngle + 360f) % 360f;
 
-        // Snap based on sectors instead of closest angle
-        float sectorSize = 360f / allowedAngles.Length;
-        float halfSector = sectorSize / 2f;
+        float sectorSize = 360f / numberOfDirections;
+        float closestAngle = Mathf.Round(inputAngle / sectorSize) * sectorSize;
 
-        foreach (float allowedAngle in allowedAngles)
-        {
-            float lowerBound = (allowedAngle - halfSector + 360f) % 360f;
-            float upperBound = (allowedAngle + halfSector) % 360f;
-
-            bool inSector = lowerBound < upperBound
-                ? inputAngle >= lowerBound && inputAngle < upperBound
-                : inputAngle >= lowerBound || inputAngle < upperBound;
-
-            if (inSector)
-            {
-                Vector2 snapped2D = new Vector2(
-                    Mathf.Cos(allowedAngle * Mathf.Deg2Rad),
-                    Mathf.Sin(allowedAngle * Mathf.Deg2Rad)
-                );
-                return new Vector3(snapped2D.x, snapped2D.y, 0f);
-            }
-        }
-
-        return Vector3.zero;
+        // Directly return Vector3 from snapped angle
+        float rad = closestAngle * Mathf.Deg2Rad;
+        return new Vector3(Mathf.Cos(rad), Mathf.Sin(rad), 0f);
     }
 
     /// <summary>
@@ -946,7 +1006,8 @@ public class JumpTest2 : MonoBehaviour
                 return;
         }
 
-        Vector3 snappedDir = ((Vector3)lastSnappedDirection).normalized;
+        // Vector3 snappedDir = ((Vector3)lastSnappedDirection).normalized;
+        Vector3 snappedDir = new Vector3(lastSnappedDirection.x, lastSnappedDirection.y, 0f);
         predictedTargetPosition = rb.position + snappedDir * travelDistance;
         showPredictedSphere = true;
     }
@@ -1041,16 +1102,15 @@ public class JumpTest2 : MonoBehaviour
 
     private void TryStartHover()
     {
-        float height = rb.position.y - jumpStartHeight;
+        float totalDistanceMoved = Vector3.Distance(rb.position, jumpStartPosition);
         float distanceToTarget = Vector3.Distance(rb.position, predictedTargetPosition);
 
-        bool isHighEnough = height >= minHoverHeight;
-        bool isCloseEnough = distanceToTarget <= 0.75f;
+        bool isFarEnough = totalDistanceMoved >= minHoverHeight;
+        bool isCloseEnough = distanceToTarget <= 0.9f;
 
-        if (isHighEnough && isCloseEnough)
+        if (isFarEnough && isCloseEnough)
         {
             state = MovementState.Hovering;
-            rb.useGravity = false;
             rb.linearVelocity = Vector3.zero;
             rb.linearDamping = 5f;
 
@@ -1061,17 +1121,25 @@ public class JumpTest2 : MonoBehaviour
             hasTriggeredHover = true;
             Debug.Log("🛸 Hover Started — Smooth Floating");
         }
-    }
+        else
+        {
+            Debug.Log("❌ Hover failed – not far or close enough");
 
+            if (state == MovementState.Ascending)
+            {
+                state = MovementState.Descending;
+                Debug.Log("⬇️ Transitioned to Descending – Hover skipped");
+            }
+        }
+    }
 
     private void ExitHover()
     {
         state = MovementState.Descending;
-        rb.useGravity = true;
-        hoverTimer = 0f; // Reset hover timer
+        hoverTimer = 0f; 
         rb.linearDamping  = 0f; 
 
-        hasTriggeredHover = false; // Reset hover trigger for next jump
+        hasTriggeredHover = false; 
         Debug.Log("⬇️ Exiting Hover – Starting to Descend");
     }
 
@@ -1130,9 +1198,16 @@ public class JumpTest2 : MonoBehaviour
         isDashing = false;
         holdTime = 0f;
 
+        southButtonPressed = false;
+        rb.linearVelocity = Vector3.zero; // Stop all movement
+        lastSnappedDirection = Vector2.zero;
         isApplyingCustomGravity = false;
         showPredictedSphere = false;
         hasAppliedForce = false;
+        rb.linearDamping = 0f; 
+
+        // rb.linearDamping = 0f; // In case hover/air dash left it on
+        // rb.useGravity = true;  // Restore gravity only once action truly ends
     }
     #endregion
 
@@ -1168,67 +1243,67 @@ public class JumpTest2 : MonoBehaviour
         }
     }
     
-    public void OnStickStarted(InputAction.CallbackContext ctx)
-    {
-        if(stickStarted) return;
+    // public void OnStickStarted(InputAction.CallbackContext ctx)
+    // {
+    //     if(stickStarted) return;
 
-        // Set a small timer
-        inputWaitTimer = baseInputWaitTime;
+    //     // Set a small timer
+    //     inputWaitTimer = baseInputWaitTime;
 
-        if (inputWaitTimer > 0f)
-        {
-            inputWaitTimer -= Time.deltaTime;
-        }
+    //     if (inputWaitTimer > 0f)
+    //     {
+    //         inputWaitTimer -= Time.deltaTime;
+    //     }
 
-        inputDirection = ctx.ReadValue<Vector2>();
-    }
+    //     inputDirection = ctx.ReadValue<Vector2>();
+    // }
 
-    public void OnStickPerformed(InputAction.CallbackContext ctx)
-    {
-        inputDirection = ctx.ReadValue<Vector2>();
+    // public void OnStickPerformed(InputAction.CallbackContext ctx)
+    // {
+    //     inputDirection = ctx.ReadValue<Vector2>();
 
-        // Wait for the timer to finish before proceeding
-        // if (inputWaitTimer > 0f)
-        // {
-        //     inputWaitTimer = 0f;
-        //     return;
-        // } 
-        // else if(inputWaitTimer <= 0) 
-        // {
-            if (inputDirection.magnitude < deadzone) inputDirection = Vector2.zero;
+    //     // Wait for the timer to finish before proceeding
+    //     // if (inputWaitTimer > 0f)
+    //     // {
+    //     //     inputWaitTimer = 0f;
+    //     //     return;
+    //     // } 
+    //     // else if(inputWaitTimer <= 0) 
+    //     // {
+    //         if (inputDirection.magnitude < deadzone) inputDirection = Vector2.zero;
 
-            stickStarted = true;
+    //         stickStarted = true;
 
-            if (!actionInProgress && stickStarted)
-            {
-                // Vector2 inputDirection = ctx.ReadValue<Vector2>();
-                lastSnappedDirection = GetSnappedDirection(inputDirection).normalized;
+    //         if (!actionInProgress && stickStarted)
+    //         {
+    //             // Vector2 inputDirection = ctx.ReadValue<Vector2>();
+    //             lastSnappedDirection = GetSnappedDirection(inputDirection).normalized;
 
-                if (lastSnappedDirection != Vector2.zero)
-                {
-                    Debug.Log($"Snapped Direction: {lastSnappedDirection}");
-                }
+    //             if (lastSnappedDirection != Vector2.zero)
+    //             {
+    //                 Debug.Log($"Snapped Direction: {lastSnappedDirection}");
+    //             }
       
-                // Reset action state if we have a new direction
-                if (lastSnappedDirection != Vector2.zero && actionCompleted)
-                {
-                    ResetActionState();
-                }
-            }
-        // }
-    }
+    //             // Reset action state if we have a new direction
+    //             if (lastSnappedDirection != Vector2.zero && actionCompleted)
+    //             {
+    //                 ResetActionState();
+    //             }
+    //         }
+    //     // }
+    // }
     
-    public void OnStickCanceled(InputAction.CallbackContext ctx)
-    {
-        if (!actionInProgress)
-        {
-            stickStarted = false;
-            inputDirection = Vector2.zero;
-            lastSnappedDirection = Vector2.zero;
-            newDir = Vector2.zero;
-            predictedTargetPosition = Vector2.zero;
-        }
-    }
+    // public void OnStickCanceled(InputAction.CallbackContext ctx)
+    // {
+    //     if (!actionInProgress)
+    //     {
+    //         stickStarted = false;
+    //         inputDirection = Vector2.zero;
+    //         lastSnappedDirection = Vector2.zero;
+    //         // newDir = Vector2.zero;
+    //         predictedTargetPosition = Vector2.zero;
+    //     }
+    // }
     #endregion
 
     #region Action Execution
@@ -1236,17 +1311,37 @@ public class JumpTest2 : MonoBehaviour
     /// Executes the player’s intended jump, dash, or air-dash.
     /// Related to: SetupMovement, HandleActionForces.
     /// </summary>
-    
+    private Vector3 jumpStartPosition;
+
     private void PerformAction()
     {
         if (lastSnappedDirection == Vector2.zero || fastFalling)
             return;
 
+
+        if (state == MovementState.Hovering)
+        {
+            // Fully exit hover
+            // rb.useGravity = true;
+            rb.linearDamping = 0f;
+            hoverTimer = 0f;
+            hasTriggeredHover = false;
+        }
+
+        if (state == MovementState.Descending && hasTriggeredHover && hasUsedAirDash)
+        {
+            Debug.Log("⛔ Ignored input during descent after hover.");
+            return;
+        }
+
         // ✅ Always allow AIR DASH if airborne and not yet used
         if (isInAir && allowedToMoveInAir && !hasUsedAirDash)
         {
+            jumpStartPosition = rb.position;
+            jumpStartHeight = jumpStartPosition.y; 
+
             state = MovementState.AirDashing;
-            SetupMovement(maxAirDashDistance, 0f, 1f, airDashForce, "AirDash");
+            SetupMovement(maxAirDashDistance, jumpHeight, 1f, airDashForce, "AirDash");
             hasUsedAirDash = true;
             lastAirDashTime = Time.time;
 
@@ -1320,7 +1415,6 @@ public class JumpTest2 : MonoBehaviour
     /// Related to: PerformAction, HandleActionForces.
     /// </summary>
     
-    public float estimatedTimeThreshold = .25f;
     private void SetupMovement(float maxTravelDistance, float forceHeight, float gravityMultiplier, float forcePower, string action)
     {
         targetDistance = maxTravelDistance * holdRatio;
@@ -1344,11 +1438,11 @@ public class JumpTest2 : MonoBehaviour
                 moveDirection = new Vector3(lastSnappedDirection.x, lastSnappedDirection.y, 0f).normalized;
             }
 
-            newDir = moveDirection.normalized;
+            // newDir = moveDirection.normalized;
             forceMagnitude = forcePower;
 
             // Apply smoothing
-            newDir = Vector3.Slerp(rb.linearVelocity .normalized, newDir, 0.85f);
+            moveDirection = Vector3.Slerp(rb.linearVelocity .normalized, moveDirection, 0.85f);
         }
         else // Jump
         {
@@ -1363,17 +1457,11 @@ public class JumpTest2 : MonoBehaviour
             {
                 if(!useArcForDiagonalJumps) 
                 {
-                    // ✅ Straight-line jump (skip arc)
-                    // newDir = new Vector3(lastSnappedDirection.x, lastSnappedDirection.y, 0f).normalized;
-                    // forceMagnitude = forcePower;
-
-                    // Debug.Log("🟧 Straight-Line Diagonal Jump");
-
                     Vector3 directionToTarget = (predictedTargetPosition - rb.position).normalized;
                     float distance = Vector3.Distance(rb.position, predictedTargetPosition);
                     float estimatedTime = estimatedTimeThreshold; // ⚠️ Tune this to feel right
 
-                    newDir = directionToTarget;
+                    moveDirection = directionToTarget;
                     forceMagnitude = distance / estimatedTime * forcePower;
                     Debug.DrawLine(rb.position, predictedTargetPosition, Color.magenta, 1.5f);
 
@@ -1414,37 +1502,20 @@ public class JumpTest2 : MonoBehaviour
 
                     Vector3 launchVelocity = horizontalDir * vx + Vector3.up * vy;
 
-                    newDir = launchVelocity.normalized;
+                    moveDirection = launchVelocity.normalized;
                     forceMagnitude = launchVelocity.magnitude * forcePower;
 
                     Debug.Log($"🟢 Arc Setup → Velocity: {launchVelocity}, Magnitude: {forceMagnitude}");
 
-                    // // ✅ Arc-based diagonal or vertical jump
-                    // float angleDegrees = 45f;
-                    // float angleRadians = angleDegrees * Mathf.Deg2Rad;
-                    // float gravity = Mathf.Abs(Physics.gravity.y) * gravityMultiplier;
-
-                    // float initialVelocity = Mathf.Sqrt(gravity * targetDistance / Mathf.Sin(2 * angleRadians));
-                    // Vector3 horizontalDir = new Vector3(lastSnappedDirection.x, 0f, 0f).normalized;
-
-                    // float vx = initialVelocity * Mathf.Cos(angleRadians);
-                    // float vy = initialVelocity * Mathf.Sin(angleRadians);
-
-                    // moveDirection = horizontalDir * vx;
-                    // lastSnappedDirection.y = vy;
-
-                    // newDir = new Vector3(moveDirection.x, vy, 0f).normalized;
-                    // forceMagnitude = forcePower;
-
                     // // Smooth out any janky direction change
-                    newDir = Vector3.Slerp(rb.linearVelocity .normalized, newDir, 0.9f);
+                    moveDirection = Vector3.Slerp(rb.linearVelocity .normalized, moveDirection, 0.9f);
 
-                    // Debug.Log("🌀 Arc-Based Jump");
+                    Debug.Log("🌀 Arc-Based Jump");
                 }
             }
         }
 
-        Debug.Log($"{action} ➤ Optimized Direction: {newDir}, Force: {forceMagnitude}");
+        Debug.Log($"{action} ➤ Optimized Direction: {moveDirection}, Force: {forceMagnitude}");
         showPredictedSphere = true;
     }
 
@@ -1495,7 +1566,7 @@ public class JumpTest2 : MonoBehaviour
     private void OnDrawGizmosSelected()
     {
         if(allowedAngles == null || allowedAngles.Length <= 0) return;
-
+        
         // If in editor mode and not playing, initialize the angles for gizmo drawing
         if (!Application.isPlaying)
         {
@@ -1506,7 +1577,8 @@ public class JumpTest2 : MonoBehaviour
         {
             return; // If in play mode but array is invalid, return
         }
-        
+
+        Vector2 inputDirection = leftAnalogStickInput.ReadValue<Vector2>();
         Gizmos.color = Color.cyan;
         Vector3 origin = rb.position;
 
@@ -1528,6 +1600,7 @@ public class JumpTest2 : MonoBehaviour
         }
 
         Gizmos.color = Color.green;
+
         Vector3 inputDir = GetSnappedDirection(inputDirection);
         if (inputDir != Vector3.zero)
         {
@@ -1549,7 +1622,8 @@ public class JumpTest2 : MonoBehaviour
     {
         if (!Application.isPlaying) return;
 
-         Gizmos.color = Color.green;
+        Vector2 inputDirection = leftAnalogStickInput.ReadValue<Vector2>();
+        Gizmos.color = Color.green;
         (float minAngle, float maxAngle) = GetAllowedJumpRange();
         Vector3 center = rb.position;
         DrawAngleArc(center, minAngle, maxAngle, 2f); // 2f is the radius
@@ -1569,19 +1643,14 @@ public class JumpTest2 : MonoBehaviour
         // 🔴 Red Arrow – Predicted move distance
         if ((southButtonPressed || holdTime > 0f) && lastSnappedDirection != Vector2.zero)
         {
-            Vector3 snappedDir = ((Vector3)lastSnappedDirection).normalized;
-
-            float travelDistance = 0f;
-            if (currentPredictionMode == "Dash")
-                travelDistance = maxDashDistance * holdRatio;
-            else if (currentPredictionMode == "Jump")
-                travelDistance = maxJumpDistance * holdRatio;
-
-            if (travelDistance > 0f)
+            // Vector3 snappedDir = ((Vector3)lastSnappedDirection).normalized;
+            Vector3 snappedDir = new Vector3(lastSnappedDirection.x, lastSnappedDirection.y, 0f).normalized;
+            
+            if (targetDistance > 0f)
             {
                 Gizmos.color = Color.red;
-                Gizmos.DrawLine(origin, origin + snappedDir * travelDistance);
-                DrawArrowHead(origin + snappedDir * travelDistance, snappedDir);
+                Gizmos.DrawLine(origin, origin + snappedDir * targetDistance);
+                DrawArrowHead(origin + snappedDir * targetDistance, snappedDir);
             }
         }
 
@@ -1605,21 +1674,27 @@ public class JumpTest2 : MonoBehaviour
 
             if (currentPredictionMode == "Jump" && lastSnappedDirection != Vector2.zero)
             {
-                Vector3 snappedDir = ((Vector3)lastSnappedDirection).normalized;
+                // Vector3 snappedDir = ((Vector3)lastSnappedDirection).normalized;
+                Vector3 snappedDir = new Vector3(lastSnappedDirection.x, lastSnappedDirection.y, 0f).normalized;
+
                 float distance = maxJumpDistance * holdRatio;
                 Gizmos.color = Color.cyan;
                 DrawJumpArc(rb.position, snappedDir, distance);
             }
             else if (currentPredictionMode == "AirDash" && lastSnappedDirection != Vector2.zero)
             {
-                Vector3 snappedDir = ((Vector3)lastSnappedDirection).normalized;
+                // Vector3 snappedDir = ((Vector3)lastSnappedDirection).normalized;
+                Vector3 snappedDir = new Vector3(lastSnappedDirection.x, lastSnappedDirection.y, 0f).normalized;
+
                 float distance = maxDashDistance * holdRatio;
                 Gizmos.color = new Color(0.8f, 0f, 1f, 0.6f);
                 DrawDashedLine(rb.position, rb.position + snappedDir * distance, 0.3f);
             }
             else if (currentPredictionMode == "WallDashing" && lastSnappedDirection != Vector2.zero)
             {
-                Vector3 snappedDir = ((Vector3)lastSnappedDirection).normalized;
+                // Vector3 snappedDir = ((Vector3)lastSnappedDirection).normalized;
+                Vector3 snappedDir = new Vector3(lastSnappedDirection.x, lastSnappedDirection.y, 0f).normalized;
+
                 float distance = maxDashDistance * holdRatio;
                 Gizmos.color = Color.magenta;
                 DrawDashedLine(rb.position, rb.position + snappedDir * distance, 0.25f);
