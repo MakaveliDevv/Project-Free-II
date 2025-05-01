@@ -475,7 +475,7 @@ MonoBehaviour:
   maxJumpDistance: 15
   jumpHeight: 1
   useArcForDiagonalJumps: 1
-  arcMultiplier: 2.5
+  arcMultiplier: 2
   dashForce: 15
   maxDashDistance: 6
   allowedToMoveInAir: 1
@@ -499,6 +499,12 @@ MonoBehaviour:
   toggleGravity: 1
   gravityDirection: {x: 0, y: -1, z: 0}
   maxFallSpeed: 20
+  wallStickDuration: 0.5
+  ceilingStickDuration: 0.3
+  wallSlideStartDelay: 0.5
+  wallSlideAcceleration: 0.5
+  wallFrictionDamping: 5
+  wallSlideDamping: 1
   maxHoldTime: 0.5
   deadzone: 0.2
   jumpForceMode: 2
