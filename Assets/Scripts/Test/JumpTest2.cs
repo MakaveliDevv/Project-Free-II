@@ -226,6 +226,12 @@ public class JumpTest2 : MonoBehaviour
 
     #endregion
 
+    private Vector2 currentInput = Vector2.zero;
+
+    [Header("Analog Stick Reader Settings")]
+    public bool snapDirectionsEnabled = true;
+    public bool useRawInput = true;
+
 
     #region Unity Lifecycle Methods
     void Awake()
@@ -259,11 +265,28 @@ public class JumpTest2 : MonoBehaviour
             Debug.Log("Gravity Toggled: " + toggleGravity);
         }
         
-        Vector2 inputDirection = leftAnalogStickInput.ReadValue<Vector2>();
-
-        if (!actionInProgress && inputDirection.magnitude > deadzone)
+        // Vector2 inputDirection = leftAnalogStickInput.ReadValue<Vector2>();
+        // if (!actionInProgress && inputDirection.magnitude > deadzone)
+        // {
+        //     Vector3 snapped = GetSnappedDirection(inputDirection);
+        //     if (snapped != Vector3.zero)
+        //     {
+        //         lastSnappedDirection = new Vector2(snapped.x, snapped.y);
+        //     }
+        // }
+        
+        if (useRawInput && Gamepad.current != null)
         {
-            Vector3 snapped = GetSnappedDirection(inputDirection);
+            currentInput = Gamepad.current.leftStick.ReadUnprocessedValue();
+        }
+        else
+        {
+            currentInput = leftAnalogStickInput.ReadValue<Vector2>();
+        }
+
+        if (!actionInProgress && currentInput.magnitude > deadzone)
+        {
+            Vector3 snapped = GetSnappedDirection(currentInput);
             if (snapped != Vector3.zero)
             {
                 lastSnappedDirection = new Vector2(snapped.x, snapped.y);
@@ -786,21 +809,37 @@ public class JumpTest2 : MonoBehaviour
     /// Snaps joystick input direction to closest valid direction.
     /// Related to: InitializeDirections (uses initialized angles).
     /// </summary>
+    // private Vector3 GetSnappedDirection(Vector2 input)
+    // {
+    //     if (input.magnitude < deadzone) return Vector3.zero;
+
+    //     if (isInAir) return new Vector3(input.x, input.y, 0f).normalized;
+
+    //     float inputAngle = Mathf.Atan2(input.y, input.x) * Mathf.Rad2Deg;
+    //     inputAngle = (inputAngle + 360f) % 360f;
+
+    //     float sectorSize = 360f / numberOfDirections;
+    //     float closestAngle = Mathf.Round(inputAngle / sectorSize) * sectorSize;
+
+    //     // Directly return Vector3 from snapped angle
+    //     float rad = closestAngle * Mathf.Deg2Rad;
+    //     return new Vector3(Mathf.Cos(rad), Mathf.Sin(rad), 0f);
+    // }
+
     private Vector3 GetSnappedDirection(Vector2 input)
     {
-        if (input.magnitude < deadzone) return Vector3.zero;
+        if (input.sqrMagnitude < 0.01f) return Vector3.zero;
 
-        if (isInAir) return new Vector3(input.x, input.y, 0f).normalized;
+        float rawAngle = Mathf.Atan2(input.y, input.x) * Mathf.Rad2Deg;
 
-        float inputAngle = Mathf.Atan2(input.y, input.x) * Mathf.Rad2Deg;
-        inputAngle = (inputAngle + 360f) % 360f;
+        if (snapDirectionsEnabled)
+        {
+            float angleStep = 360f / numberOfDirections;
+            rawAngle = Mathf.Round(rawAngle / angleStep) * angleStep;
+        }
 
-        float sectorSize = 360f / numberOfDirections;
-        float closestAngle = Mathf.Round(inputAngle / sectorSize) * sectorSize;
-
-        // Directly return Vector3 from snapped angle
-        float rad = closestAngle * Mathf.Deg2Rad;
-        return new Vector3(Mathf.Cos(rad), Mathf.Sin(rad), 0f);
+        Quaternion rotation = Quaternion.Euler(0f, 0f, rawAngle);
+        return rotation * Vector3.right;
     }
 
     /// <summary>
@@ -1414,9 +1453,7 @@ public class JumpTest2 : MonoBehaviour
     #region Gizmos Visualization
     #if UNITY_EDITOR
     private void OnDrawGizmosSelected()
-    {
-        if(allowedAngles == null || allowedAngles.Length <= 0) return;
-        
+    {        
         // If in editor mode and not playing, initialize the angles for gizmo drawing
         if (!Application.isPlaying)
         {
@@ -1428,9 +1465,13 @@ public class JumpTest2 : MonoBehaviour
             return; // If in play mode but array is invalid, return
         }
 
-        Vector2 inputDirection = leftAnalogStickInput.ReadValue<Vector2>();
+        if(allowedAngles == null || allowedAngles.Length <= 0) return;
+
+        // Vector2 inputDirection = leftAnalogStickInput.ReadValue<Vector2>();
+        Vector2 inputDirection = currentInput;
         Gizmos.color = Color.cyan;
-        Vector3 origin = rb.position;
+        // Vector3 origin = rb.position;
+        Vector3 origin = rb != null ? rb.position : transform.position;
 
         foreach (float angle in allowedAngles)
         {

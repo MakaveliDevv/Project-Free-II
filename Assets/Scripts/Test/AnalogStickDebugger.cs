@@ -73,219 +73,302 @@ public class AnalogStickDebugger : MonoBehaviour
         }
     }
 
-    //    #region Update Handlers
-    //     /// <summary>
-    //     /// Handles button hold logic, auto-triggering actions if max hold time is exceeded.
-    //     /// Related to: PerformAction (triggers action when conditions are met).
-    //     /// </summary>
-    //     private void HandleButtonHold()
-    //     {
-    //         if (southButtonPressed && !actionInProgress)
-    //         {
-    //             holdTime += Time.deltaTime;
+//     using UnityEngine;
+// using UnityEngine.InputSystem;
+// using System.Collections.Generic;
 
-    //             if (state != MovementState.Charging)
-    //                 state = MovementState.Charging;
-                
-    //             // Auto-trigger if max hold time is reached
-    //             if (holdTime >= maxHoldTime && lastSnappedDirection != Vector2.zero)
-    //             {
-    //                 PerformAction();
-    //             }
-    //         }
-    //     }
+// [RequireComponent(typeof(Rigidbody))]
+// public class AnalogStickReader : MonoBehaviour
+// {
+//     public InputAction moveAction;
+//     public bool useRawInput = true;
+//     private Vector2 currentInput = Vector2.zero;
 
-    //     /// <summary>
-    //     /// Detects and manages player's falling state.
-    //     /// Related to: ApplyCustomGravity (gravity behavior based on falling).
-    //     /// </summary>
-    //     private void DetectFallingState()
-    //     {
-    //         if (!isFalling && rb.linearVelocity.y < -0.5f && currentSurfaceState == SurfaceState.Ceiling)
-    //         {
-    //             isFalling = true;
-    //             Debug.Log("Player is falling from ceiling");
-    //         }
+//     [Header("Gizmo Settings")]
+//     public float gizmoScale = 2f;
+//     public Color gizmoColor = Color.green;
+//     public float directionLineLength = 1.5f;
 
-    //         // Reset falling state when touching ground or other surface
-    //         if (isFalling && rb.linearVelocity.y >= -0.1f)
-    //         {
-    //             isFalling = false;
-    //         }
-    //     }
+//     [Header("Jump Settings")]
+//     public float jumpForce = 5f;
+//     public float horizontalForceMultiplier = 3f;
+//     public float maxJumpDistance = 5f;
+//     public float jumpSpeed = 10f;
 
-    //     /// <summary>
-    //     /// Manages buffer timing for state transitions.
-    //     /// Related to: stateChanged flag (used to track transitions).
-    //     /// </summary>
-    //     private void HandleStateTransitionBuffer()
-    //     {
-    //         if(stateChanged) 
-    //         {
-    //             stateTimer += Time.deltaTime;
-    //             if(stateTimer >= stateBuffer) 
-    //             {
-    //                 stateChanged = false;
-    //                 stateTimer = 0f;
-    //             }
-    //         }
-    //     }
-    //     #endregion
+//     [Header("Return Settings")]
+//     public bool returnToStartAfterJump = false;
+//     public float returnSpeed = 5f;
 
-    // private void HandleActionCompletion()
-    // {
-    //     if (!actionInProgress || actionCompleted) return;
+//     [Header("Snapped Input Settings")]
+//     public bool snapDirectionsEnabled = false;
+//     public int directionCount = 16;
 
-    //     // Vector from start to predicted target
-    //     Vector3 actionVector = predictedTargetPosition - rb.position;
-    //     float remainingDistance = actionVector.magnitude;
+//     [Header("Label Settings")]
+//     public bool showDirectionLabels = true;
+//     public bool useCardinalLabels = true;
 
-    //     // Check if we've passed the target in the direction of movement
-    //     float forwardProgress = Vector3.Dot(rb.linearVelocity .normalized, actionVector.normalized);
+//     private Rigidbody rb;
+//     private Vector3 startPosition;
+//     private Vector3 jumpTarget;
+//     private bool isJumping = false;
+//     private bool isReturning = false;
+//     private List<Vector3> landingPoints = new List<Vector3>();
 
-    //     // Diagonal boost factor
-    //     float tolerance = Mathf.Max(0.15f, rb.linearVelocity .magnitude * Time.fixedDeltaTime);
+//     void Awake()
+//     {
+//         rb = GetComponent<Rigidbody>();
+//         rb.isKinematic = true;
+//         startPosition = transform.position;
+//     }
 
-    //     if (isDiagonalJump)
-    //     {
-    //         tolerance *= 2.0f; // Diagonal jumps need more tolerance
-    //     }
+//     void OnEnable()
+//     {
+//         moveAction.Enable();
+//     }
 
-    //     // If we're close OR we've passed the target directionally
-    //     if (remainingDistance <= tolerance || forwardProgress < 0f)
-    //     {
-    //         actionCompleted = true;
-    //         Invoke(nameof(ResetActionState), 0.1f);
+//     void OnDisable()
+//     {
+//         moveAction.Disable();
+//     }
 
-    //         // ✅ Always re-enable gravity unless we trigger hover
-    //         if (state != MovementState.AirDashing && state != MovementState.Ascending)
-    //         {
-    //             rb.useGravity = true;
-    //         }
+//     void Update()
+//     {
+//         if (useRawInput && Gamepad.current != null)
+//         {
+//             currentInput = Gamepad.current.leftStick.ReadUnprocessedValue();
+//         }
+//         else
+//         {
+//             currentInput = moveAction.ReadValue<Vector2>();
+//         }
 
-    //         if ((state == MovementState.AirDashing || state == MovementState.Ascending) && !hasTriggeredHover)
-    //         {
-    //             TryStartHover();
-    //         }
-            
-    //         Debug.Log("✅ Action complete — reached or passed target.");
-    //     }
+//         // Handle jump input
+//         if (!isJumping && Gamepad.current != null && Gamepad.current.buttonSouth.wasPressedThisFrame)
+//         {
+//             JumpInInputDirection();
+//         }
 
-    // }
+//         // Handle jump movement
+//         if (isJumping)
+//         {
+//             transform.position = Vector3.MoveTowards(transform.position, jumpTarget, jumpSpeed * Time.deltaTime);
+//             if (Vector3.Distance(transform.position, jumpTarget) < 0.01f)
+//             {
+//                 isJumping = false;
+//                 landingPoints.Add(jumpTarget);
 
+//                 if (returnToStartAfterJump)
+//                 {
+//                     isReturning = true;
+//                     rb.isKinematic = true;
+//                 }
+//                 else
+//                 {
+//                     rb.isKinematic = false;
+//                 }
+//             }
+//         }
 
-      // void Update()
-    // {
-    //     HandleButtonHold();
-    //     DetectFallingState();
-    //     HandleStateTransitionBuffer();
+//         // Handle return to start
+//         if (isReturning)
+//         {
+//             transform.position = Vector3.MoveTowards(transform.position, startPosition, returnSpeed * Time.deltaTime);
+//             if (Vector3.Distance(transform.position, startPosition) < 0.01f)
+//             {
+//                 isReturning = false;
+//                 rb.isKinematic = false;
+//             }
+//         }
+//     }
 
-    //     // Handle exiting hover state
-    //     // if (state == MovementState.Hovering)
-    //     // {
-    //     //     hoverTimer += Time.deltaTime;
-    //     //     if (hoverTimer > hoverDuration)
-    //     //     {
-    //     //         ExitHover();
-    //     //     }
-    //     // }
+//     void LateUpdate()
+//     {
+//         // Optional: force Z = 0 if you're staying in 2D
+//         Vector3 pos = transform.position;
+//         pos.z = 0;
+//         transform.position = pos;
+//     }
 
-    //     if (state == MovementState.Hovering)
-    //     {
-    //         hoverTimer += Time.deltaTime;
+//     public void JumpInInputDirection()
+//     {
+//         Vector3 snappedDir = GetSnappedDirection();
+//         if (snappedDir.sqrMagnitude < 0.01f)
+//             return;
 
-    //         if (hoverTimer > hoverDuration)
-    //         {
-    //             ExitHover();
-    //         }
-    //         else if (useHoverWobble)
-    //         {
-    //             hoverWobbleTimer += Time.deltaTime;
-    //             float wobbleOffset = Mathf.Sin(hoverWobbleTimer * hoverWobbleSpeed) * hoverWobbleHeight;
-    //             Vector3 newPosition = originalHoverPosition + new Vector3(0f, wobbleOffset, 0f);
-    //             rb.MovePosition(newPosition);
-    //         }
-    //     }
+//         jumpTarget = transform.position + snappedDir.normalized * maxJumpDistance + Vector3.up * jumpForce;
+//         jumpTarget = transform.position + snappedDir.normalized * maxJumpDistance * jumpForce;
 
-    //     // To contineously update the inputDirection sinc it bugs out sometimes
-    //     // Need to find a way to do it differently and clean
-    //     inputDirection = leftAnalogStickInput.ReadValue<Vector2>();
+//         rb.isKinematic = true;
+//         isJumping = true;
+//     }
 
-    //     if (!actionInProgress && inputDirection.magnitude > deadzone)
-    //     {
-    //         Vector2 snapped = GetSnappedDirection(inputDirection).normalized;
-    //         if (snapped != Vector2.zero)
-    //         {
-    //             lastSnappedDirection = snapped;
-    //         }
-    //     }
+//     private Vector3 GetSnappedDirection()
+//     {
+//         if (currentInput.sqrMagnitude < 0.01f)
+//             return Vector3.zero;
 
-    //     if (!actionInProgress && southButtonPressed && lastSnappedDirection != Vector2.zero)
-    //     {
-    //         UpdatePredictedTargetPosition();
-    //     }
+//         float rawAngle = Mathf.Atan2(currentInput.y, currentInput.x) * Mathf.Rad2Deg;
 
-    //     // if(state == MovementState.Charging) 
-    //     // {
-    //     //     rb.useGravity = false;
-    //     // }
+//         if (snapDirectionsEnabled)
+//         {
+//             float angleStep = 360f / directionCount;
+//             rawAngle = Mathf.Round(rawAngle / angleStep) * angleStep;
+//         }
 
-    // }
+//         // ✅ Rotate around Z axis for X-Y plane movement
+//         Quaternion rotation = Quaternion.Euler(0f, 0f, rawAngle);
+//         return rotation * Vector3.right;
+//     }
 
-    // void FixedUpdate()
-    // {
-    //     HandleActionForces();
-    //     CheckAirState();
-    //     HandleActionTimeout();
-    //     CheckSurfaceContact();
-    //     HandleActionCompletion();
+//     private string GetDirectionLabel(int index)
+//     {
+//         if (!useCardinalLabels)
+//             return (index + 1).ToString();
 
-    //     if(isInAir) 
-    //     {
-    //         currentSurfaceState = SurfaceState.Air;
+//         // Standard 16-point compass
+//         string[] labels = new string[]
+//         {
+//             "E", "ENE", "NE", "NNE",
+//             "N", "NNW", "NW", "WNW",
+//             "W", "WSW", "SW", "SSW",
+//             "S", "SSE", "SE", "ESE"
+//         };
 
-    //         bool stickDown = inputDirection == Vector2.down;
+//         return labels[index % labels.Length];
+//     }
 
-    //         if (stickDown &&
-    //         (
-    //             !allowedToMoveInAir ||
-    //             hasUsedAirDash ||
-    //             state == MovementState.Ascending ||
-    //             state == MovementState.Descending ||
-    //             state == MovementState.AirDashing
-    //         )
-    //         )
-    //         {
-    //             DropPlayerStraightDown();
-    //         }
-    //     }
+//     void OnDrawGizmos()
+//     {
+//         Gizmos.color = Color.gray;
+//         Gizmos.DrawWireSphere(transform.position, gizmoScale);
 
-    //     // Apply hover logic
-    //     // if (state == MovementState.Ascending && !hasTriggeredHover)
-    //     // {
-    //     //     hoverTimer += Time.fixedDeltaTime;
-    //     //     if (hoverTimer >= hoverStartDelay)
-    //     //     {
-    //     //         if (CheckHoverEligibility())
-    //     //         {
-    //     //             state = MovementState.Hovering;
-    //     //             rb.useGravity = false;
-    //     //             rb.linearVelocity  = new Vector3(rb.linearVelocity .x, 0, rb.linearVelocity .z); // Neutralize vertical velocity
-    //     //             hasTriggeredHover = true;
-    //     //         }
-    //     //     }
-    //     // }
+//         // 🔵 Draw all direction segments (in editor and play mode)
+//         if (snapDirectionsEnabled)
+//         {
+//             Gizmos.color = Color.blue;
+//             float angleStep = 360f / directionCount;
 
-    //     // if (state == MovementState.Ascending && !hasTriggeredHover)
-    //     // {
-    //     //     TryStartHover();
-    //     // }
+//             for (int i = 0; i < directionCount; i++)
+//             {
+//                 float angle = i * angleStep;
+//                 float angleRad = angle * Mathf.Deg2Rad;
+//                 Vector3 dir = new Vector3(Mathf.Cos(angleRad), Mathf.Sin(angleRad), 0f);
 
-    //     if (useCustomGravity) ApplyCustomGravity();
+//                 Vector3 endPoint = transform.position + dir * directionLineLength;
+//                 Gizmos.DrawLine(transform.position, endPoint);
 
-    //     if (!actionInProgress && !isInAir && rb.linearVelocity .magnitude < 0.1f)
-    //     {
-    //         state = MovementState.Idle;
-    //     }
-    // }
+//                 // 🏷️ Draw label
+//                 if (showDirectionLabels)
+//                 {
+//         #if UNITY_EDITOR
+//                     UnityEditor.Handles.color = Color.white;
+//                     UnityEditor.Handles.Label(endPoint + Vector3.up * 0.1f, GetDirectionLabel(i));
+//         #endif
+//                 }
+//             }
+//         }
+
+//         // 🟢 Show current snapped input (only in Play mode)
+//         if (Application.isPlaying && currentInput.sqrMagnitude > 0.01f)
+//         {
+//             Vector3 snappedDir = GetSnappedDirection();
+//             Gizmos.color = gizmoColor;
+//             Gizmos.DrawLine(transform.position, transform.position + snappedDir.normalized * directionLineLength);
+//         }
+
+//         // 🔴 Draw jump target
+//         if (isJumping)
+//         {
+//             Gizmos.color = Color.red;
+//             Gizmos.DrawWireSphere(jumpTarget, 0.25f);
+//         }
+
+//         // ✅ Draw all previous landings
+//         Gizmos.color = Color.green;
+//         foreach (var point in landingPoints)
+//         {
+//             Gizmos.DrawWireSphere(point, 0.25f);
+//         }
+//     }
+// }
+
 }
+// private void ReturnToStartPos() 
+//     {
+//          if (returnToStartAfterJump)
+//         {
+//             isReturning = true;
+//             rb.isKinematic = true;
+//         }
+//         else
+//         {
+//             rb.isKinematic = false;
+//         }
+
+//         // Handle jump movement
+//         if (isMoving)
+//         {
+//             transform.position = Vector3.MoveTowards(transform.position, moveTarget, jumpSpeed * Time.deltaTime);
+//             if (Vector3.Distance(transform.position, moveTarget) < 0.01f)
+//             {
+//                 // Don't "snap" too early
+//                 if ((transform.position - moveTarget).sqrMagnitude < 0.0001f) 
+//                 {
+//                     isMoving = false;
+//                     transform.position = moveTarget; // ensure final precision
+
+//                     if (returnToStartAfterJump)
+//                     {
+//                         isReturning = true;
+//                         rb.isKinematic = true;
+//                     }
+//                     else
+//                     {
+//                         rb.isKinematic = false;
+//                     }
+//                 }
+//             }
+//         }
+
+//         // Handle return to start
+//         if (isReturning)
+//         {
+//             transform.position = Vector3.MoveTowards(transform.position, startPosition, returnSpeed * Time.deltaTime);
+//             if (Vector3.Distance(transform.position, startPosition) < 0.01f)
+//             {
+//                 isReturning = false;
+//                 rb.isKinematic = false;
+//             }
+//         }
+//     }
+    
+
+    
+    // private (float minAngle, float maxAngle) GetAllowedJumpRange()
+    // {
+    //     if (isInAir || !allowedMoveLabels.ContainsKey(currentSurfaceState))
+    //         return (0f, 0f);
+
+    //     string[] labels = allowedMoveLabels[currentSurfaceState];
+
+    //     float min = 360f;
+    //     float max = 0f;
+
+    //     foreach (var label in labels)
+    //     {
+    //         if (labelToAngle.TryGetValue(label, out float angle))
+    //         {
+    //             min = Mathf.Min(min, angle);
+    //             max = Mathf.Max(max, angle);
+    //         }
+    //     }
+
+    //     if (max - min > 180f)
+    //     {
+    //         float temp = min;
+    //         min = max;
+    //         max = temp + 360f;
+    //     }
+
+    //     return (min, max);
+    // }

@@ -298,7 +298,7 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 0.75
+  m_Radius: 0.5
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!23 &206922469
 MeshRenderer:
@@ -362,7 +362,7 @@ Transform:
   m_GameObject: {fileID: 206922466}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -4.44, y: 6.23, z: 0}
+  m_LocalPosition: {x: -4.44, y: 0.5, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -452,10 +452,10 @@ Rigidbody:
     m_Bits: 0
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
-  m_UseGravity: 0
+  m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0
-  m_Constraints: 120
+  m_Constraints: 112
   m_CollisionDetection: 0
 --- !u!114 &206922475
 MonoBehaviour:
@@ -469,18 +469,39 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e73a204e22094714a9f84eacf9c1a916, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  currentSurfaceState: 0
   moveAction:
     m_Name: Move
     m_Type: 0
     m_ExpectedControlType: 
-    m_Id: 6d48e64f-a71b-49f1-affa-e6f1e1343ba3
+    m_Id: bd4d64bd-eec6-4a6f-8993-7c94efb9f5f1
     m_Processors: 
     m_Interactions: 
     m_SingletonActionBindings: []
     m_Flags: 0
   useRawInput: 1
-  gizmoScale: 6
-  gizmoColor: {r: 0, g: 1, b: 0, a: 1}
+  gizmoScale: 2
+  directionLineLength: 1.5
+  baseDirectionColor: {r: 0, g: 0, b: 1, a: 1}
+  allowedJumpColor: {r: 0, g: 1, b: 0, a: 1}
+  dashDirectionColor: {r: 0, g: 1, b: 1, a: 1}
+  snappedInputColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  jumpTargetColor: {r: 0, g: 1, b: 0.30440474, a: 1}
+  landingPointColor: {r: 1, g: 0.20127597, b: 0, a: 1}
+  jumpForce: 10.94
+  maxJumpDistance: 8.56
+  dashForce: 5
+  maxDashDistance: 5
+  snapDirectionsEnabled: 1
+  directionCount: 16
+  showDirectionLabels: 1
+  useCardinalLabels: 1
+  stateBuffer: 0.25
+  maxHoldTime: 0.5
+  mode: 0
+  jumpForceMode: 2
+  dashForceMode: 1
+  lerpAmount: 0.85
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0
@@ -541,7 +562,7 @@ Camera:
     height: 1
   near clip plane: 0.3
   far clip plane: 1000
-  field of view: 106.8
+  field of view: 57.6
   orthographic: 0
   orthographic size: 5
   m_Depth: -1
@@ -750,7 +771,7 @@ GameObject:
   - component: {fileID: 624238100}
   - component: {fileID: 624238099}
   - component: {fileID: 624238098}
-  - component: {fileID: 624238097}
+  - component: {fileID: 624238101}
   m_Layer: 7
   m_Name: Right-Side
   m_TagString: Untagged
@@ -758,28 +779,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!64 &624238097
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 624238096}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!23 &624238098
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -842,38 +841,19 @@ Transform:
   m_GameObject: {fileID: 624238096}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: -0.7071068, w: 0.7071068}
-  m_LocalPosition: {x: -33.91, y: 4.84, z: 0}
+  m_LocalPosition: {x: -30.7, y: 4.84, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: -90}
---- !u!1 &771023797
-GameObject:
+--- !u!65 &624238101
+BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 771023801}
-  - component: {fileID: 771023800}
-  - component: {fileID: 771023799}
-  - component: {fileID: 771023798}
-  m_Layer: 7
-  m_Name: Left-Side
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!64 &771023798
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 771023797}
+  m_GameObject: {fileID: 624238096}
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
@@ -885,10 +865,28 @@ MeshCollider:
   m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
+  serializedVersion: 3
+  m_Size: {x: 10.000002, y: 2.2204466e-16, z: 10}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!1 &771023797
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 771023801}
+  - component: {fileID: 771023800}
+  - component: {fileID: 771023799}
+  - component: {fileID: 771023802}
+  m_Layer: 7
+  m_Name: Left-Side
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
 --- !u!23 &771023799
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -957,6 +955,27 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 90}
+--- !u!65 &771023802
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 771023797}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 10.000002, y: 2.2204466e-16, z: 10}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &832575517
 GameObject:
   m_ObjectHideFlags: 0
@@ -1062,7 +1081,7 @@ GameObject:
   - component: {fileID: 1101245886}
   - component: {fileID: 1101245885}
   - component: {fileID: 1101245884}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Ceiling
   m_TagString: Untagged
   m_Icon: {fileID: 0}
