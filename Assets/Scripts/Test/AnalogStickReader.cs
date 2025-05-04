@@ -5,12 +5,17 @@ using System.Collections.Generic;
 [RequireComponent(typeof(Rigidbody))]
 public class AnalogStickReader : MonoBehaviour
 {
+    public enum MovementState { Idle, Charging, Ascending, Hovering, Descending, Dashing, AirDashing, WallDashing, Stucked, WallDescending }
     public enum SurfaceState { Ground, LeftWall, RightWall, Ceiling, Air }
+    public MovementState movementState= MovementState.Idle;
     public SurfaceState currentSurfaceState = SurfaceState.Ground;
 
-    public InputAction moveAction;
+    public InputActionAsset inputActions;
+    private InputAction leftAnalogStickInput;
+    private InputAction southButtonInput;
+
     public bool useRawInput = true;
-    private Vector2 currentInput = Vector2.zero;
+    private Vector2 leftStickInput = Vector2.zero;
     private Vector2 snappedDir = Vector2.zero;
 
     [Header("Gizmo Settings")]
@@ -41,21 +46,20 @@ public class AnalogStickReader : MonoBehaviour
     public bool showDirectionLabels = true;
     public bool useCardinalLabels = true;
 
-    private Vector3 lastJumpTarget;
+    private Vector3 lastMoveTarget;
 
     private Rigidbody rb;
-    private Vector3 startPosition;
-    private Vector3 moveTarget;
-    private List<Vector3> landingPoints = new List<Vector3>();
+    private Vector3 startPos;
     private bool isInAir = false;
     private bool stateChanged = false;
     private float stateTimer = 0f;
     public float stateBuffer = 0.25f;
     private float lastContactTime;
-    private const float NO_CONTACT_THRESHOLD = 0.2f;
     private float holdRatio = 0;
+    private bool southButtonPressed;
     private float holdTime = 0;
     public float maxHoldTime = .5f;
+
     private readonly Dictionary<SurfaceState, string[]> allowedMoveLabels = new()
     {
         { SurfaceState.Ground, new[] { "W", "WNW", "NW", "NNW", "N", "NNE", "NE", "ENE", "E" } },
@@ -71,43 +75,101 @@ public class AnalogStickReader : MonoBehaviour
 
     void Awake()
     {
-        rb = GetComponent<Rigidbody>();
-        startPosition = rb.position;
+        SetupInputActions();
 
+        rb = GetComponent<Rigidbody>();
         BuildLabelToAngleMap();
+    }
+
+    private void SetupInputActions()
+    {
+        var map = inputActions.FindActionMap("Player");
+        leftAnalogStickInput = map.FindAction("Movement");
+        southButtonInput = map.FindAction("Jump");
+
+        leftAnalogStickInput.Enable();
+        southButtonInput.Enable();
     }
 
     void OnEnable()
     {
-        moveAction.Enable();
+        // inputActions.Enable();
+        RegisterInputCallbacks();
     }
 
     void OnDisable()
     {
-        moveAction.Disable();
+        // inputActions.Disable();
+        UnregisterInputCallbacks();
+    }
+
+    private void RegisterInputCallbacks()
+    {
+        southButtonInput.started += OnSouthButtonStarted;
+        southButtonInput.performed += OnSouthButtonPerformed;
+        southButtonInput.canceled += OnSouthButtonCanceled;
+    }
+
+    private void UnregisterInputCallbacks()
+    {
+        southButtonInput.started -= OnSouthButtonStarted;
+        southButtonInput.performed -= OnSouthButtonPerformed;
+        southButtonInput.canceled -= OnSouthButtonCanceled;
+    }
+
+    private void LeftAnalogStickInput() 
+    {
+        if(Gamepad.current != null) 
+        {
+            if (useRawInput)
+            {
+                leftStickInput = Gamepad.current.leftStick.ReadUnprocessedValue();
+            }
+            else
+            {
+                leftStickInput = leftAnalogStickInput.ReadValue<Vector2>();
+            }
+
+            if(leftStickInput.magnitude > 0.1f) 
+            {
+                snappedDir = GetSnappedDirection().normalized;
+                Debug.Log("Movement detected, snapping direction");
+            }
+        }
+    }
+
+    public void OnSouthButtonStarted(InputAction.CallbackContext ctx)
+    {
+        if (ctx.started) 
+        {
+            Debug.Log("South Button Started");
+            southButtonPressed = true;
+        }
+    }
+
+    public void OnSouthButtonPerformed(InputAction.CallbackContext ctx) 
+    {
+        // This is typically called when the button is fully pressed
+    }
+
+    public void OnSouthButtonCanceled(InputAction.CallbackContext ctx) 
+    {
+        if (ctx.canceled && southButtonPressed) 
+        {
+            Debug.Log("South Button Released");
+            southButtonPressed = false;
+            
+            // If we have a valid direction, perform the action
+            if (snappedDir != Vector2.zero)
+            {
+                PerformMovementAction();
+            }
+        }
     }
 
     void Update()
     {
-        if (useRawInput && Gamepad.current != null)
-        {
-            currentInput = Gamepad.current.leftStick.ReadUnprocessedValue();
-        }
-        else
-        {
-            currentInput = moveAction.ReadValue<Vector2>();
-        }
-        
-        if(currentInput.magnitude > 0.1f) 
-        {
-            snappedDir = GetSnappedDirection().normalized;
-            Debug.Log("Movement detected, snapping direction");
-        }
-
-        if (Gamepad.current != null && Gamepad.current.buttonSouth.wasPressedThisFrame)
-        {
-            PerformMovementAction();
-        }
+        LeftAnalogStickInput();
 
         if (stateChanged)
         {
@@ -120,13 +182,41 @@ public class AnalogStickReader : MonoBehaviour
         }
 
         if(isInAir) currentSurfaceState = SurfaceState.Air;
+
+        // float distanceToTarget = Vector3.Distance(rb.position, lastMoveTarget);
+        // if(distanceToTarget <= 0.15f || distanceToTarget >= 0.15f) 
+        // {
+        //     actionInProgress = false;
+        // }
     }
+
+    public bool useHoverWobble = true;
+    public float hoverWobbleSpeed = 2f;
+    public float hoverWobbleHeight = 0.2f;
 
     void FixedUpdate()
     {
         isInAir = !IsCollidingWithSurface();
         HandleActionForces();
         CheckArrivalAtTarget();
+
+        if (movementState == MovementState.Hovering)
+        {
+            if(useHoverWobble) 
+            {   
+                hoverWobbleTimer += Time.deltaTime;
+                float wobbleOffset = Mathf.Sin(hoverWobbleTimer * hoverWobbleSpeed) * hoverWobbleHeight;
+                Vector3 newPosition = originalHoverPosition + new Vector3(0f, wobbleOffset, 0f);
+                rb.MovePosition(newPosition);
+            }
+            
+            UpdateHoverTimer();
+        }
+        else
+        {
+            TryStartHoverEffect();
+            ApplyCustomGravity();
+        }
     }
 
     void LateUpdate()
@@ -160,7 +250,7 @@ public class AnalogStickReader : MonoBehaviour
     private bool hasReachedTarget = false;
     private void CheckArrivalAtTarget()
     {
-        if (Vector3.Distance(rb.position, lastJumpTarget) < 0.25f)
+        if (Vector3.Distance(rb.position, lastMoveTarget) < 0.25f)
         {
             hasReachedTarget = true;
             Debug.Log("🏁 Reached target point, returning to start...");
@@ -169,7 +259,7 @@ public class AnalogStickReader : MonoBehaviour
 
 
     private bool hasAppliedForce = false;
-    public ForceMode mode;
+    public ForceMode movementForceMode;
     [Tooltip("Type of force applied during a jump.")]
     public ForceMode jumpForceMode = ForceMode.VelocityChange;
 
@@ -177,26 +267,14 @@ public class AnalogStickReader : MonoBehaviour
     public ForceMode dashForceMode = ForceMode.Impulse;
     private void HandleActionForces()
     {
-        // if (!hasAppliedForce && snappedDir.sqrMagnitude > 0.01f)
-        // {
-        //     rb.linearVelocity  = Vector3.zero; // Optional: reset for cleaner force response
-
-        //     Vector3 appliedForce = snappedDir * forceMagnitude;
-
-        //     rb.AddForce(appliedForce, mode);
-
-        //     hasAppliedForce = true;
-
-        // }
-
         if (!hasAppliedForce && snappedDir.sqrMagnitude > 0.01f)
         {
             rb.linearVelocity = Vector3.zero;
             Vector3 appliedForce = snappedDir.normalized * forceMagnitude;
-            rb.AddForce(appliedForce, mode);
+            rb.AddForce(appliedForce, movementForceMode);
             hasAppliedForce = true;
 
-            Debug.Log($"🔼 {currentAction} applied force: {appliedForce} (Mode: {mode})");
+            Debug.Log($"🔼 {currentAction} applied force: {appliedForce} (Mode: {movementForceMode})");
         }
     }
 
@@ -210,7 +288,7 @@ public class AnalogStickReader : MonoBehaviour
         string dirLabel = GetClosestDirectionLabel(snappedDir);
         bool isJumpAllowed = IsJumpDirectionAllowed(dirLabel);
         bool isDashAllowed = IsDashDirectionAllowed(dirLabel);
-
+        startPos = rb.position;
         if(isDashAllowed) 
         {
             SetupMovement(maxDashDistance, dashForce, "Dash");
@@ -225,6 +303,8 @@ public class AnalogStickReader : MonoBehaviour
     private float targetDistance = 0;
     private float forceMagnitude = 0;
     public float lerpAmount = 0.85f;
+    private bool isJumping = false;
+    private bool isDashing = false;
 
     private void SetupMovement(float maxTravelDistance, float force, string action) 
     {
@@ -235,21 +315,24 @@ public class AnalogStickReader : MonoBehaviour
         snappedDir = Vector3.Lerp(rb.linearVelocity.normalized, snappedDir.normalized, lerpAmount);
 
         // ✅ Set the actual target here using direction and distance
-        // Old: lastJumpTarget = rb.position + (Vector3)snappedDir.normalized * targetDistance;
-        float predictedDistance = force / rb.mass * Time.fixedDeltaTime;
-        // lastJumpTarget = rb.position + (Vector3)snappedDir.normalized * Mathf.Min(predictedDistance * 60f, targetDistance);  
-        lastJumpTarget = transform.position + maxJumpDistance * (Vector3)snappedDir.normalized;
-
+        lastMoveTarget = transform.position + maxJumpDistance * (Vector3)snappedDir.normalized;
 
         if(action == "Dash") 
         {
-            mode = dashForceMode;
+            isJumping = false;
+            isDashing = true;
+            rb.useGravity = true;
+
+            movementForceMode = dashForceMode;
             Debug.Log("Dashing");
         }
         else if(action == "Jump") 
         {
-            mode = jumpForceMode; 
+            isDashing = false;
+            isJumping = true;
+            rb.useGravity = false;
 
+            movementForceMode = jumpForceMode; 
             bool isDiagonalJump = Mathf.Abs(snappedDir.x) > 0 && Mathf.Abs(snappedDir.y) > 0;
             Debug.Log(isDiagonalJump ? "Jumping Diagonal" : "Jumping Straight");
         }
@@ -258,7 +341,7 @@ public class AnalogStickReader : MonoBehaviour
         forceMagnitude = force;
 
         Debug.Log($"{action} ➤ Direction: {snappedDir}, Force: {forceMagnitude}");
-        Debug.Log($"📍 Set jump target to: {lastJumpTarget}");
+        Debug.Log($"📍 Set jump target to: {lastMoveTarget}");
     }
 
     private bool IsDashDirectionAllowed(string label)
@@ -308,10 +391,10 @@ public class AnalogStickReader : MonoBehaviour
     
     private Vector3 GetSnappedDirection()
     {
-        if (currentInput.sqrMagnitude < 0.01f)
+        if (leftStickInput.sqrMagnitude < 0.01f)
             return Vector3.zero;
 
-        float rawAngle = Mathf.Atan2(currentInput.y, currentInput.x) * Mathf.Rad2Deg;
+        float rawAngle = Mathf.Atan2(leftStickInput.y, leftStickInput.x) * Mathf.Rad2Deg;
 
         if (snapDirectionsEnabled)
         {
@@ -425,6 +508,167 @@ public class AnalogStickReader : MonoBehaviour
         }
     }
 
+    public float gravityStrength = 9.81f;
+    public float minHoverHeight = 2.0f;
+    public float lowJumpMultiplier = 4.0f;
+    public float fallMultiplier = 1f;
+    public float dropMultiplier = 2f;
+    private bool fastFalling = false;
+    public float maxFallSpeed = 40f;
+    public ForceMode dropForceMode = ForceMode.Impulse;
+    public ForceMode fallForceMode = ForceMode.Acceleration;
+
+    private void ApplyCustomGravity()
+    {
+        if (movementState == MovementState.Hovering)
+            return;
+
+        Vector3 gravityDir = DetermineGravityDirection();
+        float gravityForce = gravityStrength;
+
+        float verticalVelocity = Vector3.Dot(rb.linearVelocity, gravityDir);
+        float upwardVelocity = Vector3.Dot(rb.linearVelocity, -gravityDir);
+        float jumpHeightSoFar = Vector3.Project(rb.position - startPos, -gravityDir).magnitude;
+        bool isDropping = leftAnalogStickInput.ReadValue<Vector2>() == Vector2.down;
+
+        if (verticalVelocity > maxFallSpeed) return;
+
+        // ✅ Handle FAST-FALL as a 1-time burst
+        if (isDropping && isInAir && !fastFalling)
+        {
+            rb.AddForce(dropMultiplier * gravityForce * gravityDir, dropForceMode);
+            fastFalling = true;
+            Debug.Log("⚡ Burst drop applied (Impulse)");
+            return; // ⛔ Skip normal gravity this frame
+        }
+
+        // ✅ Apply modifiers for regular jump/fall
+        if (jumpHeightSoFar < minHoverHeight && upwardVelocity > 0.1f && !southButtonPressed)
+        {
+            gravityForce *= lowJumpMultiplier;
+        }
+        else if (verticalVelocity > 0.1f)
+        {
+            gravityForce *= fallMultiplier;
+        }
+
+        // ✅ Apply normal gravity
+        rb.AddForce(gravityDir * gravityForce, fallForceMode);
+    }
+
+
+    public Vector3 gravityDirection = Vector3.down;
+    private const float NO_CONTACT_THRESHOLD = 0.2f;
+
+    private Vector3 DetermineGravityDirection()
+    {
+        // Default world gravity direction
+        Vector3 gravityDir = gravityDirection.normalized;
+        
+        // Modify gravity direction based on surface state
+        switch (currentSurfaceState)
+        {
+            case SurfaceState.Ground:
+                // Standard down gravity when on ground
+                gravityDir = Vector3.down;
+                fastFalling = false;
+                break;
+                
+            case SurfaceState.Ceiling:
+                // Standard down gravity when on ceiling (to fall)
+                gravityDir = Vector3.down;
+                break;
+                
+            case SurfaceState.LeftWall:
+                // Pull character toward left wall
+                gravityDir = Vector3.right;
+                break;
+                
+            case SurfaceState.RightWall:
+                // Pull character toward right wall
+                gravityDir = Vector3.left;
+                break;
+        }
+        
+        // If in mid-air and not touching any surface, use default gravity
+        if (isInAir && Time.time - lastContactTime > NO_CONTACT_THRESHOLD)
+        {
+            gravityDir = gravityDirection.normalized;
+        }
+        
+        return gravityDir;
+    }
+
+    [Header("Hover Settings")]
+    public float hoverActivationRadius = 1.5f;
+    public float hoverDuration = 2f;
+    private float hoverTimer = 0f;
+    private bool isHovering = false;
+    public float linearDampingOnHover = 5f;
+    private float hoverWobbleTimer = 0f;
+    private bool hasTriggeredHover = false;
+    private Vector3 originalHoverPosition;
+    private float storedGravityValue;
+
+    private bool TryStartHoverEffect()
+    {
+        // Only attempt hover if airborne and not already hovering
+        if (!isInAir || movementState == MovementState.Hovering)
+            return false;
+
+        // Check distance to the move target (like a hover zone)
+        float distanceToTarget = Vector3.Distance(rb.position, lastMoveTarget);
+
+        if (distanceToTarget <= hoverActivationRadius && !hasTriggeredHover)
+        {
+            storedGravityValue = gravityStrength;
+            gravityStrength = 0f;
+
+            // ✅ Trigger the hover effect
+            movementState = MovementState.Hovering;
+            isHovering = true;
+            hoverTimer = hoverDuration;
+
+            rb.linearVelocity  = Vector3.zero;
+            rb.linearDamping = linearDampingOnHover;
+            rb.useGravity = false;
+
+            hasTriggeredHover = true;
+            Debug.Log("✨ Hover effect activated!");
+            return true;
+        }
+
+        return false;
+    }
+
+    private void UpdateHoverTimer()
+    {
+        if (movementState != MovementState.Hovering)
+            return;
+
+        hoverTimer -= Time.fixedDeltaTime;
+
+        if (hoverTimer <= 0f)
+        {
+            Debug.Log("Hover timer ran out");
+            ExitHover();
+        }
+    }
+
+    private void ExitHover()
+    {
+        movementState = MovementState.Descending; 
+        hoverTimer = 0f;
+        hoverWobbleTimer = 0f;
+        rb.linearDamping  = 0f; 
+        originalHoverPosition = rb.position;
+
+        hasTriggeredHover = false; 
+        gravityStrength = storedGravityValue;
+        Debug.Log("⬇️ Exiting Hover – Starting to Descend");
+    }
+
+
     void OnDrawGizmos()
     {
         // 🔵 Direction segments
@@ -439,8 +683,8 @@ public class AnalogStickReader : MonoBehaviour
                 float angleRad = angle * Mathf.Deg2Rad;
                 Vector3 dir = new Vector3(Mathf.Cos(angleRad), Mathf.Sin(angleRad), 0f);
 
-                Vector3 endPoint = rb.position + dir * directionLineLength;
-                Gizmos.DrawLine(rb.position, endPoint);
+                Vector3 endPoint = transform.position + dir * directionLineLength;
+                Gizmos.DrawLine(transform.position, endPoint);
 
                 #if UNITY_EDITOR
                 if (showDirectionLabels)
@@ -453,11 +697,17 @@ public class AnalogStickReader : MonoBehaviour
         }
 
         // 🔴/🟢 Jump target visualization depending on reach status
-        if (Application.isPlaying && lastJumpTarget != Vector3.zero)
+        if (Application.isPlaying && lastMoveTarget != Vector3.zero)
         {
-            float distanceToTarget = Vector3.Distance(rb.position, lastJumpTarget);
+            if (rb == null)
+            {
+                rb = GetComponent<Rigidbody>();
+                if (rb == null) return; // Still null? Exit the method to avoid errors
+            }
+
+            float distanceToTarget = Vector3.Distance(rb.position, lastMoveTarget);
             Gizmos.color = hasReachedTarget ? jumpTargetColor : landingPointColor;
-            Gizmos.DrawSphere(lastJumpTarget, 0.25f);
+            Gizmos.DrawSphere(lastMoveTarget, 0.25f);
         }
 
         // 🟩 Allowed move directions
@@ -514,7 +764,7 @@ public class AnalogStickReader : MonoBehaviour
 
 
         // 🟠 Snapped input direction – draw LAST, always on top
-        if (Application.isPlaying && currentInput.sqrMagnitude > 0.01f)
+        if (Application.isPlaying && leftStickInput.sqrMagnitude > 0.01f)
         {
             Gizmos.color = snappedInputColor;
             Gizmos.DrawLine(rb.position, rb.position + (Vector3)snappedDir.normalized * directionLineLength);

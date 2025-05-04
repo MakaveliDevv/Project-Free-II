@@ -469,16 +469,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e73a204e22094714a9f84eacf9c1a916, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  movementState: 0
   currentSurfaceState: 0
-  moveAction:
-    m_Name: Move
-    m_Type: 0
-    m_ExpectedControlType: 
-    m_Id: bd4d64bd-eec6-4a6f-8993-7c94efb9f5f1
-    m_Processors: 
-    m_Interactions: 
-    m_SingletonActionBindings: []
-    m_Flags: 0
+  inputActions: {fileID: -944628639613478452, guid: 9740b7f8f03c4a749a2e93320c4985da, type: 3}
   useRawInput: 1
   gizmoScale: 2
   directionLineLength: 1.5
@@ -488,8 +481,8 @@ MonoBehaviour:
   snappedInputColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   jumpTargetColor: {r: 0, g: 1, b: 0.30440474, a: 1}
   landingPointColor: {r: 1, g: 0.20127597, b: 0, a: 1}
-  jumpForce: 10.94
-  maxJumpDistance: 8.56
+  jumpForce: 9.3
+  maxJumpDistance: 10
   dashForce: 5
   maxDashDistance: 5
   snapDirectionsEnabled: 1
@@ -498,10 +491,25 @@ MonoBehaviour:
   useCardinalLabels: 1
   stateBuffer: 0.25
   maxHoldTime: 0.5
-  mode: 0
+  useHoverWobble: 0
+  hoverWobbleSpeed: 2
+  hoverWobbleHeight: 0.2
+  movementForceMode: 0
   jumpForceMode: 2
   dashForceMode: 1
   lerpAmount: 0.85
+  gravityStrength: 9.81
+  minHoverHeight: 2
+  lowJumpMultiplier: 4
+  fallMultiplier: 1
+  dropMultiplier: 10.28
+  maxFallSpeed: 40
+  dropForceMode: 1
+  fallForceMode: 5
+  gravityDirection: {x: 0, y: -1, z: 0}
+  hoverActivationRadius: 1.5
+  hoverDuration: 2
+  linearDampingOnHover: 5
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0
