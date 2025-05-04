@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using System.Collections.Generic;
+using System.Collections;
 
 [RequireComponent(typeof(Rigidbody))]
 public class AnalogStickReader : MonoBehaviour
@@ -47,8 +48,16 @@ public class AnalogStickReader : MonoBehaviour
     public bool showDirectionLabels = true;
     public bool useCardinalLabels = true;
 
-    private Vector3 predictedTargetPoint;
+    [Header("Input Debounce Settings")]
+    public float minStickHoldTime = 0.1f;
+    public float minStickMagnitude = 0.2f;
+    public float minButtonPressTime = 0.1f;
+    private float stickHoldTimer = 0f;
+    private float buttonHoldTimer = 0f;
+    public float maxHoldTime = 0.5f;
+    private float HoldRatio => Mathf.Clamp01(buttonHoldTimer / maxHoldTime);
 
+    private Vector3 predictedTargetPoint;
     private Rigidbody rb;
     private Vector3 startPos;
     private bool isInAir = false;
@@ -56,10 +65,8 @@ public class AnalogStickReader : MonoBehaviour
     private float stateTimer = 0f;
     public float stateBuffer = 0.25f;
     private float lastContactTime;
-    private float holdRatio = 0;
     private bool southButtonPressed;
-    private float holdTime = 0;
-    public float maxHoldTime = .5f;
+
 
     private readonly Dictionary<SurfaceState, string[]> allowedMoveLabels = new()
     {
@@ -120,23 +127,27 @@ public class AnalogStickReader : MonoBehaviour
 
     private void LeftAnalogStickInput() 
     {
-        if(Gamepad.current != null) 
+        if (Gamepad.current != null)
         {
             if (useRawInput)
-            {
                 leftStickInput = Gamepad.current.leftStick.ReadUnprocessedValue();
+            else
+                leftStickInput = leftAnalogStickInput.ReadValue<Vector2>();
+
+            if (leftStickInput.magnitude > minStickMagnitude)
+            {
+                stickHoldTimer += Time.deltaTime;
+                if (stickHoldTimer >= minStickHoldTime)
+                {
+                    snappedDir = GetSnappedDirection().normalized;
+                }
             }
             else
             {
-                leftStickInput = leftAnalogStickInput.ReadValue<Vector2>();
-            }
-
-            if(leftStickInput.magnitude > 0.1f) 
-            {
-                snappedDir = GetSnappedDirection().normalized;
-                // Debug.Log("Movement detected, snapping direction");
+                stickHoldTimer = 0f;
             }
         }
+
     }
 
     public void OnSouthButtonStarted(InputAction.CallbackContext ctx)
@@ -144,9 +155,13 @@ public class AnalogStickReader : MonoBehaviour
         if (ctx.started) 
         {
             Debug.Log("South Button Started");
+
+            if(isInAir) return; 
+        
             movementState = MovementState.Charging;
-            holdTime = 0;
+            buttonHoldTimer = 0;
             southButtonPressed = true;
+            actionInProgress = false;
         }
     }
 
@@ -157,18 +172,39 @@ public class AnalogStickReader : MonoBehaviour
 
     public void OnSouthButtonCanceled(InputAction.CallbackContext ctx) 
     {
-        if (ctx.canceled && southButtonPressed) 
+        if (ctx.canceled && southButtonPressed)
         {
-            Debug.Log("South Button Released");
             southButtonPressed = false;
-            
-            // If we have a valid direction, perform the action
+
+            // Block micro-taps
+            if (buttonHoldTimer < minButtonPressTime || stickHoldTimer < minStickHoldTime)
+            {
+                Debug.Log("⛔ Ignoring quick input");
+                ResetActionState();
+                return;
+            }
+
             if (snappedDir != Vector2.zero)
             {
+                if (isInAir)
+                {
+                    Debug.Log("⛔ Cannot perform action in air");
+                    hasAppliedForce = false;
+                    buttonHoldTimer = 0;
+                    stickHoldTimer = 0;
+                    southButtonPressed = false;
+                    return;
+                }
+
                 PerformMovementAction();
+            }
+            else
+            {
+                ResetActionState();
             }
         }
     }
+
 
     void Update()
     {
@@ -185,23 +221,27 @@ public class AnalogStickReader : MonoBehaviour
         }
 
         if(isInAir) currentSurfaceState = SurfaceState.Air;
-        
-        if(southButtonPressed) 
-        {
-            holdTime += Time.deltaTime;
-            holdRatio = Mathf.Clamp01(holdTime / maxHoldTime);
-               if(holdRatio < 0.1f) holdRatio = 0.1f;
 
-            if(!actionInProgress && holdTime >= maxHoldTime) 
+        if (southButtonPressed)
+        {
+            buttonHoldTimer += Time.deltaTime;
+            if (!actionInProgress)
             {
-                PerformMovementAction();
+                if(buttonHoldTimer >= maxHoldTime && buttonHoldTimer >= minButtonPressTime) 
+                {
+                    PerformMovementAction();
+                }
+                // else 
+                // {
+                //     rb.linearVelocity = Vector2.zero;
+                //     movementState = MovementState.Idle;
+                // }
             }
         }
 
         switch (movementState)
         {
             case MovementState.Idle:
-                actionInProgress = false;
                 
             break;
 
@@ -218,7 +258,6 @@ public class AnalogStickReader : MonoBehaviour
             break;
 
             case MovementState.Hovering:
-                actionInProgress = false;
 
             break;
 
@@ -247,6 +286,9 @@ public class AnalogStickReader : MonoBehaviour
     public bool useHoverWobble = true;
     public float hoverWobbleSpeed = 2f;
     public float hoverWobbleHeight = 0.2f;
+    private bool isLandingBuffered = false;
+    public float hoverStartDelay = 0.1f; // Optional tuning variable
+    public float wobbleFadeInFactor = .25f;
 
     void FixedUpdate()
     {
@@ -256,54 +298,76 @@ public class AnalogStickReader : MonoBehaviour
 
         if (movementState == MovementState.Hovering)
         {
-            if(useHoverWobble) 
-            {   
-                hoverWobbleTimer += Time.deltaTime;
-                float wobbleOffset = Mathf.Sin(hoverWobbleTimer * hoverWobbleSpeed) * hoverWobbleHeight;
-                Vector3 newPosition = originalHoverPosition + new Vector3(0f, wobbleOffset, 0f);
-                rb.MovePosition(newPosition);
+            if (useHoverWobble && hoverTimer < (hoverDuration - hoverStartDelay))
+            {
+                hoverWobbleTimer += Time.fixedDeltaTime;
+                float wobbleFadeIn = Mathf.Clamp01(hoverWobbleTimer / wobbleFadeInFactor); 
+                float wobbleOffset = Mathf.Sin(hoverWobbleTimer * hoverWobbleSpeed) * hoverWobbleHeight * wobbleFadeIn;
+                Vector3 upwardForce = new Vector3(0f, wobbleOffset, 0f);
+
+                rb.AddForce(upwardForce, ForceMode.Acceleration);
             }
             
             UpdateHoverTimer();
         }
-        // else if(movementState == MovementState.Jumping || movementState == MovementState.AirDashing)
-        // {
-        //     TryStartHoverEffect();
-        // }
+        else if(movementState == MovementState.Jumping || movementState == MovementState.AirDashing)
+        {
+            TryStartHoverEffect();
+        }
 
-        if(movementState != MovementState.Hovering || movementState != MovementState.AirDashing) 
+        if (movementState != MovementState.Hovering && movementState != MovementState.AirDashing)
         {
             ApplyCustomGravity();
 
-            if(rb.linearVelocity.y < 0) 
+            // Only enter Descending if NOT near ground and not already landing
+            if (rb.linearVelocity.y < 0 && !IsNearGround() && !isLandingBuffered)
             {
-                Debug.Log("Player moving down");
                 movementState = MovementState.Descending;
             }
         }
 
-        if (movementState == MovementState.Jumping || movementState == MovementState.Descending)
+        if (movementState == MovementState.Jumping)
         {
-            airborneTime += Time.fixedDeltaTime;
-        }
-        else
-        {
-            airborneTime = 0f;
+            Vector3 toTarget = predictedTargetPoint - rb.position;
+            float distance = toTarget.magnitude;
+            TryStartHoverEffect();
+
+            Vector3 desiredDir = toTarget.normalized;
+
+            // 📉 Ease-in force based on proximity
+            float easingFactor = Mathf.Clamp01(distance / targetDistance);
+            float scaledForce = forceMagnitude * easingFactor;
+
+            rb.AddForce(desiredDir * scaledForce, jumpForceMode);
+
+            // 🧤 Clamp max speed
+            float maxJumpSpeed = 10f;
+            if (rb.linearVelocity.magnitude > maxJumpSpeed)
+            {
+                rb.linearVelocity = rb.linearVelocity.normalized * maxJumpSpeed;
+            }
+
+            // 🌫️ Add damping based on proximity to slow down
+            float closeRange = 1.0f;
+            rb.linearDamping = (distance < closeRange)
+                ? Mathf.Lerp(0f, 5f, 1f - (distance / closeRange))
+                : 0f;
         }
 
-        if (movementState == MovementState.Descending && airborneTime > minAirborneTimeBeforeIdle && IsNearGround())
+        if (movementState == MovementState.Descending && IsNearGround())
         {
             movementState = MovementState.Idle;
-            Debug.Log("🔍 Player is near the ground!");
+            isLandingBuffered = true;
+            Debug.Log("✅ Landed – forced transition to Idle");
         }
 
-        // if (IsNearGround() && movementState == MovementState.Descending)
-        // {
-        //     movementState = MovementState.Idle;
-        //     Debug.Log("🔍 Player is near the ground!");
-        // }
-
         TrySetIdleState();
+
+        // Reset landing buffer once fully idle and grounded
+        if (movementState == MovementState.Idle && currentSurfaceState == SurfaceState.Ground)
+        {
+            isLandingBuffered = false;
+        }
     }
 
     void LateUpdate()
@@ -317,6 +381,13 @@ public class AnalogStickReader : MonoBehaviour
     private void OnCollisionEnter(Collision collision)
     {
         HandleSurfaceState(collision);
+
+        if (movementState == MovementState.Descending && currentSurfaceState == SurfaceState.Ground || currentSurfaceState == SurfaceState.Ceiling)
+        {
+            movementState = MovementState.Idle;
+            isLandingBuffered = true;
+            Debug.Log("🛬 Collision landed – set to Idle");
+        }
     }
 
     private void OnCollisionStay(Collision collision)
@@ -353,8 +424,26 @@ public class AnalogStickReader : MonoBehaviour
         rb.linearDamping = 0;
         snappedDir = Vector2.zero;
         hasAppliedForce = false;
-        holdTime = 0;
+        buttonHoldTimer = 0;
+        stickHoldTimer = 0;
+
+        // if (movementState == MovementState.Charging)
+        // {
+        //     // Resume proper state if in air
+        //     if (isInAir)
+        //     {
+        //         if (rb.linearVelocity.y > 0)
+        //             movementState = MovementState.Jumping;
+        //         else if (rb.linearVelocity.y < 0)
+        //             movementState = MovementState.Descending;
+        //     }
+        //     else
+        //     {
+        //         movementState = MovementState.Idle;
+        //     }
+        // }
     }
+
 
     private bool hasAppliedForce = false;
     public ForceMode movementForceMode;
@@ -382,10 +471,22 @@ public class AnalogStickReader : MonoBehaviour
     {
         if(snappedDir == Vector2.zero) return;
 
+        // ✅ Block input if player is in air
+        if (isInAir)
+        {
+            Debug.Log("⛔ Action blocked while in air");
+            buttonHoldTimer = 0;
+            stickHoldTimer = 0;
+            southButtonPressed = false;
+            return;
+        }
+
         string dirLabel = GetClosestDirectionLabel(snappedDir);
         bool isJumpAllowed = IsJumpDirectionAllowed(dirLabel);
         bool isDashAllowed = IsDashDirectionAllowed(dirLabel);
+
         startPos = rb.position;
+        
         if(isDashAllowed) 
         {
             SetupMovement(maxDashDistance, dashForce, "Dash");
@@ -408,12 +509,11 @@ public class AnalogStickReader : MonoBehaviour
 
     private void SetupMovement(float maxTravelDistance, float force, string action) 
     {
-        targetDistance = maxTravelDistance * holdRatio;
+        targetDistance = maxTravelDistance * HoldRatio;
         Debug.Log($"target distance = {targetDistance}");
         currentAction = action;
 
         // ✅ Set the actual target here using direction and distance
-        // predictedTargetPoint = transform.position + targetDistance * (Vector3)snappedDir.normalized;
         predictedTargetPoint = transform.position + (Vector3)snappedDir * targetDistance;
         hasAppliedForce = false;
 
@@ -425,7 +525,7 @@ public class AnalogStickReader : MonoBehaviour
             rb.useGravity = true;
 
             movementForceMode = dashForceMode;
-            forceMagnitude = force;
+            // forceMagnitude = force;
             Debug.Log("Dashing");
         }
         else if(action == "Jump") 
@@ -439,17 +539,13 @@ public class AnalogStickReader : MonoBehaviour
             bool isDiagonalJump = Mathf.Abs(snappedDir.x) > 0 && Mathf.Abs(snappedDir.y) > 0;
             Debug.Log(isDiagonalJump ? "Jumping Diagonal" : "Jumping Straight");
 
-            Vector3 directionToTarget = (predictedTargetPoint - rb.position).normalized;
-            float distance = Vector3.Distance(rb.position, predictedTargetPoint);
-            float estimatedTime = estimatedTimeThreshold; 
-
-            snappedDir = directionToTarget;
-            forceMagnitude = distance / estimatedTime * force;
+            // Vector3 directionToTarget = (predictedTargetPoint - rb.position).normalized;
+            // snappedDir = directionToTarget;
+            // forceMagnitude = distance / estimatedTime * force;
         }
 
-        // hasAppliedForce = false;
-        // forceMagnitude = force;
-        // forceMagnitude = force * targetDistance;
+        forceMagnitude = force;
+
 
         // ✅ Set the actual target here using direction and distance
         // predictedTargetPoint = transform.position + targetDistance * (Vector3)snappedDir.normalized;
@@ -678,7 +774,7 @@ public class AnalogStickReader : MonoBehaviour
     private float airborneTime = 0f;
     public float minAirborneTimeBeforeIdle = 0.15f;
 
-
+    
     private bool IsNearGround()
     {
         if (!TryGetComponent<Collider>(out var col) && movementState != MovementState.Descending) return false;
@@ -694,6 +790,24 @@ public class AnalogStickReader : MonoBehaviour
 
         return false;
     }
+
+    public float checkDistance;
+    private bool IsNearSurface()
+    {
+        // Get the player's Rigidbody component
+        Rigidbody rb = GetComponent<Rigidbody>();
+
+        // Check if velocity is significant
+        if (rb.linearVelocity .sqrMagnitude < 0.01f)
+            return false;
+
+        Vector3 moveDirection = rb.linearVelocity .normalized;
+        Vector3 origin = rb.position;
+
+        // Perform the raycast
+        return Physics.Raycast(origin, moveDirection, checkDistance);
+    }
+
 
     private Vector3 DetermineGravityDirection()
     {
@@ -739,7 +853,6 @@ public class AnalogStickReader : MonoBehaviour
     {
         if (movementState == MovementState.Charging ||
             movementState == MovementState.Jumping ||
-            // movementState == MovementState.Descending ||
             movementState == MovementState.Dashing ||
             actionInProgress)
             return;
@@ -756,7 +869,6 @@ public class AnalogStickReader : MonoBehaviour
     public float hoverActivationRadius = 1.5f;
     public float hoverDuration = 2f;
     private float hoverTimer = 0f;
-    private bool isHovering = false;
     public float linearDampingOnHover = 5f;
     private float hoverWobbleTimer = 0f;
     private bool hasTriggeredHover = false;
@@ -765,33 +877,62 @@ public class AnalogStickReader : MonoBehaviour
 
     private bool TryStartHoverEffect()
     {
-        // Only attempt hover if airborne and not already hovering
-        if (!isInAir || movementState == MovementState.Hovering)
+        if (!isInAir || movementState == MovementState.Hovering || hasTriggeredHover)
             return false;
 
-        // Check distance to the move target (like a hover zone)
-        float distanceToTarget = Vector3.Distance(rb.position, predictedTargetPoint);
+        Vector3 toTarget = predictedTargetPoint - rb.position;
+        float forwardDot = Vector3.Dot(rb.linearVelocity.normalized, toTarget.normalized);
+        float distanceToTarget = toTarget.magnitude;
 
-        if (distanceToTarget <= hoverActivationRadius && !hasTriggeredHover)
+        float hoverTriggerRadius = hoverActivationRadius;
+        float hoverForgivenessDistance = 2.5f;
+
+        bool isCloseEnough = distanceToTarget <= hoverTriggerRadius;
+        bool hasPassedTarget = forwardDot < 0f;
+        bool isInForgivenessZone = hasPassedTarget && distanceToTarget <= hoverForgivenessDistance;
+
+        if (!(isCloseEnough || isInForgivenessZone))
+            return false;
+
+        // ✅ Passed checks — start hover
+        movementState = MovementState.Hovering;
+        rb.linearDamping = linearDampingOnHover;
+        storedGravityValue = gravityStrength;
+        gravityStrength = 0f;
+
+        hoverTimer = hoverDuration;
+        hoverWobbleTimer = 0f;
+        originalHoverPosition = rb.position;
+
+        StartCoroutine(SmoothHoverTransition());
+        hasTriggeredHover = true;
+        Debug.Log("🛸 Hover Started — Smooth Entry");
+        return true;
+    }
+
+    private IEnumerator SmoothHoverTransition()
+    {
+        float transitionTime = 0.25f; // Time to blend in
+        float elapsed = 0f;
+        float initialDamping = rb.linearDamping;
+        float targetDamping = linearDampingOnHover;
+
+        float initialGravity = gravityStrength;
+        float targetGravity = 0f;
+
+        while (elapsed < transitionTime)
         {
-            storedGravityValue = gravityStrength;
-            gravityStrength = 0f;
+            float t = elapsed / transitionTime;
 
-            // ✅ Trigger the hover effect
-            movementState = MovementState.Hovering;
-            isHovering = true;
-            hoverTimer = hoverDuration;
+            rb.linearDamping = Mathf.Lerp(initialDamping, targetDamping, t);
+            gravityStrength = Mathf.Lerp(initialGravity, targetGravity, t);
 
-            rb.linearVelocity  = Vector3.zero;
-            rb.linearDamping = linearDampingOnHover;
-            rb.useGravity = false;
-
-            hasTriggeredHover = true;
-            Debug.Log("✨ Hover effect activated!");
-            return true;
+            elapsed += Time.fixedDeltaTime;
+            yield return new WaitForFixedUpdate();
         }
 
-        return false;
+        rb.linearDamping = targetDamping;
+        gravityStrength = targetGravity;
     }
 
     private void UpdateHoverTimer()
@@ -814,10 +955,10 @@ public class AnalogStickReader : MonoBehaviour
         hoverTimer = 0f;
         hoverWobbleTimer = 0f;
         rb.linearDamping  = 0f; 
-        originalHoverPosition = rb.position;
-
         hasTriggeredHover = false; 
         gravityStrength = storedGravityValue;
+        actionInProgress = false;
+
         Debug.Log("⬇️ Exiting Hover – Starting to Descend");
     }
 
