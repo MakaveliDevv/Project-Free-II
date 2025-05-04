@@ -481,7 +481,7 @@ MonoBehaviour:
   snappedInputColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   jumpTargetColor: {r: 0, g: 1, b: 0.30440474, a: 1}
   landingPointColor: {r: 1, g: 0.20127597, b: 0, a: 1}
-  jumpForce: 9.3
+  jumpForce: 1
   maxJumpDistance: 10
   dashForce: 5
   maxDashDistance: 5
@@ -490,19 +490,21 @@ MonoBehaviour:
   showDirectionLabels: 1
   useCardinalLabels: 1
   stateBuffer: 0.25
-  maxHoldTime: 0.5
+  maxHoldTime: 1
   useHoverWobble: 0
   hoverWobbleSpeed: 2
   hoverWobbleHeight: 0.2
+  arrivalRadius: 0.25
   movementForceMode: 0
   jumpForceMode: 2
   dashForceMode: 1
   lerpAmount: 0.85
+  estimatedTimeThreshold: 1
   gravityStrength: 9.81
   minHoverHeight: 2
   lowJumpMultiplier: 4
   fallMultiplier: 1
-  dropMultiplier: 10.28
+  dropMultiplier: 2.5
   maxFallSpeed: 40
   dropForceMode: 1
   fallForceMode: 5
