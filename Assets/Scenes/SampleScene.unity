@@ -473,6 +473,45 @@ MonoBehaviour:
   currentSurfaceState: 0
   inputActions: {fileID: -944628639613478452, guid: 9740b7f8f03c4a749a2e93320c4985da, type: 3}
   useRawInput: 1
+  snapDirectionsEnabled: 1
+  directionCount: 16
+  showDirectionLabels: 1
+  useCardinalLabels: 1
+  jumpForce: 4
+  maxJumpDistance: 10
+  dashForce: 5
+  maxDashDistance: 5
+  movementForceMode: 0
+  jumpForceMode: 2
+  dashForceMode: 1
+  gravityStrength: 9.81
+  gravityDirection: {x: 0, y: -1, z: 0}
+  lowJumpMultiplier: 4
+  fallMultiplier: 1
+  dropMultiplier: 2.5
+  maxFallSpeed: 40
+  dropForceMode: 1
+  fallForceMode: 5
+  useHoverWobble: 1
+  hoverWobbleSpeed: 2
+  hoverWobbleHeight: 0.2
+  hoverStartDelay: 0.2
+  wobbleFadeInFactor: 0.25
+  hoverActivationRadius: 1.5
+  hoverDuration: 2
+  linearDampingOnHover: 5
+  minHoverHeight: 2
+  groundProximityCheckDistance: 1
+  minAirborneTimeBeforeIdle: 0.15
+  distanceToSurfaceThreshold: 0.05
+  checkDistance: 5
+  surfaceLayer:
+    serializedVersion: 2
+    m_Bits: 512
+  minStickHoldTime: 0.1
+  minStickMagnitude: 0.2
+  minButtonPressTime: 0.1
+  maxHoldTime: 1
   gizmoScale: 2
   directionLineLength: 1.5
   baseDirectionColor: {r: 0, g: 0, b: 1, a: 1}
@@ -481,37 +520,11 @@ MonoBehaviour:
   snappedInputColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   jumpTargetColor: {r: 0, g: 1, b: 0.30440474, a: 1}
   landingPointColor: {r: 1, g: 0.20127597, b: 0, a: 1}
-  jumpForce: 1
-  maxJumpDistance: 10
-  dashForce: 5
-  maxDashDistance: 5
-  snapDirectionsEnabled: 1
-  directionCount: 16
-  showDirectionLabels: 1
-  useCardinalLabels: 1
+  groundCheckDistanceColor: {r: 0, g: 0, b: 0, a: 0}
+  arrivalRadius: 0.05
   stateBuffer: 0.25
-  maxHoldTime: 1
-  useHoverWobble: 0
-  hoverWobbleSpeed: 2
-  hoverWobbleHeight: 0.2
-  arrivalRadius: 0.25
-  movementForceMode: 0
-  jumpForceMode: 2
-  dashForceMode: 1
   lerpAmount: 0.85
   estimatedTimeThreshold: 1
-  gravityStrength: 9.81
-  minHoverHeight: 2
-  lowJumpMultiplier: 4
-  fallMultiplier: 1
-  dropMultiplier: 2.5
-  maxFallSpeed: 40
-  dropForceMode: 1
-  fallForceMode: 5
-  gravityDirection: {x: 0, y: -1, z: 0}
-  hoverActivationRadius: 1.5
-  hoverDuration: 2
-  linearDampingOnHover: 5
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0
@@ -782,7 +795,7 @@ GameObject:
   - component: {fileID: 624238099}
   - component: {fileID: 624238098}
   - component: {fileID: 624238101}
-  m_Layer: 7
+  m_Layer: 9
   m_Name: Right-Side
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -890,7 +903,7 @@ GameObject:
   - component: {fileID: 771023800}
   - component: {fileID: 771023799}
   - component: {fileID: 771023802}
-  m_Layer: 7
+  m_Layer: 9
   m_Name: Left-Side
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1200,7 +1213,7 @@ GameObject:
   - component: {fileID: 1129858583}
   - component: {fileID: 1129858582}
   - component: {fileID: 1129858581}
-  m_Layer: 6
+  m_Layer: 9
   m_Name: Ground
   m_TagString: Untagged
   m_Icon: {fileID: 0}
