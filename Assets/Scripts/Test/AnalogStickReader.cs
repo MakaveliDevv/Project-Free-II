@@ -298,6 +298,7 @@ public class AnalogStickReader : MonoBehaviour
             case MovementState.Jumping:
                 break;
             case MovementState.Hovering:
+                if(isDropping) ExitHover();
                 break;
             case MovementState.Descending:
                 gravityStrength = storedGravityStrength;
