@@ -491,12 +491,24 @@ public class AnalogStickReader : MonoBehaviour
         {
             if (useHoverWobble && hoverTimer < (hoverDuration - hoverStartDelay))
             {
+                // ----
+                rb.linearDamping = 0f;
+                // ----
+
                 hoverWobbleTimer += Time.fixedDeltaTime;
                 float wobbleFadeIn = Mathf.Clamp01(hoverWobbleTimer / wobbleFadeInFactor);
                 float wobbleOffset = Mathf.Sin(hoverWobbleTimer * hoverWobbleSpeed) * hoverWobbleHeight * wobbleFadeIn;
-                Vector3 upwardForce = new Vector3(0f, wobbleOffset, 0f);
 
-                rb.AddForce(upwardForce, ForceMode.Acceleration);
+                // Vector3 upwardForce = new Vector3(0f, wobbleOffset, 0f);
+                // rb.AddForce(upwardForce, ForceMode.Acceleration);
+                
+                // ----
+                Vector3 velChange = new Vector3(0f, wobbleOffset / Time.fixedDeltaTime, 0f);
+                rb.AddForce(velChange, ForceMode.Acceleration);
+                // ----
+
+                Debug.Log($"wobbleOffset = {wobbleOffset:0.000}");
+
             }
 
             UpdateHoverTimer();

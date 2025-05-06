@@ -475,22 +475,22 @@ MonoBehaviour:
   useRawInput: 1
   snapDirectionsEnabled: 1
   directionCount: 16
-  stuckDurationWall: 10
+  stuckDurationWall: 20
   stuckDurationCeiling: 1.5
   stuckCooldownDuration: 1
   showDirectionLabels: 1
   useCardinalLabels: 1
   jumpForce: 35
   maxJumpDistance: 10
-  maxSafeSpeed: 10
-  bounceSpeed: 5
+  maxSafeSpeed: 150
+  bounceSpeed: 25
   defaultDamping: 0
-  dashForce: 8.91
+  dashForce: 20
   maxDashDistance: 5
   movementForceMode: 0
   jumpForceMode: 2
   dashForceMode: 1
-  gravityStrength: 9.81
+  gravityStrength: 20.81
   gravityDir: {x: 0, y: -1, z: 0}
   wallGravityPercent: 100
   gravityDirectionLeftWall: 0
@@ -504,14 +504,15 @@ MonoBehaviour:
   dropForceMode: 1
   fallForceMode: 5
   useHoverWobble: 1
-  hoverWobbleSpeed: 4
-  hoverWobbleHeight: 0.2
+  hoverWobbleSpeed: 25
+  hoverWobbleHeight: 0.5
   hoverStartDelay: 0.1
-  wobbleFadeInFactor: 0.25
-  hoverActivationRadius: 1.25
+  wobbleFadeInFactor: 5
+  hoverActivationRadius: 0.75
   hoverDuration: 1
-  linearDampingOnHover: 8
   minHoverHeight: 4
+  minHoverLinearDamping: 0.1
+  hoverLinearDamping: 40
   groundProximityCheckDistance: 0.18
   minAirborneTimeBeforeIdle: 0.15
   distanceToSurfaceThreshold: 0.05
@@ -537,6 +538,7 @@ MonoBehaviour:
   lerpAmount: 0.85
   useHandleActionForces: 1
   isMovingThreshold: 0.2
+  forceCurveExponent: 0.75
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0
