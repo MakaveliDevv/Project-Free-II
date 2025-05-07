@@ -218,6 +218,10 @@ public class AnalogStickReader : MonoBehaviour
     [Header("Force Curve Settings")]
     [Tooltip(">1 → small holds get much less power; <1 → small holds get more power.")]
     public float forceCurveExponent = 1.0f;
+    private bool isDropping = false;
+    private bool pendingBurstDrop = false;
+
+
 
     //========= UNITY LIFECYCLE =========//
     void Awake()
@@ -267,10 +271,10 @@ public class AnalogStickReader : MonoBehaviour
 
         if (isInAir) currentSurfaceState = SurfaceState.Air;
 
-        if(actionInProgress && IsCollidingWithSurface()) 
-        {
-            actionInProgress = false;
-        }
+        // if(actionInProgress && IsCollidingWithSurface()) 
+        // {
+        //     actionInProgress = false;
+        // }
 
         if (southButtonPressed)
         {
@@ -283,6 +287,10 @@ public class AnalogStickReader : MonoBehaviour
                     hasExecutedActionThisHold = true;
                     Debug.Log("Invoke PerformMovementAction from Update");
                 }
+                else 
+                {
+                    Debug.Log("Swaaag");
+                }
             }
         }
 
@@ -290,24 +298,43 @@ public class AnalogStickReader : MonoBehaviour
         {
             case MovementState.Idle:
                 currentSurfaceState = SurfaceState.Ground;
+                hasTriggeredHover = false;
                 break;
             case MovementState.Charging:
                 break;
             case MovementState.Dashing:
                 break;
             case MovementState.Jumping:
+                if(isDropping) 
+                {
+                    movementState = MovementState.Descending;
+                    pendingBurstDrop = true;
+                    // ApplyBurstDropForce();
+                }
                 break;
             case MovementState.Hovering:
-                if(isDropping) ExitHover();
+                if(isDropping) 
+                {
+                    ExitHover();
+                    ApplyBurstDropForce();
+                }
                 break;
             case MovementState.Descending:
                 gravityStrength = storedGravityStrength;
+                actionInProgress = false;
                 break;
             case MovementState.AirDashing:
                 break;
             case MovementState.Stucked:
+                if(ActionInputDetected()) return;
+                
+                actionInProgress = false;
+            
                 break;
             case MovementState.WallDescending:
+                if(ActionInputDetected() ) return;
+                
+                actionInProgress = false;
                 gravityStrength = wallDescendingGravityStrength;
                 break;
             case MovementState.WallDashing:
@@ -317,15 +344,20 @@ public class AnalogStickReader : MonoBehaviour
 
     void FixedUpdate()
     {
+        if (pendingBurstDrop)
+        {
+            // reuse your existing helper or inline:
+            Vector3 gDir = DetermineGravityDirection();
+            rb.AddForce(dropMultiplier * storedGravityStrength * gDir, dropForceMode);
+            fastFalling = true;
+            pendingBurstDrop = false;
+            Debug.Log("⚡ Burst drop (pending) applied at FixedUpdate");
+        }
+
         isInAir = !IsCollidingWithSurface();
         GetLastCollidedSurface();
-
-   
-        if(useHandleActionForces) 
-        {
-            HandleActionForces();
-        }
-     
+        if(useHandleActionForces) HandleActionForces();
+        
         if (movementState != MovementState.Hovering && movementState != MovementState.AirDashing && movementState != MovementState.Stucked)
         {
             ApplyCustomGravity();
@@ -337,8 +369,8 @@ public class AnalogStickReader : MonoBehaviour
                 && currentSurfaceState != SurfaceState.RightWall)
             {
                 movementState = MovementState.Descending;
-                Debug.Log($"rb linear vel Y -> {rb.linearVelocity.y}, isNearGround -> {IsNearGround()}, isLandingBuffered -> {isLandingBuffered}");
-                Debug.Log($"✅ Movement state changed to Descending");
+                // Debug.Log($"rb linear vel Y -> {rb.linearVelocity.y}, isNearGround -> {IsNearGround()}, isLandingBuffered -> {isLandingBuffered}");
+                // Debug.Log($"✅ Movement state changed to Descending");
             }
 
         }
@@ -491,29 +523,20 @@ public class AnalogStickReader : MonoBehaviour
         {
             if (useHoverWobble && hoverTimer < (hoverDuration - hoverStartDelay))
             {
-                // ----
                 rb.linearDamping = 0f;
-                // ----
-
                 hoverWobbleTimer += Time.fixedDeltaTime;
                 float wobbleFadeIn = Mathf.Clamp01(hoverWobbleTimer / wobbleFadeInFactor);
                 float wobbleOffset = Mathf.Sin(hoverWobbleTimer * hoverWobbleSpeed) * hoverWobbleHeight * wobbleFadeIn;
-
-                // Vector3 upwardForce = new Vector3(0f, wobbleOffset, 0f);
-                // rb.AddForce(upwardForce, ForceMode.Acceleration);
                 
-                // ----
                 Vector3 velChange = new Vector3(0f, wobbleOffset / Time.fixedDeltaTime, 0f);
                 rb.AddForce(velChange, ForceMode.Acceleration);
-                // ----
 
-                Debug.Log($"wobbleOffset = {wobbleOffset:0.000}");
-
+                // Debug.Log($"wobbleOffset = {wobbleOffset:0.000}");
             }
 
             UpdateHoverTimer();
         }
-        else if (movementState == MovementState.Jumping || movementState == MovementState.AirDashing)
+        else if (movementState == MovementState.Jumping || movementState == MovementState.AirDashing && !isDropping)
         {
             TryStartHoverEffect();
         }
@@ -521,6 +544,7 @@ public class AnalogStickReader : MonoBehaviour
 
     private void SmoothMovement()
     {
+        //----------
         if (movementState != MovementState.Jumping) return;
 
         // 1) vector toward goal & remaining distance
@@ -528,11 +552,11 @@ public class AnalogStickReader : MonoBehaviour
         float remaining  = toTarget.magnitude;
 
         // ─── 2) snap and stop when you’re within the arrival radius ───
-        if (remaining <= arrivalRadius)
+        if (remaining <= arrivalRadius && !isDropping)
         {
             rb.position = predictedTargetPoint;
             rb.linearVelocity  = Vector3.zero;
-            movementState = MovementState.Idle;
+            // movementState = MovementState.Idle;
             return;
         }
 
@@ -610,13 +634,17 @@ public class AnalogStickReader : MonoBehaviour
             else
                 leftStickInput = leftAnalogStickInput.ReadValue<Vector2>();
 
+            isDropping = leftStickInput.y <= -minStickMagnitude;
+
             leftStickMovement = leftStickInput.magnitude > minStickMagnitude;
             if (leftStickMovement)
             {
                 snappedDir = GetSnappedDirection().normalized;
             }
 
-            isDropping = leftAnalogStickInput.ReadValue<Vector2>() == Vector2.down;
+            // isDropping = leftAnalogStickInput.ReadValue<Vector2>() == Vector2.down;
+            // inside LeftAnalogStickInput(), after you sample into leftStickInput:
+
         }
     }
 
@@ -624,10 +652,10 @@ public class AnalogStickReader : MonoBehaviour
     {
         if (ctx.started)
         {
-            Debug.Log("South Button Started");
+            // Debug.Log("South Button Started");
 
             if (isInAir) return;
-
+            
             movementState = MovementState.Charging;
             buttonHoldTimer = 0;
             southButtonPressed = true;
@@ -644,6 +672,7 @@ public class AnalogStickReader : MonoBehaviour
         if (ctx.canceled && southButtonPressed)
         {
             southButtonPressed = false;
+            // buttonHoldTimer = 0;
 
             if (!hasExecutedActionThisHold && snappedDir != Vector2.zero)
             {
@@ -655,12 +684,12 @@ public class AnalogStickReader : MonoBehaviour
                     return;
                 }
 
-                Debug.Log("Invoke PerformMovementAction from OnSouthButtonCanceled");
+                // Debug.Log("Invoke PerformMovementAction from OnSouthButtonCanceled");
                 PerformMovementAction();
             }
-
             else if (!ActionInputDetected())
             {
+                actionInProgress = false;
                 ResetActionState();
             }
         }
@@ -757,10 +786,10 @@ public class AnalogStickReader : MonoBehaviour
 
     private void CheckArrivalAtTarget()
     {
-        if (Vector3.Distance(rb.position, predictedTargetPoint) < arrivalRadius)
+        if (Vector3.Distance(rb.position, predictedTargetPoint) < arrivalRadius && !isDropping)
         {
             hasReachedTarget = true;
-            Debug.Log("🏁 Reached target point, returning to start...");
+       
         }
     }
 
@@ -854,13 +883,19 @@ public class AnalogStickReader : MonoBehaviour
         gravityStrength = storedGravityStrength;
 
         Debug.Log("⬇️ Exiting Hover – Starting to Descend");
+
+        // RIGHT HERE, slam into the drop
+        if (isDropping && !fastFalling)
+            ApplyBurstDropForce();
+
+        pendingBurstDrop = true;
     }
 
     private bool TryStartHoverEffect()
     {
-        if (!isInAir || movementState == MovementState.Hovering || hasTriggeredHover)
+        if (!isInAir || movementState == MovementState.Hovering || hasTriggeredHover || isDropping)
             return false;
-
+  
         Vector3 toTarget = predictedTargetPoint - rb.position;
         float forwardDot = Vector3.Dot(rb.linearVelocity.normalized, toTarget.normalized);
         float distanceToTarget = toTarget.magnitude;
@@ -977,7 +1012,7 @@ public class AnalogStickReader : MonoBehaviour
     {
         if (Time.time - lastSurfaceCheckTime <= surfaceMemoryDuration)
         {
-            Debug.Log($"last surface object: {lastSurfaceObject}");
+            // Debug.Log($"last surface object: {lastSurfaceObject}");
             return lastSurfaceObject;
         }
 
@@ -1075,7 +1110,6 @@ public class AnalogStickReader : MonoBehaviour
     }
 
     //========= GRAVITY & FALLING =========//
-    private bool isDropping = false;
     private void ApplyCustomGravity()
     {   
         if (movementState == MovementState.Hovering)
@@ -1088,16 +1122,23 @@ public class AnalogStickReader : MonoBehaviour
         float upwardVelocity = Vector3.Dot(rb.linearVelocity, -gravityDir);
         float jumpHeightSoFar = Vector3.Project(rb.position - startPos, -gravityDir).magnitude;
         
-        if (verticalVelocity > maxFallSpeed) return;
-
-        // ✅ Handle FAST-FALL as a 1-time burst
-        if (isDropping && isInAir && !fastFalling)
+        if (verticalVelocity > maxFallSpeed)
         {
-            rb.AddForce(dropMultiplier * gravityForce * gravityDir, dropForceMode);
-            fastFalling = true;
-            Debug.Log("⚡ Burst drop applied (Impulse)");
-            return; 
-        }
+            Debug.Log($"Vertical Velocity --{verticalVelocity}-- overshoots Max Fall Speed --{maxFallSpeed}--");
+            return;
+        } 
+
+        // // === only do the burst‐drop once we’re in a true “descending” state ===
+        // if ((movementState == MovementState.Descending)
+        //    && isDropping && isInAir && !fastFalling)
+        // {
+        //    rb.AddForce(dropMultiplier * gravityForce * gravityDir, dropForceMode);
+        //    fastFalling = true;
+        //    isJumping = false;
+        //    hasReachedTarget = false;
+        //    Debug.Log("⚡ Burst drop applied (Impulse)");
+        //    return;
+        // }
 
         // ✅ Apply modifiers for regular jump/fall
         if (jumpHeightSoFar < minHoverHeight && upwardVelocity > 0.1f && !southButtonPressed)
@@ -1107,15 +1148,24 @@ public class AnalogStickReader : MonoBehaviour
         else if (verticalVelocity > 0.1f)
         {
             gravityForce *= fallMultiplier;
-        }
-
-        if (!isInAir)
-            fastFalling = false; 
+        } 
 
         // ✅ Apply normal gravity
         rb.AddForce(gravityDir * gravityForce, fallForceMode);
 
     }
+
+    private void ApplyBurstDropForce()
+    {
+        // use your stored gravity and current gravityDir
+        Vector3 gDir = DetermineGravityDirection();
+        rb.AddForce(dropMultiplier * storedGravityStrength * gDir, dropForceMode);
+        fastFalling   = true;
+        isJumping     = false;
+        hasReachedTarget = false;
+        Debug.Log("⚡ Burst drop applied (Impulse) “right now”");
+    }
+
 
     private Vector3 DetermineGravityDirection()
     {
@@ -1235,7 +1285,7 @@ public class AnalogStickReader : MonoBehaviour
 
     private void ResetActionState()
     {
-        actionInProgress = false;
+        // actionInProgress = false;
         southButtonPressed = false;
         hasExecutedActionThisHold = false;
         

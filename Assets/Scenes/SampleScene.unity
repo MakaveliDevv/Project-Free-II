@@ -298,7 +298,7 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 0.5
+  m_Radius: 0.75
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!23 &206922469
 MeshRenderer:
@@ -490,7 +490,7 @@ MonoBehaviour:
   movementForceMode: 0
   jumpForceMode: 2
   dashForceMode: 1
-  gravityStrength: 20.81
+  gravityStrength: 9.81
   gravityDir: {x: 0, y: -1, z: 0}
   wallGravityPercent: 100
   gravityDirectionLeftWall: 0
