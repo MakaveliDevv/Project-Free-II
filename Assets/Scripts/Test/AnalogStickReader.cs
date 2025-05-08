@@ -78,6 +78,12 @@ public class AnalogStickReader : MonoBehaviour
     [Tooltip("Maximum distance allowed for a dash; used to calculate dash endpoints")]
     public float maxDashDistance = 5f;
 
+    [Tooltip("Force applied when starting an air dash; used with airDashForceMode")]
+    public float airDashForce = 5f;
+
+    [Tooltip("Maximum distance allowed for a air dash; used to calculate air dash endpoints")]
+    public float maxAirDashDistance = 5f;
+
     [Tooltip("Default linear damping applied to the Rigidbody when no jump or dash is active")]
     public float defaultDamping = 0f;
 
@@ -91,6 +97,9 @@ public class AnalogStickReader : MonoBehaviour
 
     [Tooltip("ForceMode applied to dashForce; defaults to Impulse for a quick burst")]
     public ForceMode dashForceMode = ForceMode.Impulse;
+
+    [Tooltip("ForceMode applied to airDashForce; defaults to Impulse for a quick burst")]
+    public ForceMode airDashForceMode = ForceMode.Impulse;
 
     // ─ Gravity Settings
     [Header("Gravity Settings")]
@@ -251,6 +260,9 @@ public class AnalogStickReader : MonoBehaviour
 
     [Tooltip("Exponent applied to input magnitude for custom response curves; shapes force application")]
     public float forceCurveExponent = 1.0f;
+    
+    [Tooltip("If true, player can perform an air dash")]
+    public bool allowAirDash = false;
 
     // ─────────────────────────────────────────────────────────────────────────
     // PRIVATE VARIABLES
@@ -259,6 +271,8 @@ public class AnalogStickReader : MonoBehaviour
     // ─ State Flags
     private bool isJumping = false;
     private bool isDashing = false;
+    private bool isAirDashing = false;
+    private bool allowedToMove = false;
     private bool isInAir = false;
     private bool fastFalling = false;
     private bool isDropping = false;
@@ -291,6 +305,7 @@ public class AnalogStickReader : MonoBehaviour
     private Vector2 snappedDir = Vector2.zero;
     private bool southButtonPressed;
     private bool leftStickMovement = false;
+    private bool actionReady = true;
 
     // ─ Physics & Gravity State
     private float initialGravityStrength = 0;
@@ -352,6 +367,8 @@ public class AnalogStickReader : MonoBehaviour
     #region UNITY LIFECYCLE
     void Awake()
     {
+        InputSystem.settings.maxEventBytesPerUpdate = 0;
+
         rb = GetComponent<Rigidbody>();
         rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
         rb.interpolation = RigidbodyInterpolation.Interpolate;
@@ -383,11 +400,12 @@ public class AnalogStickReader : MonoBehaviour
     void Update()
     {
         LeftAnalogStickInput();
+        FetchActionType();
 
         if (southButtonPressed && buttonHoldTimer >= minButtonPressTime && !buttonPressedLongEnough)
         {
             buttonPressedLongEnough = true;
-            if (movementState != MovementState.Charging && ActionInputDetected())
+            if (movementState != MovementState.Charging && ActionInputDetected() && allowedToMove)
                 movementState = MovementState.Charging;
         }
 
@@ -406,8 +424,12 @@ public class AnalogStickReader : MonoBehaviour
         if (southButtonPressed)
         {
             buttonHoldTimer += Time.deltaTime;
-            if (!actionInProgress && buttonHoldTimer >= maxHoldTime && buttonHoldTimer >= minButtonPressTime)
-                PerformMovementAction();
+            if (actionReady && !actionInProgress && buttonHoldTimer >= maxHoldTime && buttonPressedLongEnough)
+            {
+                // PerformMovementAction();
+                PerformAction();
+                actionReady = false;
+            }
         }
 
         switch (movementState)
@@ -579,7 +601,9 @@ public class AnalogStickReader : MonoBehaviour
         isDropping = rawDown
                 && inAir
                 && movementState != MovementState.Idle
-                && movementState != MovementState.Charging;
+                && movementState != MovementState.Charging
+                // && !southButtonPressed;
+                && !ActionInputDetected();
     }
 
     /// <summary>
@@ -608,8 +632,10 @@ public class AnalogStickReader : MonoBehaviour
             southButtonPressed = false;
             buttonPressedLongEnough = false;
 
-            if (snappedDir != Vector2.zero && movementState == MovementState.Charging) PerformMovementAction();
+            if (snappedDir != Vector2.zero && movementState == MovementState.Charging) /*PerformMovementAction()*/ PerformAction();
             else ResetActionState();
+
+            actionReady = true;
         }
     }
     #endregion
@@ -636,20 +662,117 @@ public class AnalogStickReader : MonoBehaviour
     /// Initiates a jump or dash: resets physics via ResetPhysicsSettings, chooses direction label via GetClosestDirectionLabel,
     /// checks permissions (IsJumpDirectionAllowed / IsDashDirectionAllowed), then calls SetupMovement.
     /// </summary>
-    private void PerformMovementAction()
+    // private void PerformMovementAction()
+    // {
+
+    //     string dirLabel = GetClosestDirectionLabel(snappedDir);
+    //     bool isJumpAllowed = !isInAir && IsJumpDirectionAllowed(dirLabel);
+    //     bool isDashAllowed = !isInAir && IsDashDirectionAllowed(dirLabel);
+    //     bool isAirDashAllowed = isInAir && allowAirDash && IsJumpDirectionAllowed(dirLabel);
+
+    //     // If not allowed to move at all, return early
+    //     if (!isJumpAllowed && !isDashAllowed && !isAirDashAllowed)
+    //     {
+    //         Debug.Log("Action blocked: invalid move while airborne.");
+    //         return;
+    //     }
+
+    //     ResetPhysicsSettings(true, true);
+    //     startPos = rb.position;
+
+    //     if (isDashAllowed)
+    //     {
+    //         allowedToMove = true;
+    //         SetupMovement(maxDashDistance, dashForce, "Dash");
+    //     }
+    //     else if (isJumpAllowed)
+    //     {
+    //         allowedToMove = true;
+    //         SetupMovement(maxJumpDistance, jumpForce, "Jump");
+    //     }
+    //     else if(isAirDashAllowed) 
+    //     {
+    //         allowedToMove = true;
+    //         SetupMovement(maxAirDashDistance, airDashForce, "AirDash");
+    //     }
+
+    //     actionInProgress = true;
+    //     hasTriggeredHover = false;
+    //     hoverTimer = 0;
+    // }
+    
+    private string fetchedAction = "";
+    private void FetchActionType()
     {
-        ResetPhysicsSettings(true, true);
+        allowedToMove = false;      // Always reset
+        fetchedAction = "";         // Always reset
 
         string dirLabel = GetClosestDirectionLabel(snappedDir);
         bool isJumpAllowed = IsJumpDirectionAllowed(dirLabel);
         bool isDashAllowed = IsDashDirectionAllowed(dirLabel);
+        bool isAirDashAllowed = isInAir && allowAirDash && IsAirDashDirectionAllowed(dirLabel);
 
+        if (!isInAir)
+        {
+            if (isDashAllowed)
+            {
+                fetchedAction = "Dash";
+                allowedToMove = true;
+            }
+            else if (isJumpAllowed)
+            {
+                fetchedAction = "Jump";
+                allowedToMove = true;
+            }
+        }
+        else if (isAirDashAllowed)
+        {
+            fetchedAction = "AirDash";
+            allowedToMove = true;
+        }
+
+        if (!allowedToMove)
+        {
+            Debug.Log("Action blocked: invalid move based on current state.");
+        }
+    }
+    
+    private void PerformAction() 
+    {
+        if (!allowedToMove || string.IsNullOrEmpty(fetchedAction))
+        {
+            Debug.Log("PerformAction() aborted: no valid action fetched.");
+            return;
+        }
+
+        float maxTravelDistance;
+        float force;
+
+        ResetPhysicsSettings(true, true);
         startPos = rb.position;
 
-        if (isDashAllowed)
-            SetupMovement(maxDashDistance, dashForce, "Dash");
-        else if (isJumpAllowed)
-            SetupMovement(maxJumpDistance, jumpForce, "Jump");
+        if(fetchedAction == "Dash") 
+        {
+            maxTravelDistance = maxAirDashDistance;
+            force = dashForce;
+        }
+        else if(fetchedAction == "Jump") 
+        {
+            maxTravelDistance = maxJumpDistance;
+            force = jumpForce;
+        }
+        else if(fetchedAction == "AirDash") 
+        {
+            maxTravelDistance = maxAirDashDistance;
+            force = airDashForce;
+        }
+        else
+        {
+            Debug.LogWarning($"Unhandled action type: {fetchedAction}");
+            return;
+        }
+
+        SetupMovement(maxTravelDistance, force, fetchedAction);
 
         actionInProgress = true;
         hasTriggeredHover = false;
@@ -685,6 +808,15 @@ public class AnalogStickReader : MonoBehaviour
             rb.useGravity = false;
             movementForceMode = jumpForceMode;
             bool isDiagonalJump = Mathf.Abs(snappedDir.x) > 0 && Mathf.Abs(snappedDir.y) > 0;
+        }
+        else if(action == "AirDash") 
+        {
+            movementState = MovementState.AirDashing;
+            isDashing = false;
+            isJumping = false;
+            isAirDashing = true;
+            rb.useGravity = false;
+            movementForceMode = airDashForceMode;
         }
 
         snappedDir = Vector3.Lerp(rb.linearVelocity.normalized, snappedDir.normalized, lerpAmount);
@@ -726,7 +858,7 @@ public class AnalogStickReader : MonoBehaviour
     /// </summary>
     private void SmoothMovement()
     {
-        if (movementState != MovementState.Jumping) return;
+        if (movementState != MovementState.Jumping && movementState != MovementState.AirDashing) return;
 
         Vector3 toTarget = predictedTargetPoint - rb.position;
         float remaining = toTarget.magnitude;
@@ -884,6 +1016,7 @@ public class AnalogStickReader : MonoBehaviour
     /// Applies gravity each physics step based on currentSurfaceState (via DetermineGravityDirection),
     /// and adjusts for jump/fall multipliers (lowJumpMultiplier, fallMultiplier), clamping by maxFallSpeed.
     /// </summary>
+    public bool useDynamicGravityStrenght = false;
     private void ApplyCustomGravity()
     {
         Vector3 dir = DetermineGravityDirection().normalized;
@@ -905,7 +1038,7 @@ public class AnalogStickReader : MonoBehaviour
         }
 
         float heightAboveStart = Vector3.Project(rb.position - startPos, -dir).magnitude;
-        float dynamicGravity = initialGravityStrength * (1f + heightAboveStart / maxJumpDistance);
+        float dynamicGravity = useDynamicGravityStrenght ? initialGravityStrength * (1f + heightAboveStart / maxJumpDistance) : initialGravityStrength;
 
         if (verticalVelocity > 0.1f)
             dynamicGravity *= fallMultiplier;
@@ -925,24 +1058,27 @@ public class AnalogStickReader : MonoBehaviour
     /// </summary>
     private void ApplyBurstDropForce()
     {
-        if (movementState == MovementState.Hovering) ExitHover();   
+        if (movementState == MovementState.Hovering) { ExitHover(); StopAllCoroutines(); }
 
-        // gravityStrength = initialGravityStrength;
+        rb.linearDamping = defaultDamping;
 
         Vector3 gDir = DetermineGravityDirection();
+
+        float velAlongDown = Vector3.Dot(rb.linearVelocity , gDir);
         float burstStrength = initialGravityStrength * dropMultiplier;
-        rb.AddForce(gDir * burstStrength, dropForceMode);
+        rb.linearVelocity  -= gDir * velAlongDown;
+        rb.AddForce(gDir * burstStrength, ForceMode.VelocityChange);
 
         fastFalling = true;
+        hasBurstDropped = true;
+
         predictedTargetPoint = rb.position;
         ResetActionState();
 
         movementState = MovementState.Descending;
 
-        hasBurstDropped = true;
-        
         #if UNITY_EDITOR
-        Debug.Log("Burst Drop Applied...");
+        Debug.Log($"Burst Drop! strength={burstStrength:F2}");
         #endif
     }
 
@@ -1074,9 +1210,9 @@ public class AnalogStickReader : MonoBehaviour
         if (Physics.Raycast(origin, Vector3.down, out RaycastHit hit,
             groundProximityCheckDistance + 0.25f, surfaceLayer))
         {
-#if UNITY_EDITOR
+            #if UNITY_EDITOR
             Debug.DrawLine(origin, hit.point, Color.magenta);
-#endif
+            #endif
             return true;
         }
         return false;
@@ -1305,6 +1441,12 @@ public class AnalogStickReader : MonoBehaviour
             (label == "N" || label == "S"))
             return false;
 
+        return allowedMoveLabels.TryGetValue(currentSurfaceState, out var allowed) &&
+            System.Array.Exists(allowed, l => l == label);
+    }
+
+    private bool IsAirDashDirectionAllowed(string label)
+    {
         return allowedMoveLabels.TryGetValue(currentSurfaceState, out var allowed) &&
             System.Array.Exists(allowed, l => l == label);
     }
