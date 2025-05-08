@@ -1423,3 +1423,192 @@ public class AnalogStickDebugger : MonoBehaviour
         //         movementState = MovementState.Descending;
         //     }
         // }
+
+
+
+         // GPT
+    // void FixedUpdate()
+    // {
+    //     TrySetIdleState();
+    //     ApplyCustomGravity();
+    //     GetLastCollidedSurface();
+
+    //     isInAir = !IsCollidingWithSurface();
+    //     if (useHandleActionForces) HandleActionForces();
+        
+    //     CheckArrivalAtTarget();
+    //     if ((movementState == MovementState.Jumping || movementState == MovementState.AirDashing) 
+    //         && (!isDropping || !fastFalling))
+    //     {
+    //         TryStartHoverEffect();
+    //         Debug.Log("Can hover");
+    //     }
+        
+    //     if (movementState != MovementState.Hovering 
+    //         && movementState != MovementState.AirDashing 
+    //         && movementState != MovementState.Stucked)
+    //     {
+    //         if (rb.linearVelocity.y < 0 
+    //             && !hasReachedTarget              
+    //             && !IsNearGround() 
+    //             && !isLandingBuffered 
+    //             && currentSurfaceState != SurfaceState.LeftWall 
+    //             && currentSurfaceState != SurfaceState.RightWall)
+    //         {
+    //             movementState = MovementState.Descending;
+    //             // Debug.Log($"rb linear vel Y -> {rb.linearVelocity.y}, isNearGround -> {IsNearGround()}, isLandingBuffered -> {isLandingBuffered}");
+    //             // Debug.Log($"✅ Movement state changed to Descending");
+    //         }
+    //     }
+
+    //     // else if (movementState == MovementState.Hovering && (!isDropping || !fastFalling)) 
+    //     // {
+    //     //     WobbleEffect();
+    //     // }
+    //     // ⬇️ Prevent descending override if we're about to hover
+
+    //     // Smooth out movement
+    //     SmoothMovement(); 
+
+    //     if (rb.linearVelocity.sqrMagnitude > isMovingThreshold)
+    //         isMoving = true;
+    //     else 
+    //         isMoving = false;
+    
+    //     // if (isMoving)
+    //     // {
+    //     //     TrySmartDecelerateIfNearSurface();
+    //     // }
+
+    //     // ⛔ Stop movement if colliding while moving
+    //     StopMovementUponCollision();
+
+    //     // // Hover
+    //     // if ((movementState == MovementState.Jumping || movementState == MovementState.AirDashing) 
+    //     //     && (!isDropping || !fastFalling))
+    //     // {
+    //     //     TryStartHoverEffect();
+    //     // }
+    //     // else if (movementState == MovementState.Hovering && (!isDropping || !fastFalling)) 
+    //     // {
+    //     //     WobbleEffect();
+    //     // }
+
+    //     // if((movementState == MovementState.Hovering || movementState == MovementState.Descending) && isDropping && !fastFalling) 
+    //     // {
+    //     //     Debug.Log("Applying burst drop");
+    //     //     ApplyBurstDropForce(); 
+    //     // } 
+        
+    //     // ⏳ Handle stuck freeze logic
+    //     if (movementState == MovementState.Stucked)
+    //     {
+    //         FreezePlayer();
+    //     }
+        
+    //     // Force to idle if near ground
+    //     if (/*movementState == MovementState.Descending ||*/ movementState == MovementState.WallDescending)
+    //     {
+    //         if (IsNearGround() && rb.linearVelocity.y < -10f) // Adjust speed threshold as needed
+    //         {
+    //             float wallDescendingSpeed = 10f;
+    //             // Clamp vertical speed near ground to ensure smoother landing
+    //             rb.linearVelocity = new Vector3(rb.linearVelocity.x, -wallDescendingSpeed, rb.linearVelocity.z);
+    //             Debug.Log("✅ Landed – forced transition to Idle");
+    //         }
+    //     }
+
+    //     // Handle bounce mechanic when wall descending
+    //     if (movementState == MovementState.WallDescending && IsNearGround()) 
+    //     {
+    //         OnGroundCollisionBounceFromWall();
+    //     }
+    // }
+
+    // ORIGNAL 
+    // void FixedUpdate()
+    // {
+    //     ApplyCustomGravity();
+    //     GetLastCollidedSurface();
+
+    //     isInAir = !IsCollidingWithSurface();
+    //     if(useHandleActionForces) HandleActionForces();
+        
+    //     if (movementState != MovementState.Hovering && movementState != MovementState.AirDashing && movementState != MovementState.Stucked)
+    //     {
+    //         if (rb.linearVelocity.y < 0 
+    //             && !IsNearGround() 
+    //             && !isLandingBuffered 
+    //             && currentSurfaceState != SurfaceState.LeftWall 
+    //             && currentSurfaceState != SurfaceState.RightWall)
+    //         {
+    //             movementState = MovementState.Descending;
+    //             // Debug.Log($"rb linear vel Y -> {rb.linearVelocity.y}, isNearGround -> {IsNearGround()}, isLandingBuffered -> {isLandingBuffered}");
+    //             // Debug.Log($"✅ Movement state changed to Descending");
+    //         }
+
+    //     }
+
+    //     // Smoooth out movement
+    //     SmoothMovement(); 
+
+    //     if (rb.linearVelocity.sqrMagnitude > isMovingThreshold)
+    //     {
+    //         isMoving = true;
+    //     }
+    //     else { isMoving = false; }
+       
+
+    //     // if (isMoving)
+    //     // {
+    //     //     TrySmartDecelerateIfNearSurface();
+    //     // }
+
+    //     CheckArrivalAtTarget();
+
+    //     // Hover
+    //     if (movementState == MovementState.Jumping || movementState == MovementState.AirDashing && (!isDropping || !fastFalling))
+    //     {
+    //         TryStartHoverEffect();
+    //     }
+    //     else if (movementState == MovementState.Hovering && (!isDropping || !fastFalling)) 
+    //     {
+    //         WobbleEffect();
+    //     }
+
+    //     // if((movementState == MovementState.Hovering || movementState == MovementState.Descending) && isDropping && !fastFalling) 
+    //     // {
+    //     //     Debug.Log("Applying burst drop");
+    //     //     ApplyBurstDropForce(); 
+    //     // } 
+
+    //     // Force to idle if near ground
+    //     if (/*movementState == MovementState.Descending ||*/ movementState == MovementState.WallDescending)
+    //     {
+    //         if (IsNearGround() && rb.linearVelocity.y < -10f) // Adjust speed threshold as needed
+    //         {
+    //             float wallDescendingSpeed = 10f;
+    //             // Clamp vertical speed near ground to ensure smoother landing
+               
+    //             rb.linearVelocity = new Vector3(rb.linearVelocity.x, -wallDescendingSpeed, rb.linearVelocity.z);
+    //             Debug.Log("✅ Landed – forced transition to Idle");
+    //         }
+    //     }
+
+    //     TrySetIdleState();
+
+    //     // ⛔ Stop movement if colliding while moving
+    //     StopMovementUponCollision();
+
+    //     // ⏳ Handle stuck freeze logic
+    //     if (movementState == MovementState.Stucked)
+    //     {
+    //         FreezePlayer();
+    //     }
+       
+    //     // Handle bounce mechanic when walldescending
+    //     if(movementState == MovementState.WallDescending && IsNearGround()) 
+    //     {
+    //         OnGroundCollisionBounceFromWall();
+    //     }
+    // }
