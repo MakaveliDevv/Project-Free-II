@@ -486,10 +486,13 @@ MonoBehaviour:
   bounceSpeed: 25
   dashForce: 20
   maxDashDistance: 5
+  airDashForce: 5
+  maxAirDashDistance: 5
   defaultDamping: 0
   movementForceMode: 0
   jumpForceMode: 2
   dashForceMode: 1
+  airDashForceMode: 1
   gravityStrength: 9.81
   wallGravityPercent: 100
   gravityDir: {x: 0, y: -1, z: 0}
@@ -540,6 +543,8 @@ MonoBehaviour:
   useHandleActionForces: 1
   isMovingThreshold: 0.2
   forceCurveExponent: 0.75
+  allowAirDash: 1
+  useDynamicGravityStrenght: 0
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0

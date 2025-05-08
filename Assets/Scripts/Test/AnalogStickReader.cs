@@ -299,6 +299,7 @@ public class AnalogStickReader : MonoBehaviour
 
     // ─ Input Tracking & Actions
     private string currentAction = "";
+    private string fetchedAction = "";
     private InputAction leftAnalogStickInput;
     private InputAction southButtonInput;
     private Vector2 leftStickInput = Vector2.zero;
@@ -448,6 +449,10 @@ public class AnalogStickReader : MonoBehaviour
                 break;
             case MovementState.Hovering:
                 isJumping = false;
+                break;
+            case MovementState.Stucked:
+                actionInProgress = false;
+                allowAirDash = false;
                 break;
         }
     }
@@ -658,54 +663,10 @@ public class AnalogStickReader : MonoBehaviour
         return false;
     }
 
-    /// <summary>
-    /// Initiates a jump or dash: resets physics via ResetPhysicsSettings, chooses direction label via GetClosestDirectionLabel,
-    /// checks permissions (IsJumpDirectionAllowed / IsDashDirectionAllowed), then calls SetupMovement.
-    /// </summary>
-    // private void PerformMovementAction()
-    // {
-
-    //     string dirLabel = GetClosestDirectionLabel(snappedDir);
-    //     bool isJumpAllowed = !isInAir && IsJumpDirectionAllowed(dirLabel);
-    //     bool isDashAllowed = !isInAir && IsDashDirectionAllowed(dirLabel);
-    //     bool isAirDashAllowed = isInAir && allowAirDash && IsJumpDirectionAllowed(dirLabel);
-
-    //     // If not allowed to move at all, return early
-    //     if (!isJumpAllowed && !isDashAllowed && !isAirDashAllowed)
-    //     {
-    //         Debug.Log("Action blocked: invalid move while airborne.");
-    //         return;
-    //     }
-
-    //     ResetPhysicsSettings(true, true);
-    //     startPos = rb.position;
-
-    //     if (isDashAllowed)
-    //     {
-    //         allowedToMove = true;
-    //         SetupMovement(maxDashDistance, dashForce, "Dash");
-    //     }
-    //     else if (isJumpAllowed)
-    //     {
-    //         allowedToMove = true;
-    //         SetupMovement(maxJumpDistance, jumpForce, "Jump");
-    //     }
-    //     else if(isAirDashAllowed) 
-    //     {
-    //         allowedToMove = true;
-    //         SetupMovement(maxAirDashDistance, airDashForce, "AirDash");
-    //     }
-
-    //     actionInProgress = true;
-    //     hasTriggeredHover = false;
-    //     hoverTimer = 0;
-    // }
-    
-    private string fetchedAction = "";
     private void FetchActionType()
     {
-        allowedToMove = false;      // Always reset
-        fetchedAction = "";         // Always reset
+        allowedToMove = false;      
+        fetchedAction = "";         
 
         string dirLabel = GetClosestDirectionLabel(snappedDir);
         bool isJumpAllowed = IsJumpDirectionAllowed(dirLabel);
@@ -1033,7 +994,7 @@ public class AnalogStickReader : MonoBehaviour
             if (verticalVelocity > dropCap)
                 rb.linearVelocity -= dir * (verticalVelocity - dropCap);
 
-            Debug.Log($"[Fast-fall] speed={verticalVelocity:F2}  gravity={dropGravity:F2}");
+            // Debug.Log($"[Fast-fall] speed={verticalVelocity:F2}  gravity={dropGravity:F2}");
             return;
         }
 
@@ -1048,7 +1009,7 @@ public class AnalogStickReader : MonoBehaviour
         if (verticalVelocity > maxFallSpeed)
             rb.linearVelocity -= dir * (verticalVelocity - maxFallSpeed);
 
-        Debug.Log($"[Fall] speed={verticalVelocity:F2}  height={heightAboveStart:F2}  gravity={dynamicGravity:F2}");
+        // Debug.Log($"[Fall] speed={verticalVelocity:F2}  height={heightAboveStart:F2}  gravity={dynamicGravity:F2}");
     }
 
 
@@ -1058,15 +1019,27 @@ public class AnalogStickReader : MonoBehaviour
     /// </summary>
     private void ApplyBurstDropForce()
     {
-        if (movementState == MovementState.Hovering) { ExitHover(); StopAllCoroutines(); }
+        Debug.Log("DropForce applied");
+        
+        if (movementState == MovementState.Hovering)
+        {
+            ExitHover();
+            StopAllCoroutines();
+        }
+
+        // ✅ If stuck, force exit the freeze state
+        // if (movementState == MovementState.Stucked)
+        // {
+        //     ExitStuckState();
+        //     Debug.Log("burst applied while in stucked mode");
+        // }
 
         rb.linearDamping = defaultDamping;
-
         Vector3 gDir = DetermineGravityDirection();
 
-        float velAlongDown = Vector3.Dot(rb.linearVelocity , gDir);
+        float velAlongDown = Vector3.Dot(rb.linearVelocity, gDir);
         float burstStrength = initialGravityStrength * dropMultiplier;
-        rb.linearVelocity  -= gDir * velAlongDown;
+        rb.linearVelocity -= gDir * velAlongDown;
         rb.AddForce(gDir * burstStrength, ForceMode.VelocityChange);
 
         fastFalling = true;
@@ -1075,12 +1048,14 @@ public class AnalogStickReader : MonoBehaviour
         predictedTargetPoint = rb.position;
         ResetActionState();
 
-        movementState = MovementState.Descending;
+        if(currentSurfaceState == SurfaceState.LeftWall  || currentSurfaceState == SurfaceState.RightWall) movementState = MovementState.WallDescending;
+        else movementState = MovementState.Descending;
 
-        #if UNITY_EDITOR
-        Debug.Log($"Burst Drop! strength={burstStrength:F2}");
-        #endif
+        // #if UNITY_EDITOR
+        // Debug.Log($"[Burst Drop] from {movementState}, strength={burstStrength:F2}");
+        // #endif
     }
+
 
     /// <summary>
     /// Calculates the correct gravity direction vector from currentSurfaceState and contact time.
@@ -1265,14 +1240,10 @@ public class AnalogStickReader : MonoBehaviour
     /// </summary>    
     private void FreezePlayer()
     {
-        if (movementState != MovementState.Stucked) return;
+        if (movementState != MovementState.Stucked || isDropping) return;
 
+        Debug.Log("FreezePlayer method running....");
         stuckTimer -= Time.fixedDeltaTime;
-        if (isDropping)
-        {
-            stuckTimer = 0;
-            return;
-        }
 
         if (stuckTimer <= 0f)
         {
@@ -1363,6 +1334,15 @@ public class AnalogStickReader : MonoBehaviour
         if (resetAppliedForce) hasAppliedForce = false;
         if (resetDamping) rb.linearDamping = defaultDamping;
     }
+
+    private void ExitStuckState()
+    {
+        stuckTimer = 0f;
+        isStuckFrozen = false;
+        rb.isKinematic = false;
+        movementState = MovementState.WallDescending;
+    }
+
     #endregion
 
     // ─────────────────────────────────────────────────────────────────────────
