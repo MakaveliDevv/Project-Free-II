@@ -482,7 +482,7 @@ MonoBehaviour:
   useCardinalLabels: 1
   jumpForce: 35
   maxJumpDistance: 10
-  maxSafeSpeed: 150
+  maxJumpSpeed: 10
   bounceSpeed: 25
   dashForce: 20
   maxDashDistance: 5
@@ -491,8 +491,8 @@ MonoBehaviour:
   jumpForceMode: 2
   dashForceMode: 1
   gravityStrength: 9.81
-  gravityDir: {x: 0, y: -1, z: 0}
   wallGravityPercent: 100
+  gravityDir: {x: 0, y: -1, z: 0}
   gravityDirectionGround: 0
   gravityDirectionCeiling: 0
   gravityDirectionLeftWall: 0
@@ -501,6 +501,7 @@ MonoBehaviour:
   fallMultiplier: 2
   dropMultiplier: 3
   maxFallSpeed: 40
+  dropAngleTolerance: 15
   dropForceMode: 1
   fallForceMode: 5
   useHoverWobble: 1
