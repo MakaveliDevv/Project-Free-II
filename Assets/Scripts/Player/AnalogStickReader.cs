@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Collections;
 
 [RequireComponent(typeof(Rigidbody))]
-public class AnalogStickReader : MonoBehaviour
+public class MovementSystemm : MonoBehaviour
 {
     // ─────────────────────────────────────────────────────────────────────────
     // PUBLIC VARIABLES
@@ -255,6 +255,9 @@ public class AnalogStickReader : MonoBehaviour
     [Tooltip("Interpolation factor (0–1) used when smoothing movement toward a target")]
     public float lerpAmount = 0.85f;
 
+    [Tooltip("When false, LateUpdate will not force Z=0 (allows small Z offsets)")]
+    public bool enableZLock = true;
+
     [Tooltip("If true, uses InputSystem action callbacks to apply forces instead of manual polling")]
     public bool useHandleActionForces = true;
 
@@ -503,9 +506,12 @@ public class AnalogStickReader : MonoBehaviour
 
     void LateUpdate()
     {
-        Vector3 pos = rb.position;
-        pos.z = 0;
-        rb.position = pos;
+        if(enableZLock) 
+        {
+            Vector3 pos = rb.position;
+            pos.z = 0;
+            rb.position = pos;
+        }
     }
 
     void FixedUpdate()
@@ -743,7 +749,7 @@ public class AnalogStickReader : MonoBehaviour
         }
     }
     
-    private void PerformMovementAction() 
+    public void PerformMovementAction() 
     {
         if (!allowedToMove || string.IsNullOrEmpty(fetchedAction)) { return; }
 
@@ -786,6 +792,18 @@ public class AnalogStickReader : MonoBehaviour
         actionInProgress = true;
         hasTriggeredHover = false;
         hoverTimer = 0;
+    }
+
+    /// <summary>
+    /// Called by BoxController right after pulling the player onto a box.
+    /// </summary>
+    public void LaunchOffBox(Vector3 direction)
+    {
+        // map 3D→2D stick dir
+        snappedDir = new Vector2(direction.x, direction.y);
+        fetchedAction = "Jump";
+        allowedToMove = true;
+        PerformMovementAction();
     }
 
     /// <summary>
