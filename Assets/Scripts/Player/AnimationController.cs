@@ -32,8 +32,15 @@ public class AnimationController : MonoBehaviour
             case MovementSystem.MovementState.Jumping:
                 if(movementSystem.isDiagonalJump) // If jumping diagonal
                 {
-                    // Invoke the diagonal jump anim
-                    JumpUpDiagonalAnim();
+                    if(movementSystem.rb.position.x > 0) 
+                    {
+                        // Invoke the diagonal jump anim
+                        JumpDiagonalRightAnim();
+                    }
+                    else if(movementSystem.rb.position.x < 0) 
+                    {
+                        JumpDiagonalLeftAnim();
+                    }
                 }
                 else // Straigh jump
                 {
@@ -172,7 +179,12 @@ public class AnimationController : MonoBehaviour
         
     }
 
-    private void JumpUpDiagonalAnim()  // Jumping upward diagonal
+    private void JumpDiagonalRightAnim()  // Jumping upward diagonal
+    {
+
+    }
+
+    private void JumpDiagonalLeftAnim()  // Jumping upward diagonal
     {
 
     }
