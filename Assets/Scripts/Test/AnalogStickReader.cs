@@ -11,7 +11,7 @@ public class AnalogStickReader : MonoBehaviour
     // ─────────────────────────────────────────────────────────────────────────
 
     // ─ Movement Enums
-    public enum MovementState { Idle, Charging, Jumping, Hovering, Descending, Dashing, AirDashing, WallDashing, Stucked, WallDescending }
+    public enum MovementState { Idle, Charging, Jumping, WallJump, Hovering, Descending, Dashing, AirDashing, WallDashing, Stucked, WallDescending }
     public enum SurfaceState { Ground, LeftWall, RightWall, Ceiling, Air }
     public enum GravityDirection { Down, Up, Left, Right }
 
@@ -132,8 +132,11 @@ public class AnalogStickReader : MonoBehaviour
     [Tooltip("Gravity multiplier when falling normally; makes descent faster or slower")]
     public float fallMultiplier = 1f;
 
-    [Tooltip("Gravity multiplier for a fast-drop action;")]
-    public float dropMultiplier = 2f;
+    [Tooltip("Gravity multiplier for a fast-drop action when in the air;")]
+    public float defaultDropMultiplier = 2f;
+
+    [Tooltip("Gravity multiplier for a fast-drop action when stucked on the wall;")]
+    public float wallDropMultiplier = 2f;
 
     [Tooltip("Maximum allowed downward speed when falling; caps fall velocity")]
     [Range(1f, 100f)]
@@ -271,6 +274,7 @@ public class AnalogStickReader : MonoBehaviour
 
     // ─ State Flags
     private bool isJumping = false;
+    private bool isWallJumping = false;
     private bool isDashing = false;
     private bool isAirDashing = false;
     private bool allowedToMove = false;
@@ -424,7 +428,7 @@ public class AnalogStickReader : MonoBehaviour
             if (movementState != MovementState.Charging && ActionInputDetected() && allowedToMove) { movementState = MovementState.Charging; }
         }
         
-        if(movementState == MovementState.Jumping || movementState == MovementState.Dashing 
+        if(movementState == MovementState.Jumping || movementState == MovementState.WallJump || movementState == MovementState.Dashing 
         || movementState == MovementState.WallDashing || movementState == MovementState.AirDashing) { CheckArrivalAtTarget(); } 
 
         if(movementState == MovementState.Dashing || movementState == MovementState.WallDashing) 
@@ -442,7 +446,6 @@ public class AnalogStickReader : MonoBehaviour
                 ResetActionState();
                 ResetPhysicsSettings(true, true);
                 movementState = MovementState.Idle;
-                Debug.Log("Force resetting actions");
             }
         }
 
@@ -456,13 +459,19 @@ public class AnalogStickReader : MonoBehaviour
         //     }
         // }
 
-        if (isInAir) currentSurfaceState = SurfaceState.Air;
+        if (isInAir) { currentSurfaceState = SurfaceState.Air; }
 
         if (southButtonPressed)
         {
             buttonHoldTimer += Time.deltaTime;
             if (actionReady && !actionInProgress && buttonHoldTimer >= maxHoldTime && buttonPressedLongEnough)
             {
+                if(currentSurfaceState == SurfaceState.LeftWall || currentSurfaceState == SurfaceState.RightWall) 
+                {
+                    fetchedAction = "WallJump";
+                    allowedToMove = true;
+                }
+
                 PerformMovementAction();
                 actionReady = false;
             }
@@ -505,85 +514,39 @@ public class AnalogStickReader : MonoBehaviour
         GetLastCollidedSurface();
 
         isInAir = !IsCollidingWithSurface();
-        if (useHandleActionForces) HandleActionForces();
-
-        if (isDropping && !prevStickDownDrop  && !hasBurstDropped) ApplyBurstDropForce();
-
+        if (useHandleActionForces) { HandleActionForces(); }
+        if (isDropping && !prevStickDownDrop  && !hasBurstDropped) { ApplyBurstDropForce(); }
         prevStickDownDrop = isDropping;
-
+        
         SmoothMovement();
 
         isMoving = rb.linearVelocity.sqrMagnitude > isMovingThreshold;
 
-        if ((movementState == MovementState.Jumping || movementState == MovementState.AirDashing)
-            && (!isDropping || !fastFalling))
-        {
-            TryStartHoverEffect();
-        }
-        else if (movementState == MovementState.Hovering && (!isDropping || !fastFalling))
-        {
-            WobbleEffect();
-        }
+        if ((movementState == MovementState.Jumping || 
+            movementState == MovementState.WallJump || 
+            movementState == MovementState.AirDashing) && 
+            (!isDropping || !fastFalling)) { TryStartHoverEffect(); }
+        else if (movementState == MovementState.Hovering && (!isDropping || !fastFalling)) { WobbleEffect(); }
 
-        if (movementState == MovementState.WallDescending && IsNearGround())
-        {
-            OnGroundCollisionBounceFromWall();
-        }
-
-        TrySetIdleState();
-        StopMovementUponCollision();
-        if (movementState == MovementState.Stucked) FreezePlayer();
+        ForceIdleState();
     }
-
-    // private void OnCollisionEnter(Collision collision)
-    // {
-    //     isJumping = false;
-    //     hasReachedTarget = false;
-    //     HandleSurfaceState(collision, out lastSurfaceObject);
-
-    //     if (currentSurfaceState == SurfaceState.Ground || currentSurfaceState == SurfaceState.Ceiling)
-    //     {
-    //         var contact = collision.contacts[0];
-    //         SnapToGround(contact.point);
-
-    //         surfaceContactTime = Time.time;
-    //         Debug.Log($"ActionInProgress->{actionInProgress}, Time-groundContactTime>{Time.time - surfaceContactTime}");
-
-    //         if (!actionInProgress && Time.time - surfaceContactTime > landingBuffer) 
-    //         {
-    //             isLandingBuffered = true;
-    //             hasBounced = false;
-    //             hasBurstDropped = false;
-
-    //             ResetPhysicsSettings(false, true);
-    //             ResetActionState();
-    //             movementState = MovementState.Idle;
-    //             Debug.Log("Resetting after contact with surface");
-    //         }
-    //     }
-
-    //     if (currentSurfaceState == SurfaceState.LeftWall || currentSurfaceState == SurfaceState.RightWall)
-    //         hasBounced = false;
-    // }
 
     private void OnCollisionEnter(Collision collision)
     {
         HandleSurfaceState(collision, out _);
+        StopMovementUponCollision();
+        
+        Invoke(nameof(ResetActionState), .1f);
+
+        if (movementState == MovementState.WallDescending && 
+            currentSurfaceState == SurfaceState.Ground && !hasBounced) { OnWallDescendingBounce(); }
 
         if (currentSurfaceState == SurfaceState.Ground)
         {
-            // 1) Snap to exact ground height (your existing SnapToGround code)
             var contact = collision.contacts[0];
             SnapToGround(contact.point);
-
-            // 2) Record when we touched
             surfaceContactTime = Time.time;
-
-            // 3) Cancel any prior landing-reset (just in case)
-            if (landingResetCoroutine != null)
-                StopCoroutine(landingResetCoroutine);
-        
-            // 4) Start a fresh one-shot buffer timer
+            if (landingResetCoroutine != null) { StopCoroutine(landingResetCoroutine); }
             landingResetCoroutine = StartCoroutine(DelayedLandingReset());
         }
     }
@@ -653,7 +616,7 @@ public class AnalogStickReader : MonoBehaviour
     /// </summary>
     private void LeftAnalogStickInput()
     {
-        if (Gamepad.current == null) return;
+        if (Gamepad.current == null) { return; }
 
         if (useRawInput) { leftStickInput = Gamepad.current.leftStick.ReadUnprocessedValue(); }
         else { leftStickInput = leftAnalogStickInput.ReadValue<Vector2>(); }
@@ -675,11 +638,10 @@ public class AnalogStickReader : MonoBehaviour
             rawDown = Mathf.Abs(angleDiff) <= dropAngleTolerance;
         }
 
-        isDropping = rawDown && canDrop
-        && movementState != MovementState.Idle
-        && movementState != MovementState.Charging
-        && !ActionInputDetected();
-
+        isDropping = rawDown && canDrop && 
+            movementState != MovementState.Idle && 
+            movementState != MovementState.Charging && 
+            !ActionInputDetected();
     }
 
     /// <summary>
@@ -708,8 +670,17 @@ public class AnalogStickReader : MonoBehaviour
             southButtonPressed = false;
             buttonPressedLongEnough = false;
 
-            if (snappedDir != Vector2.zero && movementState == MovementState.Charging) PerformMovementAction();
-            else ResetActionState();
+            if (snappedDir != Vector2.zero && movementState == MovementState.Charging) 
+            {
+                if(currentSurfaceState == SurfaceState.LeftWall || currentSurfaceState == SurfaceState.RightWall) 
+                {
+                    fetchedAction = "WallJump";
+                    allowedToMove = true;
+                }
+
+                PerformMovementAction();
+            } 
+            else { ResetActionState(); }
 
             actionReady = true;
         }
@@ -726,8 +697,7 @@ public class AnalogStickReader : MonoBehaviour
     /// </summary>
     private bool ActionInputDetected()
     {
-        if (leftStickMovement && southButtonPressed && buttonHoldTimer >= minButtonPressTime)
-            return true;
+        if (leftStickMovement && southButtonPressed && buttonHoldTimer >= minButtonPressTime) { return true; }
 
         buttonHoldTimer = 0;
         southButtonPressed = false;
@@ -740,7 +710,16 @@ public class AnalogStickReader : MonoBehaviour
         fetchedAction = "";         
 
         string dirLabel = GetClosestDirectionLabel(snappedDir);
-        bool isJumpAllowed = IsJumpDirectionAllowed(dirLabel);
+
+        bool isJumpAllowed = (currentSurfaceState != SurfaceState.LeftWall 
+            || currentSurfaceState != SurfaceState.RightWall) 
+            && IsJumpDirectionAllowed(dirLabel);
+
+        bool isWallJumpAllowed = movementState == MovementState.Stucked
+            && (currentSurfaceState == SurfaceState.LeftWall 
+            || currentSurfaceState == SurfaceState.LeftWall)
+            && IsJumpDirectionAllowed(dirLabel);
+            
         bool isDashAllowed = IsDashDirectionAllowed(dirLabel);
         bool isAirDashAllowed = isInAir && allowAirDash && IsAirDashDirectionAllowed(dirLabel);
 
@@ -762,22 +741,11 @@ public class AnalogStickReader : MonoBehaviour
             fetchedAction = "AirDash";
             allowedToMove = true;
         }
-
-        if (!allowedToMove)
-        {
-            Debug.Log("Action blocked: invalid move based on current state.");
-        }
     }
     
     private void PerformMovementAction() 
     {
-        if (!allowedToMove || string.IsNullOrEmpty(fetchedAction))
-        {
-            Debug.Log("PerformAction() aborted: no valid action fetched.");
-            return;
-        }
-
-        Debug.Log("Perform action");
+        if (!allowedToMove || string.IsNullOrEmpty(fetchedAction)) { return; }
 
         float maxTravelDistance;
         float force;
@@ -800,11 +768,12 @@ public class AnalogStickReader : MonoBehaviour
             maxTravelDistance = maxAirDashDistance;
             force = airDashForce;
         }
-        else
+        else if(fetchedAction == "WallJump") 
         {
-            Debug.LogWarning($"Unhandled action type: {fetchedAction}");
-            return;
+            maxTravelDistance = maxJumpDistance;
+            force = jumpForce;
         }
+        else { Debug.LogWarning($"Unhandled action type: {fetchedAction}"); return; }
 
         if (landingResetCoroutine != null)
         {
@@ -836,6 +805,8 @@ public class AnalogStickReader : MonoBehaviour
         {
             movementState = MovementState.Dashing;
             isJumping = false;
+            isWallJumping = false;
+            isAirDashing = false;
             isDashing = true;
             rb.useGravity = true;
             movementForceMode = dashForceMode;
@@ -845,7 +816,21 @@ public class AnalogStickReader : MonoBehaviour
         {
             movementState = MovementState.Jumping;
             isDashing = false;
+            isWallJumping = false;
+            isAirDashing = false;
             isJumping = true;
+            rb.useGravity = false;
+            movementForceMode = jumpForceMode;
+            bool isDiagonalJump = Mathf.Abs(snappedDir.x) > 0 && Mathf.Abs(snappedDir.y) > 0;
+            jumpStartPos = rb.position;
+        }
+        else if(action == "WallJump") 
+        {
+            movementState = MovementState.WallJump;
+            isDashing = false;
+            isJumping = false;
+            isAirDashing = false;
+            isWallJumping = true;
             rb.useGravity = false;
             movementForceMode = jumpForceMode;
             bool isDiagonalJump = Mathf.Abs(snappedDir.x) > 0 && Mathf.Abs(snappedDir.y) > 0;
@@ -856,6 +841,7 @@ public class AnalogStickReader : MonoBehaviour
             movementState = MovementState.AirDashing;
             isDashing = false;
             isJumping = false;
+            isWallJumping = false;
             isAirDashing = true;
             rb.useGravity = false;
             movementForceMode = airDashForceMode;
@@ -914,6 +900,7 @@ public class AnalogStickReader : MonoBehaviour
             hasBurstDropped = false;
             ResetPhysicsSettings(false, true);
             ResetActionState();
+            Debug.Log("DelayedLandingReset...");
         }
 
         landingResetCoroutine = null;
@@ -931,7 +918,7 @@ public class AnalogStickReader : MonoBehaviour
     /// </summary>
     private void SmoothMovement()
     {
-        if (movementState != MovementState.Jumping && movementState != MovementState.AirDashing) return;
+        if (movementState != MovementState.Jumping && movementState != MovementState.WallJump && movementState != MovementState.AirDashing) return;
 
         Vector3 toTarget = predictedTargetPoint - rb.position;
         float remaining = toTarget.magnitude;
@@ -957,10 +944,10 @@ public class AnalogStickReader : MonoBehaviour
         float dynamicForce = forceMagnitude * ratio;
         rb.AddForce(dir * dynamicForce, movementForceMode);
 
-        if (rb.linearVelocity.magnitude > maxJumpSpeed)
-            rb.linearVelocity = rb.linearVelocity.normalized * maxJumpSpeed;
+        if (rb.linearVelocity.magnitude > maxJumpSpeed) { rb.linearVelocity = rb.linearVelocity.normalized * maxJumpSpeed; }
 
         float closeRange = 1.0f;
+
         rb.linearDamping = (remaining < closeRange)
             ? Mathf.Lerp(0f, 5f, 1f - (remaining / closeRange))
             : defaultDamping;
@@ -1008,8 +995,7 @@ public class AnalogStickReader : MonoBehaviour
     private bool TryStartHoverEffect()
     {
         if (!isInAir || movementState == MovementState.Hovering ||
-            hasTriggeredHover || isDropping || fastFalling)
-            return false;
+            hasTriggeredHover || isDropping || fastFalling) { return false; }
 
         Vector3 toTarget = predictedTargetPoint - rb.position;
         float forwardDot = Vector3.Dot(rb.linearVelocity.normalized, toTarget.normalized);
@@ -1021,7 +1007,7 @@ public class AnalogStickReader : MonoBehaviour
         bool hasPassedTarget = forwardDot < 0f;
         bool isInForgivenessZone = hasPassedTarget && distanceToTarget <= hoverForgivenessDistance;
 
-        if (!(isCloseEnough || isInForgivenessZone)) return false;
+        if (!(isCloseEnough || isInForgivenessZone)) { return false; }
 
         movementState = MovementState.Hovering;
         gravityStrength = 0;
@@ -1097,12 +1083,12 @@ public class AnalogStickReader : MonoBehaviour
         float dropGravity = 0;
         if (fastFalling)
         {
-            if(currentSurfaceState == SurfaceState.Air) dropGravity = initialGravityStrength * dropMultiplier;
+            if(currentSurfaceState == SurfaceState.Air) dropGravity = initialGravityStrength * defaultDropMultiplier;
             else if(currentSurfaceState == SurfaceState.LeftWall || currentSurfaceState == SurfaceState.RightWall) dropGravity = initialGravityStrength * wallDescendingGravityStrength;
             
             rb.AddForce(dir * dropGravity, fallForceMode);
 
-            float dropCap = maxFallSpeed * dropMultiplier;
+            float dropCap = maxFallSpeed * defaultDropMultiplier;
             if (verticalVelocity > dropCap)
                 rb.linearVelocity -= dir * (verticalVelocity - dropCap);
 
@@ -1113,13 +1099,9 @@ public class AnalogStickReader : MonoBehaviour
         float heightAboveStart = Vector3.Project(rb.position - startPos, -dir).magnitude;
         float dynamicGravity = useDynamicGravityStrenght ? initialGravityStrength * (1f + heightAboveStart / maxJumpDistance) : initialGravityStrength;
 
-        if (verticalVelocity > 0.1f)
-            dynamicGravity *= fallMultiplier;
-
+        if (verticalVelocity > 0.1f) { dynamicGravity *= fallMultiplier; }
         rb.AddForce(dir * dynamicGravity, fallForceMode);
-
-        if (verticalVelocity > maxFallSpeed)
-            rb.linearVelocity -= dir * (verticalVelocity - maxFallSpeed);
+        if (verticalVelocity > maxFallSpeed) { rb.linearVelocity -= dir * (verticalVelocity - maxFallSpeed); }
 
         // Debug.Log($"[Fall] speed={verticalVelocity:F2}  height={heightAboveStart:F2}  gravity={dynamicGravity:F2}");
     }
@@ -1131,28 +1113,25 @@ public class AnalogStickReader : MonoBehaviour
     /// </summary>
     private void ApplyBurstDropForce()
     {
-        Debug.Log("DropForce applied");
-
-        // ─── FORCE EXIT STUCKED ───────────────────────────────────────────────────
-        if (movementState == MovementState.Stucked && isStuckFrozen)
+        if (landingResetCoroutine != null)
         {
-            ExitStuckState();
-            Debug.Log("Exited stuck state due to drop input");
+            StopCoroutine(landingResetCoroutine);
+            landingResetCoroutine = null;
         }
 
-        // ─── HOVER OVERRIDE ──────────────────────────────────────────────────────
-        if (movementState == MovementState.Hovering)
-        {
-            ExitHover();
-            StopAllCoroutines();
-        }
+        float burstStrength;
 
-        // ─── NOW NORMAL DROP BEHAVIOR ─────────────────────────────────────────────
+        if (movementState == MovementState.Stucked && isStuckFrozen) { ExitStuckState(); }
+        if (movementState == MovementState.Hovering) { ExitHover(); StopAllCoroutines(); }
+
+        if (currentSurfaceState == SurfaceState.LeftWall || 
+            currentSurfaceState == SurfaceState.RightWall) { burstStrength = initialGravityStrength * wallDropMultiplier; }
+        else { burstStrength = initialGravityStrength * defaultDropMultiplier; }
+            
         rb.linearDamping = defaultDamping;
         Vector3 gDir = DetermineGravityDirection();
 
         float velAlongDown  = Vector3.Dot(rb.linearVelocity, gDir);
-        float burstStrength = initialGravityStrength * dropMultiplier;
         rb.linearVelocity -= gDir * velAlongDown;
         rb.AddForce(gDir * burstStrength, ForceMode.VelocityChange);
 
@@ -1162,10 +1141,9 @@ public class AnalogStickReader : MonoBehaviour
         ResetActionState();
 
         // switch to the appropriate descending state
-        if (currentSurfaceState == SurfaceState.LeftWall || currentSurfaceState == SurfaceState.RightWall)
-            movementState = MovementState.WallDescending;
-        else
-            movementState = MovementState.Descending;
+        if (currentSurfaceState == SurfaceState.LeftWall || 
+            currentSurfaceState == SurfaceState.RightWall) { movementState = MovementState.WallDescending; }
+        else {movementState = MovementState.Descending; }
     }
 
     /// <summary>
@@ -1229,24 +1207,18 @@ public class AnalogStickReader : MonoBehaviour
             }
             else if (dotDown > 0.7f && dotDown > bestDot)
             {
-                if(IsNearGround()) return;
-
                 detectedState = SurfaceState.Ceiling;
                 surfaceObject = contact.otherCollider.gameObject;
                 bestDot = dotDown;
             }
             else if (dotLeft > 0.7f && dotLeft > bestDot)
-            {
-                if(IsNearGround()) return;
-                
+            {                
                 detectedState = SurfaceState.RightWall;
                 surfaceObject = contact.otherCollider.gameObject;
                 bestDot = dotLeft;
             }
             else if (dotRight > 0.7f && dotRight > bestDot)
             {
-                if(IsNearGround()) return;
-
                 detectedState = SurfaceState.LeftWall;
                 surfaceObject = contact.otherCollider.gameObject;
                 bestDot = dotRight;
@@ -1259,11 +1231,7 @@ public class AnalogStickReader : MonoBehaviour
             lastSurfaceCheckTime = Time.time;
         }
 
-        if (detectedState != currentSurfaceState)
-        {
-            currentSurfaceState = detectedState;
-            // stateChanged = true;
-        }
+        if (detectedState != currentSurfaceState) { currentSurfaceState = detectedState; }
     }
 
     /// <summary>
@@ -1285,8 +1253,7 @@ public class AnalogStickReader : MonoBehaviour
     /// </summary>
     private GameObject GetLastCollidedSurface()
     {
-        if (Time.time - lastSurfaceCheckTime <= surfaceMemoryDuration)
-            return lastSurfaceObject;
+        if (Time.time - lastSurfaceCheckTime <= surfaceMemoryDuration) { return lastSurfaceObject; }
         return null;
     }
 
@@ -1296,25 +1263,22 @@ public class AnalogStickReader : MonoBehaviour
     /// </summary>
     private bool IsNearGround()
     {
-        if (!TryGetComponent<Collider>(out var col)) return false;
+        Debug.Log("IsNearGround activated");
         Vector3 origin = col.bounds.center;
         origin.y = col.bounds.min.y + 0.1f;
+
         if (Physics.Raycast(origin, Vector3.down, out RaycastHit hit,
             groundProximityCheckDistance + 0.25f, surfaceLayer))
         {
             #if UNITY_EDITOR
             Debug.DrawLine(origin, hit.point, Color.magenta);
+            Debug.Log($"surface->{hit.transform.gameObject.name}");
             #endif
             return true;
         }
+        
         return false;
     }
-
-    /// <summary>
-    /// Convenience check for whether currentSurfaceState is Ground.
-    /// Used in StopMovementUponCollision to differentiate wall vs. ground collisions.
-    /// </summary>
-    private bool SurfaceIsGround() => currentSurfaceState == SurfaceState.Ground;
     #endregion
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -1328,12 +1292,17 @@ public class AnalogStickReader : MonoBehaviour
     /// </summary>
     private void StopMovementUponCollision()
     {
-        if (isMoving && IsCollidingWithSurface())
+        if(isMoving && movementState == MovementState.Dashing && 
+            (currentSurfaceState == SurfaceState.LeftWall || 
+            currentSurfaceState == SurfaceState.RightWall)) { movementState = MovementState.Idle; return; }
+
+
+        if (isMoving && (movementState == MovementState.Jumping || movementState == MovementState.AirDashing))
         {
-            if (movementState == MovementState.WallDescending) return;
+            if (movementState == MovementState.WallDescending || movementState == MovementState.WallJump) return;
 
             if ((currentSurfaceState == SurfaceState.LeftWall || currentSurfaceState == SurfaceState.RightWall)
-                && !SurfaceIsGround())
+                && currentSurfaceState != SurfaceState.Ground)
             {
                 movementState = MovementState.Stucked;
                 stuckTimer = stuckDurationWall;
@@ -1346,6 +1315,7 @@ public class AnalogStickReader : MonoBehaviour
                 isStuckFrozen = true;
             }
 
+            FreezePlayer();
             isMoving = false;
         }
     }
@@ -1357,15 +1327,6 @@ public class AnalogStickReader : MonoBehaviour
     /// </summary>    
     private void FreezePlayer()
     {
-        if (movementState != MovementState.Stucked || isDropping) return;
-
-        // if (movementState == MovementState.Stucked && isDropping)
-        // {
-        //     ExitStuckState();
-        //     return;
-        // }
-
-        Debug.Log("FreezePlayer method running....");
         stuckTimer -= Time.fixedDeltaTime;
 
         if (stuckTimer <= 0f)
@@ -1378,10 +1339,7 @@ public class AnalogStickReader : MonoBehaviour
                 lastWallSide = currentSurfaceState;
                 movementState = MovementState.WallDescending;
             }
-            else
-            {
-                movementState = MovementState.Descending;
-            }
+            else { movementState = MovementState.Descending; }
         }
         else
         {
@@ -1395,25 +1353,33 @@ public class AnalogStickReader : MonoBehaviour
     /// Applies a one-time bounce impulse when wall descending and near ground.
     /// Triggered in FixedUpdate if conditions are met.
     /// </summary>
-    private void OnGroundCollisionBounceFromWall()
+    private void OnWallDescendingBounce()
     {
-        if (hasBounced || rb.linearVelocity.y > 0f || !IsNearGround())
-            return;
+        // bool nearGround = IsNearGround() || currentSurfaceState == SurfaceState.Ground;
+
+        // Debug.Log($"hasBounced='{hasBounced}'  vel.y='{rb.linearVelocity.y}'  nearGround='{nearGround}'");
+
+        // if (hasBounced || rb.linearVelocity.y > 0f || !nearGround)
+        //     return;
 
         Vector3 bounceDir = (lastWallSide == SurfaceState.LeftWall) ? Vector3.right : Vector3.left;
         rb.AddForce(bounceDir * bounceSpeed, ForceMode.Impulse);
         rb.linearVelocity = new Vector3(bounceDir.x * bounceSpeed, 0f, 0f);
-        hasBounced = true;
+        hasBurstDropped = false;
+        hasBounced = false;
+        Debug.Log("Bounced from wall after descending");
     }
+
 
     /// <summary>
     /// Transitions to Idle when no action is in progress and velocity is near zero on the ground,
     /// and calls ResetPhysicsSettings to restore default physics parameters.
     /// </summary>
-    private void TrySetIdleState()
+    private void ForceIdleState()
     {
         if (movementState == MovementState.Charging ||
             movementState == MovementState.Jumping ||
+            movementState == MovementState.WallJump ||
             movementState == MovementState.Dashing ||
             actionInProgress)
             return;
@@ -1424,8 +1390,7 @@ public class AnalogStickReader : MonoBehaviour
             ResetPhysicsSettings(false, true);
         }
 
-        if (movementState == MovementState.Idle && currentSurfaceState == SurfaceState.Ground)
-            isLandingBuffered = false;
+        if (movementState == MovementState.Idle && currentSurfaceState == SurfaceState.Ground) { isLandingBuffered = false; }
     }
 
     /// <summary>
@@ -1439,6 +1404,9 @@ public class AnalogStickReader : MonoBehaviour
         actionInProgress = false;
         hasReachedTarget = false;
         isJumping = false;
+        isDashing = false;
+        isAirDashing = false;
+        isWallJumping = false;
         snappedDir = Vector2.zero;
     }
 
@@ -1479,7 +1447,7 @@ public class AnalogStickReader : MonoBehaviour
     /// </summary>
     private Vector3 GetSnappedDirection(Vector2 input)
     {
-        if (input.sqrMagnitude < minStickMagnitude) return Vector3.zero;
+        if (input.sqrMagnitude < minStickMagnitude) { return Vector3.zero; }
 
         float rawAngle = Mathf.Atan2(input.y, input.x) * Mathf.Rad2Deg;
         if (snapDirectionsEnabled)
@@ -1522,10 +1490,10 @@ public class AnalogStickReader : MonoBehaviour
     private bool IsDashDirectionAllowed(string label)
     {
         if (currentSurfaceState == SurfaceState.Ground || currentSurfaceState == SurfaceState.Ceiling)
-            return label == "W" || label == "E";
+            { return label == "W" || label == "E"; }
 
         if (currentSurfaceState == SurfaceState.LeftWall || currentSurfaceState == SurfaceState.RightWall)
-            return label == "N" || label == "S";
+            { return label == "N" || label == "S"; }
 
         return false;
     }
@@ -1537,12 +1505,10 @@ public class AnalogStickReader : MonoBehaviour
     /// </summary>
     private bool IsJumpDirectionAllowed(string label)
     {
-        if (label == "W" || label == "E")
-            return false;
+        if (label == "W" || label == "E") { return false; }
 
         if ((currentSurfaceState == SurfaceState.LeftWall || currentSurfaceState == SurfaceState.RightWall) &&
-            (label == "N" || label == "S"))
-            return false;
+            (label == "N" || label == "S")) { return false; }
 
         return allowedMoveLabels.TryGetValue(currentSurfaceState, out var allowed) &&
             System.Array.Exists(allowed, l => l == label);
