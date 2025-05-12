@@ -272,6 +272,7 @@ GameObject:
   - component: {fileID: 206922473}
   - component: {fileID: 206922472}
   - component: {fileID: 206922475}
+  - component: {fileID: 206922476}
   m_Layer: 0
   m_Name: PlayerTest
   m_TagString: Untagged
@@ -538,7 +539,27 @@ MonoBehaviour:
   forceCurveExponent: 0.75
   allowAirDash: 1
   landingBuffer: 0.1
+  snappedDir: {x: 0, y: 0}
+  rb: {fileID: 0}
+  lastSurfaceObject: {fileID: 0}
+  isDiagonalJump: 0
+  isDiagonalAirDash: 0
   useDynamicGravityStrenght: 1
+--- !u!114 &206922476
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 206922466}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b767ebc5280ff154f97c557e2a264110, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  inputActions: {fileID: -944628639613478452, guid: 9740b7f8f03c4a749a2e93320c4985da, type: 3}
+  snapSpeed: 5
+  launchForce: 10
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0
@@ -1320,7 +1341,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1108820446}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b770fc93f7d43904495af2e4200a3920, type: 3}
   m_Name: 
@@ -1576,29 +1597,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 414e299e030d702479352f0093dbebfb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  mode: 0
-  state: 0
-  inputActions: {fileID: -944628639613478452, guid: 9740b7f8f03c4a749a2e93320c4985da, type: 3}
-  jumpDashParams:
-    maxJumpRange: 7
-    maxHoldTime: 1
-    maxDashRange: 7
-    dashForceMultiplier: 5
-    stopDashAfterDuration: 0.1
-    jumpForceMultiplier: 10
-    epsilon: 0.1
-    clampMagnitudeMaxLength: 50
-    hoverDelay: 0.2
-    hoverDuration: 1.01
-    groundCheckDistance: 0.1
-    gravityScale: 2
-    fastFallMultiplier: 8
-    horizontalLeftAngleThreshold: 150
-    horizontalRightAngleThreshold: 30
-    wallCheckDistance: 1
-    wallLayer:
-      serializedVersion: 2
-      m_Bits: 128
 --- !u!114 &1669732987
 MonoBehaviour:
   m_ObjectHideFlags: 0

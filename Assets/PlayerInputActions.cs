@@ -117,6 +117,15 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""SnapAction"",
+                    ""type"": ""Button"",
+                    ""id"": ""5a1434da-b06c-44ec-bb3a-0a7ac309dffa"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -196,6 +205,17 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
                     ""action"": ""OnPause"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""05e64f0a-0850-4824-a046-0f287433e512"",
+                    ""path"": ""<Gamepad>/buttonNorth"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""SnapAction"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -207,6 +227,7 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
         m_Player_Jump = m_Player.FindAction("Jump", throwIfNotFound: true);
         m_Player_Movement = m_Player.FindAction("Movement", throwIfNotFound: true);
         m_Player_OnPause = m_Player.FindAction("OnPause", throwIfNotFound: true);
+        m_Player_SnapAction = m_Player.FindAction("SnapAction", throwIfNotFound: true);
     }
 
     ~@PlayerInputActions()
@@ -290,6 +311,7 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
     private readonly InputAction m_Player_Jump;
     private readonly InputAction m_Player_Movement;
     private readonly InputAction m_Player_OnPause;
+    private readonly InputAction m_Player_SnapAction;
     /// <summary>
     /// Provides access to input actions defined in input action map "Player".
     /// </summary>
@@ -313,6 +335,10 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
         /// Provides access to the underlying input action "Player/OnPause".
         /// </summary>
         public InputAction @OnPause => m_Wrapper.m_Player_OnPause;
+        /// <summary>
+        /// Provides access to the underlying input action "Player/SnapAction".
+        /// </summary>
+        public InputAction @SnapAction => m_Wrapper.m_Player_SnapAction;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
@@ -348,6 +374,9 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
             @OnPause.started += instance.OnOnPause;
             @OnPause.performed += instance.OnOnPause;
             @OnPause.canceled += instance.OnOnPause;
+            @SnapAction.started += instance.OnSnapAction;
+            @SnapAction.performed += instance.OnSnapAction;
+            @SnapAction.canceled += instance.OnSnapAction;
         }
 
         /// <summary>
@@ -368,6 +397,9 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
             @OnPause.started -= instance.OnOnPause;
             @OnPause.performed -= instance.OnOnPause;
             @OnPause.canceled -= instance.OnOnPause;
+            @SnapAction.started -= instance.OnSnapAction;
+            @SnapAction.performed -= instance.OnSnapAction;
+            @SnapAction.canceled -= instance.OnSnapAction;
         }
 
         /// <summary>
@@ -429,5 +461,12 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnOnPause(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "SnapAction" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnSnapAction(InputAction.CallbackContext context);
     }
 }

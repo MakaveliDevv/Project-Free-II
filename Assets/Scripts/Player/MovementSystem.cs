@@ -272,10 +272,42 @@ public class MovementSystem : MonoBehaviour
     public float landingBuffer = 0.1f;
 
     // ─────────────────────────────────────────────────────────────────────────
+    // PUBLIC HIDDEN VARIABLES
+    // ─────────────────────────────────────────────────────────────────────────
+
+    // ─ Movement Flags
+    // ground jump
+    [HideInInspector] public bool isStraightJump = false;
+    [HideInInspector] public bool isDiagonalJumpRight = false;
+
+    // air dash
+
+    // To right
+    [HideInInspector] public bool isVerticalAirDash = false;
+    [HideInInspector] public bool isHorizontalAirDash = false;
+
+    [HideInInspector] public bool isRightAirDash = false;
+    
+    [HideInInspector] public bool isRightDiagonalAirDash = false;
+    [HideInInspector] public bool isAirDashAscend = false;
+
+
+    // wall jump
+    [HideInInspector] public bool isWallJumpRight = false;
+    [HideInInspector] public bool isWallJumpAscend = false;
+
+    // ─ Movement Calculations
+    [HideInInspector] public Vector2 snappedDir = Vector2.zero;
+    [HideInInspector] public Rigidbody rb;
+
+    // ─ Surface Memory
+    [HideInInspector] public GameObject lastSurfaceObject;
+
+    // ─────────────────────────────────────────────────────────────────────────
     // PRIVATE VARIABLES
     // ─────────────────────────────────────────────────────────────────────────
 
-    // ─ State Flags
+    // ─ Movement Flags
     private bool isJumping = false;
     private bool isWallJumping = false;
     private bool isDashing = false;
@@ -310,10 +342,9 @@ public class MovementSystem : MonoBehaviour
     // ─ Input Tracking & Actions
     private string currentAction = "";
     private string fetchedAction = "";
-    private InputAction leftAnalogStickInput;
-    private InputAction southButtonInput;
+    private InputAction leftStick;
+    private InputAction southButton;
     private Vector2 leftStickInput = Vector2.zero;
-    public Vector2 snappedDir = Vector2.zero;
     private bool southButtonPressed;
     private bool leftStickMovement = false;
     private bool actionReady = true;
@@ -356,7 +387,6 @@ public class MovementSystem : MonoBehaviour
     private Vector3 airDashStartPos = Vector3.zero;
 
     // ─ References
-    public Rigidbody rb;
     private Collider col;
 
     private Vector3 startPos;
@@ -365,7 +395,6 @@ public class MovementSystem : MonoBehaviour
 
     // ─ Surface Memory
     private GameObject nearbySurface = null;
-    public GameObject lastSurfaceObject;
     private float lastSurfaceCheckTime;
     private const float surfaceMemoryDuration = 0.2f;
 
@@ -432,9 +461,9 @@ public class MovementSystem : MonoBehaviour
         }
         
         if(movementState == MovementState.Jumping || movementState == MovementState.WallJump || movementState == MovementState.Dashing 
-        || movementState == MovementState.WallDashing || movementState == MovementState.AirDashing) { CheckArrivalAtTarget(); } 
+            || movementState == MovementState.AirDashing) { CheckArrivalAtTarget(); } 
 
-        if(movementState == MovementState.Dashing || movementState == MovementState.WallDashing) 
+        if(movementState == MovementState.Dashing) 
         {
             float traveled = Vector3.Distance(rb.position, dashStartPos);
 
@@ -466,6 +495,8 @@ public class MovementSystem : MonoBehaviour
 
         if (southButtonPressed)
         {
+            allowAirDash = true;
+
             buttonHoldTimer += Time.deltaTime;
             if (actionReady && !actionInProgress && buttonHoldTimer >= maxHoldTime && buttonPressedLongEnough)
             {
@@ -581,11 +612,11 @@ public class MovementSystem : MonoBehaviour
     private void SetupInputActions()
     {
         var map = inputActions.FindActionMap("Player");
-        leftAnalogStickInput = map.FindAction("Movement");
-        southButtonInput = map.FindAction("Jump");
+        leftStick = map.FindAction("Movement");
+        southButton = map.FindAction("Jump");
 
-        leftAnalogStickInput.Enable();
-        southButtonInput.Enable();
+        leftStick.Enable();
+        southButton.Enable();
     }
 
     /// <summary>
@@ -594,9 +625,9 @@ public class MovementSystem : MonoBehaviour
     /// </summary>
     private void RegisterInputCallbacks()
     {
-        southButtonInput.started += OnSouthButtonStarted;
-        southButtonInput.performed += OnSouthButtonPerformed;
-        southButtonInput.canceled += OnSouthButtonCanceled;
+        southButton.started += OnSouthButtonStarted;
+        southButton.performed += OnSouthButtonPerformed;
+        southButton.canceled += OnSouthButtonCanceled;
     }
 
     /// <summary>
@@ -605,9 +636,9 @@ public class MovementSystem : MonoBehaviour
     /// </summary>
     private void UnregisterInputCallbacks()
     {
-        southButtonInput.started -= OnSouthButtonStarted;
-        southButtonInput.performed -= OnSouthButtonPerformed;
-        southButtonInput.canceled -= OnSouthButtonCanceled;
+        southButton.started -= OnSouthButtonStarted;
+        southButton.performed -= OnSouthButtonPerformed;
+        southButton.canceled -= OnSouthButtonCanceled;
     }
     #endregion
 
@@ -625,7 +656,7 @@ public class MovementSystem : MonoBehaviour
         if (Gamepad.current == null) { return; }
 
         if (useRawInput) { leftStickInput = Gamepad.current.leftStick.ReadUnprocessedValue(); }
-        else { leftStickInput = leftAnalogStickInput.ReadValue<Vector2>(); }
+        else { leftStickInput = leftStick.ReadValue<Vector2>(); }
 
         leftStickMovement = leftStickInput.magnitude > minStickMagnitude;
         
@@ -644,7 +675,7 @@ public class MovementSystem : MonoBehaviour
             rawDown = Mathf.Abs(angleDiff) <= dropAngleTolerance;
         }
 
-        isDropping = rawDown && canDrop && 
+        isDropping = Gamepad.current.buttonEast.isPressed && rawDown && canDrop && 
             movementState != MovementState.Idle && 
             movementState != MovementState.Charging && 
             !ActionInputDetected();
@@ -806,9 +837,6 @@ public class MovementSystem : MonoBehaviour
         PerformMovementAction();
     }
 
-
-    public bool isDiagonalJump = false;
-    public bool isDiagonalAirDash = false;
     /// <summary>
     /// Configures targetDistance, forceMagnitude, predictedTargetPoint, and movementForceMode for a jump or dash.
     /// Called by PerformMovementAction and consumed by HandleActionForces and SmoothMovement.
@@ -822,52 +850,95 @@ public class MovementSystem : MonoBehaviour
         hasAppliedForce = false;
         currentAction = action;
 
+        string dirLabel = GetClosestDirectionLabel(snappedDir);
+
         if (action == "Dash")
         {
             movementState = MovementState.Dashing;
+            
             isJumping = false;
             isWallJumping = false;
             isAirDashing = false;
             isDashing = true;
+            
             rb.useGravity = true;
-            movementForceMode = dashForceMode;
             dashStartPos = rb.position;
+            movementForceMode = dashForceMode;
         }
         else if (action == "Jump")
         {
             movementState = MovementState.Jumping;
+
+            // Movement flags
             isDashing = false;
             isWallJumping = false;
             isAirDashing = false;
             isJumping = true;
+
             rb.useGravity = false;
-            movementForceMode = jumpForceMode;
-            isDiagonalJump = Mathf.Abs(snappedDir.x) > 0 && Mathf.Abs(snappedDir.y) > 0;
             jumpStartPos = rb.position;
+            movementForceMode = jumpForceMode;
+
+            if(dirLabel == "N") { isStraightJump = true;}
+            else { isStraightJump = false; }
+
+            bool isDiagonalJump = !isStraightJump && Mathf.Abs(snappedDir.x) > 0 && Mathf.Abs(snappedDir.y) > 0; 
+            if(isDiagonalJump && snappedDir.x > 0) { isDiagonalJumpRight = true; }
+            else if (isDiagonalJump && snappedDir.x < 0) { isDiagonalJumpRight = false; }
         }
         else if(action == "WallJump") 
         {
             movementState = MovementState.WallJump;
-            isDashing = false;
+
             isJumping = false;
+            isDashing = false;
             isAirDashing = false;
             isWallJumping = true;
+            
             rb.useGravity = false;
-            movementForceMode = jumpForceMode;
-            isDiagonalJump = Mathf.Abs(snappedDir.x) > 0 && Mathf.Abs(snappedDir.y) > 0;
             jumpStartPos = rb.position;
+            movementForceMode = jumpForceMode;
+
+            if(currentSurfaceState == SurfaceState.LeftWall) { isWallJumpRight = true; }
+            else if(currentSurfaceState == SurfaceState.RightWall) { isWallJumpRight = false; }
+
+            if(snappedDir.y > 0) { isWallJumpAscend = true; }
+            else if (snappedDir.y < 0) { isWallJumpAscend = false; }
         }
         else if(action == "AirDash") 
         {
             movementState = MovementState.AirDashing;
-            isDashing = false;
+            
             isJumping = false;
+            isDashing = false;
             isWallJumping = false;
             isAirDashing = true;
+            
             rb.useGravity = false;
-            movementForceMode = airDashForceMode;
-            isDiagonalAirDash = Mathf.Abs(snappedDir.x) > 0 && Mathf.Abs(snappedDir.y) > 0;
             airDashStartPos = rb.position;
+            movementForceMode = airDashForceMode;
+            
+            if(dirLabel == "N" || dirLabel == "S") { isVerticalAirDash = true;}
+            else { isVerticalAirDash = false;}
+
+            if(dirLabel == "E" || dirLabel == "W") { isHorizontalAirDash = true; }
+            else { isHorizontalAirDash = false; }
+
+            bool isDiagonalAirDash = !isVerticalAirDash && !isHorizontalAirDash && Mathf.Abs(snappedDir.x) > 0 && Mathf.Abs(snappedDir.y) > 0; 
+            
+            if(isHorizontalAirDash) 
+            {
+                if(snappedDir.x > 0)  { isRightAirDash = true; }
+                else if(snappedDir.x < 0) { isRightAirDash = false;}
+            }
+            else if(isDiagonalAirDash) 
+            { 
+                if(snappedDir.x > 0) { isRightDiagonalAirDash = true; }
+                else if(snappedDir.x < 0) { isRightDiagonalAirDash = false; }
+            }
+
+            if(snappedDir.y > 0) { isAirDashAscend = true; }
+            else if(snappedDir.y < 0) { isAirDashAscend = false; }	
         }
 
         snappedDir = Vector3.Lerp(rb.linearVelocity.normalized, snappedDir.normalized, lerpAmount);
@@ -1377,13 +1448,6 @@ public class MovementSystem : MonoBehaviour
     /// </summary>
     private void OnWallDescendingBounce()
     {
-        // bool nearGround = IsNearGround() || currentSurfaceState == SurfaceState.Ground;
-
-        // Debug.Log($"hasBounced='{hasBounced}'  vel.y='{rb.linearVelocity.y}'  nearGround='{nearGround}'");
-
-        // if (hasBounced || rb.linearVelocity.y > 0f || !nearGround)
-        //     return;
-
         Vector3 bounceDir = (lastWallSide == SurfaceState.LeftWall) ? Vector3.right : Vector3.left;
         rb.AddForce(bounceDir * bounceSpeed, ForceMode.Impulse);
         rb.linearVelocity = new Vector3(bounceDir.x * bounceSpeed, 0f, 0f);
@@ -1485,7 +1549,7 @@ public class MovementSystem : MonoBehaviour
     /// Finds the nearest direction label (e.g. "NNE") for a given Vector2 direction
     /// based on the labelToAngle map. Used by PerformMovementAction and permission checks.
     /// </summary>
-    private string GetClosestDirectionLabel(Vector2 dir)
+    public string GetClosestDirectionLabel(Vector2 dir)
     {
         float angle = (Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg + 360f) % 360f;
         float minDiff = float.MaxValue;
