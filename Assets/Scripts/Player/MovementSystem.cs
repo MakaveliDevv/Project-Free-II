@@ -11,7 +11,7 @@ public class MovementSystem : MonoBehaviour
     // ─────────────────────────────────────────────────────────────────────────
 
     // ─ Movement Enums
-    public enum MovementState { Idle, Charging, Jumping, WallJump, Hovering, Descending, Dashing, AirDashing, WallDashing, Stucked, WallDescending }
+    public enum MovementState { Idle, Charging, Jumping, WallJump, Hovering, Descending, Dashing, AirDashing, WallDashing, Stucked, WallDescending, NOTHING }
     public enum SurfaceState { Ground, LeftWall, RightWall, Ceiling, Air }
     public enum GravityDirection { Down, Up, Left, Right }
 
@@ -105,6 +105,7 @@ public class MovementSystem : MonoBehaviour
     [Header("Gravity Settings")]
     [Tooltip("Magnitude of gravitational pull applied each physics frame")]
     public float gravityStrength = 9.81f;
+    public bool useDynamicGravityStrenght = false;
 
     [Tooltip("Percentage of gravityStrength applied when on walls; reduces slip along walls")]
     public int wallGravityPercent = 10;
@@ -270,6 +271,11 @@ public class MovementSystem : MonoBehaviour
     [Tooltip("If true, player can perform an air dash")]
     public bool allowAirDash = false;
     public float landingBuffer = 0.1f;
+
+    [Header("Test")]
+    public float fallTimer = .25f;
+    public bool useAutoHover = false;
+    private bool isTimerRunning = false;
 
     // ─────────────────────────────────────────────────────────────────────────
     // PUBLIC HIDDEN VARIABLES
@@ -448,6 +454,14 @@ public class MovementSystem : MonoBehaviour
     {
         wallDescendingGravityStrength = gravityStrength * (wallGravityPercent * 0.1f);
     }
+    
+    private IEnumerator Timer(float timer) 
+    {
+        isTimerRunning = true;
+        yield return new WaitForSeconds(timer);
+        isTimerRunning = false;
+        yield break;
+    }
 
     void Update()
     {
@@ -463,23 +477,48 @@ public class MovementSystem : MonoBehaviour
         if(movementState == MovementState.Jumping || movementState == MovementState.WallJump || movementState == MovementState.Dashing 
             || movementState == MovementState.AirDashing) { CheckArrivalAtTarget(); } 
 
-        if(movementState == MovementState.Dashing) 
-        {
-            float traveled = Vector3.Distance(rb.position, dashStartPos);
+        if(!useAutoHover && movementState == MovementState.Jumping || 
+            movementState == MovementState.WallJump || 
+            movementState == MovementState.AirDashing) 
+            {
 
-            if(hasReachedTarget) 
-            {
-                ResetActionState();
-                ResetPhysicsSettings(true, true);
-                movementState = MovementState.Idle;
+                if(hasReachedTarget)
+                {                  
+                    movementState = MovementState.NOTHING;
+
+                    Debug.Log("Player reached target point");
+                    gravityStrength = gravityStrength / 100f * 10f;
+                    StartCoroutine(Timer(fallTimer));
+                    ResetActionState();
+                    ResetPhysicsSettings(false, true);
+
+                    if(isTimerRunning) 
+                    {
+                        Debug.Log("Timer running..."); 
+                        return; 
+                    } 
+                    
+                    movementState = MovementState.Descending;
+                
+                }
             }
-            else if(!hasReachedTarget && traveled > TravelEpsilon && rb.linearVelocity.magnitude <= 0.01f) 
+            else if(movementState == MovementState.Dashing) 
             {
-                ResetActionState();
-                ResetPhysicsSettings(true, true);
-                movementState = MovementState.Idle;
+                float traveled = Vector3.Distance(rb.position, dashStartPos);
+
+                if(hasReachedTarget) 
+                {
+                    ResetActionState();
+                    ResetPhysicsSettings(true, true);
+                    movementState = MovementState.Idle;
+                }
+                else if(!hasReachedTarget && traveled > TravelEpsilon && rb.linearVelocity.magnitude <= 0.01f) 
+                {
+                    ResetActionState();
+                    ResetPhysicsSettings(true, true);
+                    movementState = MovementState.Idle;
+                }
             }
-        }
 
         // if (stateChanged)
         // {
@@ -510,7 +549,7 @@ public class MovementSystem : MonoBehaviour
                 actionReady = false;
             }
         }
-
+        
         switch (movementState)
         {
             case MovementState.Idle:
@@ -709,11 +748,11 @@ public class MovementSystem : MonoBehaviour
 
             if (snappedDir != Vector2.zero && movementState == MovementState.Charging) 
             {
-                if(currentSurfaceState == SurfaceState.LeftWall || currentSurfaceState == SurfaceState.RightWall) 
-                {
-                    fetchedAction = "WallJump";
-                    allowedToMove = true;
-                }
+                // if(currentSurfaceState == SurfaceState.LeftWall || currentSurfaceState == SurfaceState.RightWall) 
+                // {
+                //     fetchedAction = "WallJump";
+                //     allowedToMove = true;
+                // }
 
                 PerformMovementAction();
             } 
@@ -748,13 +787,13 @@ public class MovementSystem : MonoBehaviour
 
         string dirLabel = GetClosestDirectionLabel(snappedDir);
 
-        bool isJumpAllowed = (currentSurfaceState != SurfaceState.LeftWall 
-            || currentSurfaceState != SurfaceState.RightWall) 
+        bool isJumpAllowed = currentSurfaceState != SurfaceState.LeftWall 
+            && currentSurfaceState != SurfaceState.RightWall 
             && IsJumpDirectionAllowed(dirLabel);
 
-        bool isWallJumpAllowed = movementState == MovementState.Stucked
+        bool isWallJumpAllowed = (movementState == MovementState.Stucked || movementState == MovementState.WallDescending || movementState == MovementState.Charging)
             && (currentSurfaceState == SurfaceState.LeftWall 
-            || currentSurfaceState == SurfaceState.LeftWall)
+            || currentSurfaceState == SurfaceState.RightWall)
             && IsJumpDirectionAllowed(dirLabel);
             
         bool isDashAllowed = IsDashDirectionAllowed(dirLabel);
@@ -762,7 +801,12 @@ public class MovementSystem : MonoBehaviour
 
         if (!isInAir)
         {
-            if (isDashAllowed)
+            if (isWallJumpAllowed)
+            {
+                fetchedAction = "WallJump";
+                allowedToMove = true;
+            }
+            else if (isDashAllowed)
             {
                 fetchedAction = "Dash";
                 allowedToMove = true;
@@ -1102,6 +1146,23 @@ public class MovementSystem : MonoBehaviour
 
         if (!(isCloseEnough || isInForgivenessZone)) { return false; }
 
+        if(Gamepad.current.buttonWest.IsPressed() && !useAutoHover) 
+        {
+            Hover();
+            return true;
+        }
+        else if(useAutoHover) 
+        {
+            Debug.Log("Auto hover.."); 
+            Hover(); 
+            return true; 
+        }
+
+        return false;
+    }
+
+    private void Hover() 
+    {
         movementState = MovementState.Hovering;
         gravityStrength = 0;
         rb.linearDamping = hoverLinearDamping;
@@ -1112,7 +1173,6 @@ public class MovementSystem : MonoBehaviour
 
         StartCoroutine(SmoothHoverTransition());
         WobbleEffect();
-        return true;
     }
 
     /// <summary>
@@ -1168,7 +1228,6 @@ public class MovementSystem : MonoBehaviour
     /// Applies gravity each physics step based on currentSurfaceState (via DetermineGravityDirection),
     /// and adjusts for jump/fall multipliers (lowJumpMultiplier, fallMultiplier), clamping by maxFallSpeed.
     /// </summary>
-    public bool useDynamicGravityStrenght = false;
     private void ApplyCustomGravity()
     {
         Vector3 dir = DetermineGravityDirection().normalized;
@@ -1390,9 +1449,9 @@ public class MovementSystem : MonoBehaviour
             currentSurfaceState == SurfaceState.RightWall)) { movementState = MovementState.Idle; return; }
 
 
-        if (isMoving && (movementState == MovementState.Jumping || movementState == MovementState.AirDashing))
+        if (isMoving && (movementState == MovementState.Jumping || movementState == MovementState.WallJump || movementState == MovementState.AirDashing))
         {
-            if (movementState == MovementState.WallDescending || movementState == MovementState.WallJump) return;
+            if (movementState == MovementState.WallDescending) return;
 
             if ((currentSurfaceState == SurfaceState.LeftWall || currentSurfaceState == SurfaceState.RightWall)
                 && currentSurfaceState != SurfaceState.Ground)

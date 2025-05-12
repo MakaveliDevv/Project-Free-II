@@ -1,8 +1,10 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class Player : MonoBehaviour 
 {
+    private MovementSystem movementSystem;
     private bool inRangeForInteractable = false;
     private bool inRangeForAttackable = false;
 
@@ -12,6 +14,56 @@ public class Player : MonoBehaviour
     private GameObject _interactable;
     private GameObject _attackable;
 
+    public InputActionAsset inputActions;
+    private InputAction dPadUp;
+    private InputAction dPadRight;
+    
+    private void Awake()
+    {
+        movementSystem = GetComponent<MovementSystem>();
+        SetupInputActions();
+    }
+
+    private void SetupInputActions()
+    {
+        var map = inputActions.FindActionMap("ToggleMechanics");
+        dPadUp = map.FindAction("ToggleAutoHover");
+        dPadRight = map.FindAction("ToggleAirDash");
+
+        dPadUp.Enable();
+        dPadRight.Enable();
+    }
+
+    private void RegisterInputCallbacks()
+    {
+        dPadUp.canceled += ToggleAutoHover;
+        dPadRight.canceled += ToggleAirDash;
+    }
+
+    private void UnregisterInputCallbacks()
+    {
+        dPadUp.canceled -= ToggleAutoHover;
+        dPadRight.canceled -= ToggleAirDash;
+    }
+
+    private void ToggleAutoHover(InputAction.CallbackContext ctx) 
+    {
+        if(ctx.canceled) 
+        {
+            Debug.Log("Toggle Auto Hover");
+            movementSystem.useAutoHover = !movementSystem.useAutoHover;
+        }
+    }
+
+    private void ToggleAirDash(InputAction.CallbackContext ctx) 
+    {
+        if(ctx.canceled) 
+        {
+            Debug.Log("Toggle Air Dash");
+            movementSystem.allowAirDash = !movementSystem.allowAirDash;
+        }
+    }
+    
     private void Update()
     {
         if(inRangeForInteractable && interactable.Count == 1) 

@@ -273,6 +273,7 @@ GameObject:
   - component: {fileID: 206922472}
   - component: {fileID: 206922475}
   - component: {fileID: 206922476}
+  - component: {fileID: 206922477}
   m_Layer: 0
   m_Name: PlayerTest
   m_TagString: Untagged
@@ -418,6 +419,10 @@ MonoBehaviour:
         m_CallState: 2
     m_ActionId: 129e45d5-8ec5-4ea8-8538-fb086bcd2eeb
     m_ActionName: 'Player/OnPause[/XInputControllerWindows/select]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 5a1434da-b06c-44ec-bb3a-0a7ac309dffa
+    m_ActionName: 'Player/SnapAction[/XInputControllerWindows/buttonNorth]'
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
   m_DefaultActionMap: Player
@@ -487,6 +492,7 @@ MonoBehaviour:
   dashForceMode: 1
   airDashForceMode: 1
   gravityStrength: 9.81
+  useDynamicGravityStrenght: 1
   wallGravityPercent: 100
   gravityDir: {x: 0, y: -1, z: 0}
   gravityDirectionGround: 0
@@ -539,12 +545,20 @@ MonoBehaviour:
   forceCurveExponent: 0.75
   allowAirDash: 1
   landingBuffer: 0.1
+  fallTimer: 0.25
+  useAutoHover: 0
+  isStraightJump: 0
+  isDiagonalJumpRight: 0
+  isVerticalAirDash: 0
+  isHorizontalAirDash: 0
+  isRightAirDash: 0
+  isRightDiagonalAirDash: 0
+  isAirDashAscend: 0
+  isWallJumpRight: 0
+  isWallJumpAscend: 0
   snappedDir: {x: 0, y: 0}
   rb: {fileID: 0}
   lastSurfaceObject: {fileID: 0}
-  isDiagonalJump: 0
-  isDiagonalAirDash: 0
-  useDynamicGravityStrenght: 1
 --- !u!114 &206922476
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -560,6 +574,21 @@ MonoBehaviour:
   inputActions: {fileID: -944628639613478452, guid: 9740b7f8f03c4a749a2e93320c4985da, type: 3}
   snapSpeed: 5
   launchForce: 10
+--- !u!114 &206922477
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 206922466}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 42180d6faf6c6bf4089dd106f56dee1b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  movementSystem: {fileID: 0}
+  animationController: {fileID: 0}
+  animator: {fileID: 0}
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0
@@ -1205,13 +1234,13 @@ GameObject:
   - component: {fileID: 1101245886}
   - component: {fileID: 1101245885}
   - component: {fileID: 1101245884}
-  m_Layer: 8
+  m_Layer: 9
   m_Name: Ceiling
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!64 &1101245884
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -1296,7 +1325,7 @@ Transform:
   m_GameObject: {fileID: 1101245883}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 1, w: 0}
-  m_LocalPosition: {x: -5.06, y: 9.78, z: 0}
+  m_LocalPosition: {x: -0.57, y: 12.37, z: 0}
   m_LocalScale: {x: 2, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

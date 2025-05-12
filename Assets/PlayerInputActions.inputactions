@@ -132,6 +132,76 @@
                     "isPartOfComposite": false
                 }
             ]
+        },
+        {
+            "name": "ToggleMechanics",
+            "id": "8eb8176f-c93b-4b80-a910-8ab89faef1e3",
+            "actions": [
+                {
+                    "name": "ToggleAutoHover",
+                    "type": "Button",
+                    "id": "a8c62f56-02ce-446e-a2e8-d9e506adc9e3",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "ToggleAirDash",
+                    "type": "Button",
+                    "id": "b9cfd90b-d8c7-47fc-891d-7605a63016ed",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "ba65122b-d456-491e-8d2f-3a3faa34a3c6",
+                    "path": "",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ToggleAutoHover",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "1a3bf291-5371-4210-8d24-3dddbe49f4d0",
+                    "path": "<Gamepad>/dpad/up",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ToggleAutoHover",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "cb96fd15-c9b7-403a-99f3-8702696ed80c",
+                    "path": "",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ToggleAirDash",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "8ba901b7-380f-4b12-984a-8b10a7625c3b",
+                    "path": "<Gamepad>/dpad/right",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ToggleAirDash",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
         }
     ],
     "controlSchemes": []
