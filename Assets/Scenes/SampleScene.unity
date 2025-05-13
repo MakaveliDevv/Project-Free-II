@@ -556,9 +556,9 @@ MonoBehaviour:
   surfaceLayer:
     serializedVersion: 2
     m_Bits: 512
-  minStickHoldTime: 0.05
-  minStickMagnitude: 0.05
-  minButtonPressTime: 0.05
+  minStickHoldTime: 0.2
+  minStickMagnitude: 0.2
+  minButtonPressTime: 0.1
   maxHoldTime: 0.5
   gizmoScale: 2
   directionLineLength: 1.5
@@ -590,6 +590,7 @@ MonoBehaviour:
   isAirDashAscend: 0
   isWallJumpRight: 0
   isWallJumpAscend: 0
+  isWallJumpHorizontal: 0
   snappedDir: {x: 0, y: 0}
   rb: {fileID: 0}
   lastSurfaceObject: {fileID: 0}

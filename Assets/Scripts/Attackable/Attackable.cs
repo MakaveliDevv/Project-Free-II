@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -15,10 +15,18 @@ public class Attackable : MonoBehaviour
         BottomRightToTopLeft,  // ↖
         TopLeftToBottomRight   // ↘
     }
+
+    [Tooltip("Which swipe direction counts as a hit")]
     public AttackDirection attackDirection;
 
-    // map "startLabel-endLabel" → enum
-    private readonly Dictionary<string, AttackDirection> directions = new()
+    [SerializeField, Tooltip("Provides dead-zone threshold")]
+    private MovementSystem movementSystem;
+
+    // Eight labels, clockwise from East
+    private static readonly string[] labels = { "E","NE","N","NW","W","SW","S","SE" };
+
+    // Map "A-B" → AttackDirection
+    private static readonly System.Collections.Generic.Dictionary<string,AttackDirection> directions = new()
     {
         { "N-S", AttackDirection.TopToBottom },
         { "S-N", AttackDirection.BottomToTop },
@@ -30,78 +38,120 @@ public class Attackable : MonoBehaviour
         { "NW-SE", AttackDirection.TopLeftToBottomRight },
     };
 
-    [Tooltip("Drag in your player’s MovementSystem here so we can reuse its snapping logic")]
-    [SerializeField] private MovementSystem movementSystem;
+    // how many neighbor steps to forgive on either side of B
+    [Tooltip("How many adjacent directions to accept as a valid end")]
+    [Range(0,3)]
+    public int forgivenessSteps = 1;
 
-    // attack‐tracking state
-    private bool  isTrackingAttack = false;
-    private string startLabel;
-    private string endLabel;
+    private enum State { Idle, Tracking, AwaitingReset }
+    private State currentState = State.Idle;
+
+    private string startLabel, targetLabel;
 
     void Update()
     {
-        // 1) read raw stick
-        Vector2 stick = Gamepad.current?.rightStick.ReadUnprocessedValue() ?? Vector2.zero;
-        bool  tilted = stick.magnitude > movementSystem.minStickMagnitude;
+        Vector2 raw   = Gamepad.current?.rightStick.ReadUnprocessedValue() ?? Vector2.zero;
+        bool tilted   = raw.magnitude > movementSystem.minStickMagnitude;
+        Vector2 snap8 = SnapTo8(raw);
 
-        // 2) if not yet tracking, wait for first tilt → that’s your start
-        if (!isTrackingAttack)
+        switch (currentState)
         {
-            // Debug.Log("Attack is not tracking");
-            if (tilted)
-            {
-                // Debug.Log("Stick is titled, getting closest direction label");
-                isTrackingAttack = true;
-                startLabel = movementSystem.GetClosestDirectionLabel(stick);
-                // Debug.Log($"Start label = {startLabel}");
-                endLabel = startLabel; // initialize
-            }
-        }
-        else
-        {
-            // Debug.Log("Attack is tracking");
-            // 3) while still tilted, keep updating the “end” label
-            if (tilted)
-            {
-                // Debug.Log("Stick is titled, getting closest direction label");
-                endLabel = movementSystem.GetClosestDirectionLabel(stick);
-                // Debug.Log($"End Label = {endLabel}");
-            }
-            else
-            {
-                // Debug.Log("Stick is not titled yet");
-                // 4) user let go → evaluate
-                string key = $"{startLabel}-{endLabel}";
-                // Debug.Log($"Key = {key}");
-                if (directions.TryGetValue(key, out var performed))
+            case State.Idle:
+                if (tilted)
                 {
-                    // Debug.Log($"performed = {performed}, attackDirection = {attackDirection}");
-                    if (performed == attackDirection)
-                        OnAttackSuccess();
-                    else
-                        OnAttackFailure();
+                    // record A and compute exact opposite B
+                    startLabel  = LabelFromVector(snap8);
+                    int idx     = Array.IndexOf(labels, startLabel);
+                    targetLabel = labels[(idx + 4) % 8];
+                    Debug.Log($"[Attackable] → START. A={startLabel}, exact B={targetLabel}");
+                    currentState = State.Tracking;
+                }
+                break;
+
+            case State.Tracking:
+                if (tilted)
+                {
+                    string current = LabelFromVector(snap8);
+                    int startIdx   = Array.IndexOf(labels, startLabel);
+                    int targetIdx  = Array.IndexOf(labels, targetLabel);
+                    int currIdx    = Array.IndexOf(labels, current);
+
+                    // build forgiven set around targetIdx
+                    bool inForgiveZone = false;
+                    for (int off = -forgivenessSteps; off <= forgivenessSteps; off++)
+                    {
+                        int test = (targetIdx + off + 8) % 8;
+                        if (currIdx == test)
+                        {
+                            inForgiveZone = true;
+                            break;
+                        }
+                    }
+
+                    if (inForgiveZone)
+                    {
+                        Debug.Log($"[Attackable] ✓ Hit forgiveness zone: {current} ≈ {targetLabel}");
+                        EvaluateSwipe(pass: true);
+                    }
+                    else if (currIdx != startIdx)
+                    {
+                        Debug.Log($"[Attackable] ✗ Moved to invalid C={current}");
+                        EvaluateSwipe(pass: false);
+                    }
+                    // else still at A → keep waiting
                 }
                 else
                 {
-                    Debug.LogWarning($"Unmapped swipe: {key}");
+                    // released to center before reaching any B-zone → cancel
+                    Debug.Log("[Attackable] ✗ Released to center mid-swipe; cancel");
+                    EvaluateSwipe(pass: false);
                 }
+                break;
 
-                // reset for next swipe
-                isTrackingAttack = false;
-                startLabel = endLabel = null;
-            }
+            case State.AwaitingReset:
+                if (!tilted)
+                {
+                    Debug.Log("[Attackable] ↺ Reset complete; ready for next swipe");
+                    currentState = State.Idle;
+                }
+                break;
         }
     }
 
-    private void OnAttackSuccess()
+    private void EvaluateSwipe(bool pass)
     {
-        Debug.Log("Attack hit!");
-        // ... your success logic here …
+        string key = $"{startLabel}-{targetLabel}";
+
+        if (pass)
+        {
+            if (directions.TryGetValue(key, out var performed) && performed == attackDirection)
+                Debug.Log($"[Attackable] ▶️ SUCCESS {key} → {performed}");
+            else
+                Debug.Log($"[Attackable] ❌ FAILURE {key} → mapped {(directions.TryGetValue(key, out performed)? performed : (AttackDirection)(-1))}, expected {attackDirection}");
+        }
+        else
+        {
+            Debug.Log($"[Attackable] ❌ FAILURE {key} (did not reach correct B-zone)");
+        }
+
+        currentState = State.AwaitingReset;
     }
 
-    private void OnAttackFailure()
+    private Vector2 SnapTo8(Vector2 v)
     {
-        Debug.Log("Attack missed.");
-        // ... your failure logic here …
+        if (v.sqrMagnitude < movementSystem.minStickMagnitude * movementSystem.minStickMagnitude)
+            return Vector2.zero;
+        float angle = (Mathf.Atan2(v.y, v.x) * Mathf.Rad2Deg + 360f) % 360f;
+        float snappedAngle = Mathf.Round(angle / 45f) * 45f;
+        float rad = snappedAngle * Mathf.Deg2Rad;
+        return new Vector2(Mathf.Cos(rad), Mathf.Sin(rad));
+    }
+
+    private string LabelFromVector(Vector2 v)
+    {
+        if (v == Vector2.zero) return "";
+        float angle = (Mathf.Atan2(v.y, v.x) * Mathf.Rad2Deg + 360f) % 360f;
+        int idx = Mathf.RoundToInt(angle / 45f) % 8;
+        return labels[idx];
     }
 }

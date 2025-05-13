@@ -467,7 +467,7 @@ public class MovementSystem : MonoBehaviour
         ResetActionState();
         ResetPhysicsSettings(false, true);
 
-        Debug.Log("Timer finished, starting descend...");
+        // Debug.Log("Timer finished, starting descend...");
 
         yield break;
     }
@@ -895,7 +895,7 @@ public class MovementSystem : MonoBehaviour
 
         string dirLabel = GetClosestDirectionLabel(snappedDir);
 
-        Debug.Log($"Action = {action}" );
+        // Debug.Log($"Action = {action}" );
 
         if (action == "Dash")
         {
@@ -916,14 +916,14 @@ public class MovementSystem : MonoBehaviour
                 if(dirLabel == "E") { isRightGroundDash = true; }
                 else if(dirLabel == "W") { isRightGroundDash = false; }
 
-                Debug.Log($"dirLabel = {dirLabel}");
+                // Debug.Log($"dirLabel = {dirLabel}");
             }
             else if(currentSurfaceState == SurfaceState.LeftWall ||
                 currentSurfaceState == SurfaceState.RightWall) 
                 { 
                     if(dirLabel == "N") { isUpWallDash = true; }
                     else if(dirLabel == "S") { isUpWallDash = false; }
-                    Debug.Log($"dirLabel = {dirLabel}");
+                    // Debug.Log($"dirLabel = {dirLabel}");
                 }
         }
         else if (action == "Jump")
@@ -1064,7 +1064,7 @@ public class MovementSystem : MonoBehaviour
             hasBurstDropped = false;
             ResetPhysicsSettings(false, true);
             ResetActionState();
-            Debug.Log("DelayedLandingReset...");
+            // Debug.Log("DelayedLandingReset...");
         }
 
         landingResetCoroutine = null;
@@ -1180,7 +1180,7 @@ public class MovementSystem : MonoBehaviour
         }
         else if(useAutoHover) 
         {
-            Debug.Log("Auto hover.."); 
+            // Debug.Log("Auto hover.."); 
             Hover(); 
             return true; 
         }
@@ -1442,7 +1442,7 @@ public class MovementSystem : MonoBehaviour
     /// </summary>
     private bool IsNearGround()
     {
-        Debug.Log("IsNearGround activated");
+        // Debug.Log("IsNearGround activated");
         Vector3 origin = col.bounds.center;
         origin.y = col.bounds.min.y + 0.1f;
 
@@ -1451,7 +1451,7 @@ public class MovementSystem : MonoBehaviour
         {
             #if UNITY_EDITOR
             Debug.DrawLine(origin, hit.point, Color.magenta);
-            Debug.Log($"surface->{hit.transform.gameObject.name}");
+            // Debug.Log($"surface->{hit.transform.gameObject.name}");
             #endif
             return true;
         }
@@ -1539,7 +1539,7 @@ public class MovementSystem : MonoBehaviour
         rb.linearVelocity = new Vector3(bounceDir.x * bounceSpeed, 0f, 0f);
         hasBurstDropped = false;
         hasBounced = false;
-        Debug.Log("Bounced from wall after descending");
+        // Debug.Log("Bounced from wall after descending");
     }
 
 

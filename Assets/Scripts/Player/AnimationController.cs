@@ -18,7 +18,7 @@ public class AnimationController : MonoBehaviour
         switch (movementSystem.movementState)
         {
             case MovementSystem.MovementState.Idle:
-                Debug.Log("Starting idle anim");
+                // Debug.Log("Starting idle anim");
                 IdleAnim();
 
                 break;
