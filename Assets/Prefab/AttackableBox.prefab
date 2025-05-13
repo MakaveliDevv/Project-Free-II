@@ -121,5 +121,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5b871fff75a65114982365fd67ff96c5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  attackDirection: 0
+  attackDirection: 2
   movementSystem: {fileID: 0}

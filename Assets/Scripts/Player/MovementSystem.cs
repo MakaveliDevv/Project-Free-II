@@ -287,6 +287,9 @@ public class MovementSystem : MonoBehaviour
 
     // air dash
 
+    [HideInInspector] public bool isRightGroundDash = false;
+    [HideInInspector] public bool isUpWallDash = false;
+
     // To right
     [HideInInspector] public bool isVerticalAirDash = false;
     [HideInInspector] public bool isHorizontalAirDash = false;
@@ -300,6 +303,7 @@ public class MovementSystem : MonoBehaviour
     // wall jump
     [HideInInspector] public bool isWallJumpRight = false;
     [HideInInspector] public bool isWallJumpAscend = false;
+    [HideInInspector] public bool isWallJumpHorizontal = false;
 
     // ─ Movement Calculations
     [HideInInspector] public Vector2 snappedDir = Vector2.zero;
@@ -891,6 +895,8 @@ public class MovementSystem : MonoBehaviour
 
         string dirLabel = GetClosestDirectionLabel(snappedDir);
 
+        Debug.Log($"Action = {action}" );
+
         if (action == "Dash")
         {
             movementState = MovementState.Dashing;
@@ -903,6 +909,22 @@ public class MovementSystem : MonoBehaviour
             rb.useGravity = true;
             dashStartPos = rb.position;
             movementForceMode = dashForceMode;
+
+            if(currentSurfaceState == SurfaceState.Ground ||
+                currentSurfaceState == SurfaceState.Ceiling) 
+            {
+                if(dirLabel == "E") { isRightGroundDash = true; }
+                else if(dirLabel == "W") { isRightGroundDash = false; }
+
+                Debug.Log($"dirLabel = {dirLabel}");
+            }
+            else if(currentSurfaceState == SurfaceState.LeftWall ||
+                currentSurfaceState == SurfaceState.RightWall) 
+                { 
+                    if(dirLabel == "N") { isUpWallDash = true; }
+                    else if(dirLabel == "S") { isUpWallDash = false; }
+                    Debug.Log($"dirLabel = {dirLabel}");
+                }
         }
         else if (action == "Jump")
         {
@@ -938,8 +960,18 @@ public class MovementSystem : MonoBehaviour
             jumpStartPos = rb.position;
             movementForceMode = jumpForceMode;
 
-            if(currentSurfaceState == SurfaceState.LeftWall) { isWallJumpRight = true; }
-            else if(currentSurfaceState == SurfaceState.RightWall) { isWallJumpRight = false; }
+            if(currentSurfaceState == SurfaceState.RightWall) 
+            { 
+                isWallJumpRight = true;
+                if(dirLabel == "W") { isWallJumpHorizontal = true; }
+                else { isWallJumpHorizontal = false; } 
+            }
+            else if(currentSurfaceState == SurfaceState.LeftWall) 
+            { 
+                isWallJumpRight = false;
+                if(dirLabel == "E") { isWallJumpHorizontal = true; }
+                else { isWallJumpHorizontal = false; } 
+            }
 
             if(snappedDir.y > 0) { isWallJumpAscend = true; }
             else if (snappedDir.y < 0) { isWallJumpAscend = false; }
@@ -1521,6 +1553,7 @@ public class MovementSystem : MonoBehaviour
             movementState == MovementState.Jumping ||
             movementState == MovementState.WallJump ||
             movementState == MovementState.Dashing ||
+            currentSurfaceState == SurfaceState.Ceiling ||
             actionInProgress)
             return;
 
@@ -1645,7 +1678,15 @@ public class MovementSystem : MonoBehaviour
     /// </summary>
     private bool IsJumpDirectionAllowed(string label)
     {
-        if (label == "W" || label == "E") { return false; }
+        if (label == "W" || label == "E") 
+        {
+            if(currentSurfaceState == SurfaceState.LeftWall ||
+                currentSurfaceState == SurfaceState.RightWall)
+                {
+                    return true;
+                } 
+            return false; 
+        }
 
         if ((currentSurfaceState == SurfaceState.LeftWall || currentSurfaceState == SurfaceState.RightWall) &&
             (label == "N" || label == "S")) { return false; }
