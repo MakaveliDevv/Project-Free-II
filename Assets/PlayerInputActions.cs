@@ -117,6 +117,15 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""SnapAction"",
+                    ""type"": ""Button"",
+                    ""id"": ""5a1434da-b06c-44ec-bb3a-0a7ac309dffa"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -196,6 +205,65 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
                     ""action"": ""OnPause"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""05e64f0a-0850-4824-a046-0f287433e512"",
+                    ""path"": ""<Gamepad>/buttonNorth"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""SnapAction"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                }
+            ]
+        },
+        {
+            ""name"": ""ToggleMechanics"",
+            ""id"": ""8eb8176f-c93b-4b80-a910-8ab89faef1e3"",
+            ""actions"": [
+                {
+                    ""name"": ""ToggleAutoHover"",
+                    ""type"": ""Button"",
+                    ""id"": ""a8c62f56-02ce-446e-a2e8-d9e506adc9e3"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""ToggleAirDash"",
+                    ""type"": ""Button"",
+                    ""id"": ""b9cfd90b-d8c7-47fc-891d-7605a63016ed"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                }
+            ],
+            ""bindings"": [
+                {
+                    ""name"": """",
+                    ""id"": ""1a3bf291-5371-4210-8d24-3dddbe49f4d0"",
+                    ""path"": ""<Gamepad>/dpad/up"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""ToggleAutoHover"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""8ba901b7-380f-4b12-984a-8b10a7625c3b"",
+                    ""path"": ""<Gamepad>/dpad/right"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""ToggleAirDash"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -207,11 +275,17 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
         m_Player_Jump = m_Player.FindAction("Jump", throwIfNotFound: true);
         m_Player_Movement = m_Player.FindAction("Movement", throwIfNotFound: true);
         m_Player_OnPause = m_Player.FindAction("OnPause", throwIfNotFound: true);
+        m_Player_SnapAction = m_Player.FindAction("SnapAction", throwIfNotFound: true);
+        // ToggleMechanics
+        m_ToggleMechanics = asset.FindActionMap("ToggleMechanics", throwIfNotFound: true);
+        m_ToggleMechanics_ToggleAutoHover = m_ToggleMechanics.FindAction("ToggleAutoHover", throwIfNotFound: true);
+        m_ToggleMechanics_ToggleAirDash = m_ToggleMechanics.FindAction("ToggleAirDash", throwIfNotFound: true);
     }
 
     ~@PlayerInputActions()
     {
         UnityEngine.Debug.Assert(!m_Player.enabled, "This will cause a leak and performance issues, PlayerInputActions.Player.Disable() has not been called.");
+        UnityEngine.Debug.Assert(!m_ToggleMechanics.enabled, "This will cause a leak and performance issues, PlayerInputActions.ToggleMechanics.Disable() has not been called.");
     }
 
     /// <summary>
@@ -290,6 +364,7 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
     private readonly InputAction m_Player_Jump;
     private readonly InputAction m_Player_Movement;
     private readonly InputAction m_Player_OnPause;
+    private readonly InputAction m_Player_SnapAction;
     /// <summary>
     /// Provides access to input actions defined in input action map "Player".
     /// </summary>
@@ -313,6 +388,10 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
         /// Provides access to the underlying input action "Player/OnPause".
         /// </summary>
         public InputAction @OnPause => m_Wrapper.m_Player_OnPause;
+        /// <summary>
+        /// Provides access to the underlying input action "Player/SnapAction".
+        /// </summary>
+        public InputAction @SnapAction => m_Wrapper.m_Player_SnapAction;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
@@ -348,6 +427,9 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
             @OnPause.started += instance.OnOnPause;
             @OnPause.performed += instance.OnOnPause;
             @OnPause.canceled += instance.OnOnPause;
+            @SnapAction.started += instance.OnSnapAction;
+            @SnapAction.performed += instance.OnSnapAction;
+            @SnapAction.canceled += instance.OnSnapAction;
         }
 
         /// <summary>
@@ -368,6 +450,9 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
             @OnPause.started -= instance.OnOnPause;
             @OnPause.performed -= instance.OnOnPause;
             @OnPause.canceled -= instance.OnOnPause;
+            @SnapAction.started -= instance.OnSnapAction;
+            @SnapAction.performed -= instance.OnSnapAction;
+            @SnapAction.canceled -= instance.OnSnapAction;
         }
 
         /// <summary>
@@ -401,6 +486,113 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
     /// Provides a new <see cref="PlayerActions" /> instance referencing this action map.
     /// </summary>
     public PlayerActions @Player => new PlayerActions(this);
+
+    // ToggleMechanics
+    private readonly InputActionMap m_ToggleMechanics;
+    private List<IToggleMechanicsActions> m_ToggleMechanicsActionsCallbackInterfaces = new List<IToggleMechanicsActions>();
+    private readonly InputAction m_ToggleMechanics_ToggleAutoHover;
+    private readonly InputAction m_ToggleMechanics_ToggleAirDash;
+    /// <summary>
+    /// Provides access to input actions defined in input action map "ToggleMechanics".
+    /// </summary>
+    public struct ToggleMechanicsActions
+    {
+        private @PlayerInputActions m_Wrapper;
+
+        /// <summary>
+        /// Construct a new instance of the input action map wrapper class.
+        /// </summary>
+        public ToggleMechanicsActions(@PlayerInputActions wrapper) { m_Wrapper = wrapper; }
+        /// <summary>
+        /// Provides access to the underlying input action "ToggleMechanics/ToggleAutoHover".
+        /// </summary>
+        public InputAction @ToggleAutoHover => m_Wrapper.m_ToggleMechanics_ToggleAutoHover;
+        /// <summary>
+        /// Provides access to the underlying input action "ToggleMechanics/ToggleAirDash".
+        /// </summary>
+        public InputAction @ToggleAirDash => m_Wrapper.m_ToggleMechanics_ToggleAirDash;
+        /// <summary>
+        /// Provides access to the underlying input action map instance.
+        /// </summary>
+        public InputActionMap Get() { return m_Wrapper.m_ToggleMechanics; }
+        /// <inheritdoc cref="UnityEngine.InputSystem.InputActionMap.Enable()" />
+        public void Enable() { Get().Enable(); }
+        /// <inheritdoc cref="UnityEngine.InputSystem.InputActionMap.Disable()" />
+        public void Disable() { Get().Disable(); }
+        /// <inheritdoc cref="UnityEngine.InputSystem.InputActionMap.enabled" />
+        public bool enabled => Get().enabled;
+        /// <summary>
+        /// Implicitly converts an <see ref="ToggleMechanicsActions" /> to an <see ref="InputActionMap" /> instance.
+        /// </summary>
+        public static implicit operator InputActionMap(ToggleMechanicsActions set) { return set.Get(); }
+        /// <summary>
+        /// Adds <see cref="InputAction.started"/>, <see cref="InputAction.performed"/> and <see cref="InputAction.canceled"/> callbacks provided via <param cref="instance" /> on all input actions contained in this map.
+        /// </summary>
+        /// <param name="instance">Callback instance.</param>
+        /// <remarks>
+        /// If <paramref name="instance" /> is <c>null</c> or <paramref name="instance"/> have already been added this method does nothing.
+        /// </remarks>
+        /// <seealso cref="ToggleMechanicsActions" />
+        public void AddCallbacks(IToggleMechanicsActions instance)
+        {
+            if (instance == null || m_Wrapper.m_ToggleMechanicsActionsCallbackInterfaces.Contains(instance)) return;
+            m_Wrapper.m_ToggleMechanicsActionsCallbackInterfaces.Add(instance);
+            @ToggleAutoHover.started += instance.OnToggleAutoHover;
+            @ToggleAutoHover.performed += instance.OnToggleAutoHover;
+            @ToggleAutoHover.canceled += instance.OnToggleAutoHover;
+            @ToggleAirDash.started += instance.OnToggleAirDash;
+            @ToggleAirDash.performed += instance.OnToggleAirDash;
+            @ToggleAirDash.canceled += instance.OnToggleAirDash;
+        }
+
+        /// <summary>
+        /// Removes <see cref="InputAction.started"/>, <see cref="InputAction.performed"/> and <see cref="InputAction.canceled"/> callbacks provided via <param cref="instance" /> on all input actions contained in this map.
+        /// </summary>
+        /// <remarks>
+        /// Calling this method when <paramref name="instance" /> have not previously been registered has no side-effects.
+        /// </remarks>
+        /// <seealso cref="ToggleMechanicsActions" />
+        private void UnregisterCallbacks(IToggleMechanicsActions instance)
+        {
+            @ToggleAutoHover.started -= instance.OnToggleAutoHover;
+            @ToggleAutoHover.performed -= instance.OnToggleAutoHover;
+            @ToggleAutoHover.canceled -= instance.OnToggleAutoHover;
+            @ToggleAirDash.started -= instance.OnToggleAirDash;
+            @ToggleAirDash.performed -= instance.OnToggleAirDash;
+            @ToggleAirDash.canceled -= instance.OnToggleAirDash;
+        }
+
+        /// <summary>
+        /// Unregisters <param cref="instance" /> and unregisters all input action callbacks via <see cref="ToggleMechanicsActions.UnregisterCallbacks(IToggleMechanicsActions)" />.
+        /// </summary>
+        /// <seealso cref="ToggleMechanicsActions.UnregisterCallbacks(IToggleMechanicsActions)" />
+        public void RemoveCallbacks(IToggleMechanicsActions instance)
+        {
+            if (m_Wrapper.m_ToggleMechanicsActionsCallbackInterfaces.Remove(instance))
+                UnregisterCallbacks(instance);
+        }
+
+        /// <summary>
+        /// Replaces all existing callback instances and previously registered input action callbacks associated with them with callbacks provided via <param cref="instance" />.
+        /// </summary>
+        /// <remarks>
+        /// If <paramref name="instance" /> is <c>null</c>, calling this method will only unregister all existing callbacks but not register any new callbacks.
+        /// </remarks>
+        /// <seealso cref="ToggleMechanicsActions.AddCallbacks(IToggleMechanicsActions)" />
+        /// <seealso cref="ToggleMechanicsActions.RemoveCallbacks(IToggleMechanicsActions)" />
+        /// <seealso cref="ToggleMechanicsActions.UnregisterCallbacks(IToggleMechanicsActions)" />
+        public void SetCallbacks(IToggleMechanicsActions instance)
+        {
+            foreach (var item in m_Wrapper.m_ToggleMechanicsActionsCallbackInterfaces)
+                UnregisterCallbacks(item);
+            m_Wrapper.m_ToggleMechanicsActionsCallbackInterfaces.Clear();
+            AddCallbacks(instance);
+        }
+    }
+    /// <summary>
+    /// Provides a new <see cref="ToggleMechanicsActions" /> instance referencing this action map.
+    /// </summary>
+    public ToggleMechanicsActions @ToggleMechanics => new ToggleMechanicsActions(this);
     /// <summary>
     /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "Player" which allows adding and removing callbacks.
     /// </summary>
@@ -429,5 +621,34 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnOnPause(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "SnapAction" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnSnapAction(InputAction.CallbackContext context);
+    }
+    /// <summary>
+    /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "ToggleMechanics" which allows adding and removing callbacks.
+    /// </summary>
+    /// <seealso cref="ToggleMechanicsActions.AddCallbacks(IToggleMechanicsActions)" />
+    /// <seealso cref="ToggleMechanicsActions.RemoveCallbacks(IToggleMechanicsActions)" />
+    public interface IToggleMechanicsActions
+    {
+        /// <summary>
+        /// Method invoked when associated input action "ToggleAutoHover" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnToggleAutoHover(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "ToggleAirDash" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnToggleAirDash(InputAction.CallbackContext context);
     }
 }

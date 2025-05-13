@@ -12,6 +12,11 @@ public class BoxSpawner : MonoBehaviour
 
     float _timer;
 
+    void Start()
+    {
+        SpawnBox();
+    }
+    
     void Update()
     {
         _timer += Time.deltaTime;

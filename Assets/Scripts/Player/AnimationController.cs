@@ -18,306 +18,272 @@ public class AnimationController : MonoBehaviour
         switch (movementSystem.movementState)
         {
             case MovementSystem.MovementState.Idle:
-                // Invoke the idle anim
+                Debug.Log("Starting idle anim");
                 IdleAnim();
 
                 break;
 
             case MovementSystem.MovementState.Charging:
-                // Invoke the charging anim
                 ChargingAnim();
 
                 break;
 
             case MovementSystem.MovementState.Jumping:
-                if(movementSystem.isDiagonalJump) // If jumping diagonal
+                if(movementSystem.isStraightJump) { JumpStraightAnim(); }
+                else  
                 {
-                  
-                    if(movementSystem.rb.position.x > 0) 
-                    {
-                        // Invoke the diagonal jump anim
-                        JumpDiagonalRightAnim();
-                    }
-                    else if(movementSystem.rb.position.x < 0) 
-                    {
-                        JumpDiagonalLeftAnim();
-                    }
+                    if(movementSystem.isDiagonalJumpRight) { JumpDiagonalRightAnim(); }
+                    else { JumpDiagonalLeftAnim(); }
                 }
-                else // Straigh jump
+                break;
+
+            case MovementSystem.MovementState.Dashing:
+                switch (movementSystem.currentSurfaceState)
                 {
-                    // Invoke the straigh vertical jump anim
-                    JumpStraightAnim();
+                    case MovementSystem.SurfaceState.Ground:
+                        GroundDashAnim();
+                        break;
+
+                    case MovementSystem.SurfaceState.Ceiling:
+                        CeilingDashAnim();
+                        break;
+
+                    case MovementSystem.SurfaceState.RightWall:
+                        RightWallDashAnim();
+                        break;
+                    
+                    case MovementSystem.SurfaceState.LeftWall:
+                        LeftWallDashAnim();
+                        break;
                 }
 
                 break;
 
             case MovementSystem.MovementState.WallJump:
-                // Invoke wall jump
                 if(movementSystem.currentSurfaceState != MovementSystem.SurfaceState.Ground ||
                     movementSystem.currentSurfaceState != MovementSystem.SurfaceState.Ceiling) 
                 {
-                    if(movementSystem.lastSurfaceObject.name.Contains("Left")) // If jumping from left wall
+                    Debug.Log("Invoke wall jump anim");	
+                    if(movementSystem.isWallJumpRight) 
                     {
-                        if(movementSystem.isDiagonalJump) 
-                        {
-                            if(movementSystem.rb.linearVelocity.magnitude > 0.01f) 
-                            {
-                                // Upward jumps
-                                LeftWallJumpUpAnim();
-                            }
-                            else 
-                            {
-                                // Downward jump
-                                LeftWallJumpDownAnim();
-                            }
-                        }
+                        InvokeLeftWallJumpAnim();
                     }
-                    else if(movementSystem.lastSurfaceObject.name.Contains("Right"))
+                    else 
                     {
-                        if(movementSystem.rb.linearVelocity.magnitude > 0.01f) 
-                        {
-                            // Upward jumps
-                            RightWallJumpUpAnim();
-                        }
-                        else 
-                        {
-                            // Downward jump
-                            RightWallJumpDownAnim();
-                        }
+                        InvokeRightWallJumpAnim();
                     }
                 }
 
                 break;
 
             case MovementSystem.MovementState.Hovering:
-                // Invoke hovering
                 HoverAnim();
 
                 break;
 
             case MovementSystem.MovementState.Descending:
-                // Invoke descending anim
                 DescendingAnim();
 
                 break;
 
-            case MovementSystem.MovementState.Dashing:
-                if(movementSystem.currentSurfaceState == MovementSystem.SurfaceState.Ground ||
-                movementSystem.currentSurfaceState == MovementSystem.SurfaceState.Ceiling) 
-                {
-                    // Invoke ground dash
-                    GroundDashAnim();
-                }
-
-                break;
-
             case MovementSystem.MovementState.AirDashing:
-                if(movementSystem.rb.linearVelocity.magnitude < 0.01f) // Air dashing downward 
+                if(movementSystem.isVerticalAirDash) 
                 {
-                    // Invoke air dashing downward direction
-                    // But check first if the air dash is diagonal 
-                    if(movementSystem.isDiagonalAirDash) // If diagonal?
+                    if(movementSystem.isAirDashAscend) { AirDashVerticalAscend(); }
+                    else { AirDashVerticalDescend(); }
+                }
+                else if(movementSystem.isHorizontalAirDash) 
+                {
+                    if(movementSystem.isRightAirDash) { AirDashHorizontalRight(); }
+                    else { AirDashHorizontalLeft(); }
+                }
+                else 
+                {
+                    if(movementSystem.isRightDiagonalAirDash) 
                     {
-                        // Invoke diagonal air dash 
-                        AirDashDownDiagonalAnim();
+                        if(movementSystem.isAirDashAscend) { AirDashDiagonalRightUp(); }
+                        else { AirDashDiagonalRightDown(); }
                     }
-                    else 
+                    else  
                     {
-                        // Invoke straight air dash
-                        AirDashDownStraightAnim();
+                        if(movementSystem.isAirDashAscend) { AirDashDiagonalLeftUp(); }
+                        else { AirDashDiagonalLeftDown(); }
                     }
                 }
-                else // Air dashing upward
-                {
-                    // Invoke air dashing downward direction
-                    if(movementSystem.isDiagonalAirDash) // If diagonal?
-                    {
-                        // Invoke diagonal air dash 
-                        AirDashUpDiagonalAnim();
-                    }
-                    else 
-                    {
-                        // Invoke straight air dash
-                        AirDashUpStraightAnim();
-                    }
-                }
-
-                // Need to create an instance for air dashes left and right. I'll do that another time
-                break;
-
-            case MovementSystem.MovementState.WallDashing:
-                // Invoke the wall dash anim
-                    WallDashAnim();
+              
 
                 break;
 
             case MovementSystem.MovementState.Stucked:
-                // Invoke stucked anim
                 StuckedAnim();
 
                 break;
 
             case MovementSystem.MovementState.WallDescending:
-                // Invoke wall descending anim
-                WallDescendingAnim();
+                if(movementSystem.currentSurfaceState == MovementSystem.SurfaceState.RightWall)
+                {
+                    RightWallDescendingAnim();
+                }
+                else if(movementSystem.currentSurfaceState == MovementSystem.SurfaceState.LeftWall)
+                {
+                    LeftWallDescendingAnim();
+                }
 
                 break;
         }
     }
 
-    private void IdleAnim() // Idle
-    {
-        animator.SetBool("Idle", true);
-        animator.SetBool("Charge", false);
-        animator.SetBool("JumpUp", false);
-        animator.SetBool("Hover", false);
-        animator.SetBool("Descent", false);
-        animator.SetBool("QuickDescent", false);
-        animator.SetBool("Landing",false);
-        animator.SetBool("DashR",false);
-        animator.SetBool("DashL",false);
-        animator.SetBool("Wallstick",false);
-
-
-    }
-
-    private void ChargingAnim() // Charging
-    {
-        animator.SetBool("Idle", false);
-        animator.SetBool("Charge", true);
-        animator.SetBool("JumpUp", false);
-        animator.SetBool("Hover", false);
-        animator.SetBool("Descent", false);
-        animator.SetBool("QuickDescent", false);
-        animator.SetBool("Landing",false);
-        animator.SetBool("DashR",false);
-        animator.SetBool("DashL",false);
-        animator.SetBool("Wallstick",false);
-    }
-
-    private void JumpStraightAnim() // Jumping upward in a straight line
-    {
-        animator.SetBool("Idle", false);
-        animator.SetBool("Charge", false);
-        animator.SetBool("JumpUp", true);
-        animator.SetBool("Hover", false);
-        animator.SetBool("Descent", false);
-        animator.SetBool("QuickDescent", false);
-        animator.SetBool("Landing",false);
-        animator.SetBool("DashR",false);
-        animator.SetBool("DashL",false);
-        animator.SetBool("Wallstick",false);
-    }
-
-    private void JumpDiagonalRightAnim()  // Jumping upward diagonal
+    private void IdleAnim() 
     {
 
     }
 
-    private void JumpDiagonalLeftAnim()  // Jumping upward diagonal
+    private void ChargingAnim() 
     {
-
+        Debug.Log("Invoke charging anim");
     }
 
-    private void LeftWallJumpUpAnim() // Jump from left wall diagonal upwards
+    private void HoverAnim() 
     {
-
-    }
-
-    private void LeftWallJumpDownAnim() // Jump from left wall diagonal downwards
-    {
-
-    }
-
-    private void RightWallJumpUpAnim() // Jump from right wall diagonal upwards
-    {
-
-    }
-
-    private void RightWallJumpDownAnim() // Jump from right wall diagonal downwards
-    {
-
-    }
-
-    private void AirDashDownStraightAnim() // Is basically jumping but then to the downward directions
-    {
-
-    }
-
-    private void AirDashVerticalAnim() // Air dash left or right  
-    {
-        
-    }
-
-    private void AirDashUpStraightAnim() // Air dashing straight up
-    {
-
-    }
-
-    private void AirDashUpDiagonalAnim() // Air dashing diagonal upwards
-    {
-
-    }
-
-      private void AirDashDownDiagonalAnim() // Air dashing diagonal downwards
-    {
-
-    }
-
-    private void GroundDashAnim() // Dash on the ground 
-    {
-           animator.SetBool("Idle", false);
-        animator.SetBool("Charge", false;)
-        animator.SetBool("JumpUp", false;)
-        animator.SetBool("Hover", false;)
-        animator.SetBool("Descent", false;)
-        animator.SetBool("QuickDescent", false;)
-        animator.SetBool("Landing",false;)
-        animator.SetBool("DashR",true;)
-        animator.SetBool("DashL",false;)
-        animator.SetBool("Wallstick",false;)
-    }
-
-    private void WallDashAnim() // Dash on the wall
-    {
-        animator.SetBool("WallDash", true);
-    }
-
-    private void HoverAnim() // Hover anim
-    {
-       animator.SetBool("Idle", false);
-        animator.SetBool("Charge", false);
-        animator.SetBool("JumpUp", false);
-        animator.SetBool("Hover", true);
-        animator.SetBool("Descent", false);
-        animator.SetBool("QuickDescent", false);
-        animator.SetBool("Landing",false);
-        animator.SetBool("DashR",false);
-        animator.SetBool("DashL",false);
-        animator.SetBool("Wallstick",false);
+        Debug.Log("Invoke hover anim");
     }
 
     private void DescendingAnim() 
     {
-       animator.SetBool("Idle", false);
-        animator.SetBool("Charge", false);
-        animator.SetBool("JumpUp", false);
-        animator.SetBool("Hover", false);
-        animator.SetBool("Descent", true);
-        animator.SetBool("QuickDescent", false);
-        animator.SetBool("Landing",false);
-        animator.SetBool("DashR",false);
-        animator.SetBool("DashL",false);
-        animator.SetBool("Wallstick",false);
+        Debug.Log("Invoke descend anim");
     }
 
-    private void WallDescendingAnim() 
+    private void RightWallDescendingAnim() 
     {
-        
+        Debug.Log("Invoke wall descend anim (right wall)");
+    }
+
+    private void LeftWallDescendingAnim() 
+    {
+        Debug.Log("Invoke wall descend anim (left wall)");
     }
 
     private void StuckedAnim() 
     {
-
+        Debug.Log("Invoke stucked anim");
     }
+
+    // Jump animations
+    #region Jump Animations
+
+        private void JumpStraightAnim() 
+        {
+            Debug.Log("Invoke jump straight anim");
+        }
+
+        private void JumpDiagonalRightAnim()  
+        {
+            Debug.Log("Invoke jump diagonal anim (right)");
+        }
+
+        private void JumpDiagonalLeftAnim()  
+        {
+            Debug.Log("Invoke jump diagonal anim (left)");
+        }
+
+        private void InvokeLeftWallJumpAnim() // DONT TOUCH THIS METHOD
+        {
+            if(movementSystem.isWallJumpAscend) { RightWallJumpAscendAnim(); }
+            else { RightWallJumpDescendAnim(); }
+        }
+
+        private void InvokeRightWallJumpAnim() // DONT TOUCH THIS METHOD
+        {
+            if(movementSystem.isWallJumpAscend) { LeftWallJumpAscendAnim(); }
+            else { LeftWallJumpDescendAnim(); }
+        }
+
+        private void RightWallJumpAscendAnim() 
+        {
+            Debug.Log("Invoke right wall jump ascend anim");
+        }
+
+        private void RightWallJumpDescendAnim()
+        {
+            Debug.Log("Invoke right wall jump descend anim");
+        }
+
+        private void LeftWallJumpAscendAnim() 
+        {
+            Debug.Log("Invoke left wall jump ascend anim");
+        }
+
+        private void LeftWallJumpDescendAnim()
+        {
+            Debug.Log("Invoke left wall jump descend anim");
+        }
+
+    #endregion Jump Animations
+
+    #region Dash Animations
+        private void GroundDashAnim() 
+        {
+            Debug.Log("Invoke ground dash anim");
+        }
+
+        private void CeilingDashAnim() 
+        {
+            Debug.Log("Invoke ceiling dash anim");
+        }
+
+        private void RightWallDashAnim() 
+        {
+            Debug.Log("Invoke wall dash anim (right)");
+        }
+
+        private void LeftWallDashAnim() 
+        {
+            Debug.Log("Invoke wall dash anim (left)");
+        }
+
+    #endregion Dash Animations
+
+    #region Air Dash Animations
+        private void AirDashVerticalAscend() 
+        {
+            Debug.Log("Invoke air dash straight up anim");
+        }
+
+        private void AirDashVerticalDescend() 
+        {
+            Debug.Log("Invoke air dash straight down anim");
+        }
+
+        private void AirDashHorizontalRight() 
+        {
+            Debug.Log("Invoke air dash right anim (horizontal)");
+        }
+
+        private void AirDashHorizontalLeft() 
+        {
+            Debug.Log("Invoke air dash left anim (horizontal)");
+        }
+
+        private void AirDashDiagonalRightUp() 
+        {
+            Debug.Log("Invoke air dash up diagonally anim (right)");
+        }
+
+        private void AirDashDiagonalRightDown() 
+        {
+            Debug.Log("Invoke air dash down diagonally anim (right)");
+        }
+
+        private void AirDashDiagonalLeftUp() 
+        {
+            Debug.Log("Invoke air dash up diagonally anim (left)");
+        }
+
+        private void AirDashDiagonalLeftDown() 
+        {
+            Debug.Log("Invoke air dash down diagonally anim (left)");
+        }
+
+    #endregion Air Dash Animations
+  
 }
