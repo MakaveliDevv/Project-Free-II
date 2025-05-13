@@ -1741,7 +1741,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5b871fff75a65114982365fd67ff96c5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  attackDirection: 2
+  centerResetDelay: 1
+  sitckMagnitudeThresh: 0.9
   movementSystem: {fileID: 206922475}
 --- !u!23 &5413093255523348522
 MeshRenderer:
