@@ -34,21 +34,32 @@ public class Player : MonoBehaviour
         dPadRight.Enable();
     }
 
+    void OnEnable()
+    {
+        RegisterInputCallbacks();
+    }
+
+    void OnDisable()
+    {
+        UnregisterInputCallbacks();
+    }
+
     private void RegisterInputCallbacks()
     {
-        dPadUp.canceled += ToggleAutoHover;
-        dPadRight.canceled += ToggleAirDash;
+        dPadUp.started += ToggleAutoHover;
+        dPadRight.started += ToggleAirDash;
     }
 
     private void UnregisterInputCallbacks()
     {
-        dPadUp.canceled -= ToggleAutoHover;
-        dPadRight.canceled -= ToggleAirDash;
+        dPadUp.started -= ToggleAutoHover;
+        dPadRight.started -= ToggleAirDash;
     }
 
     private void ToggleAutoHover(InputAction.CallbackContext ctx) 
     {
-        if(ctx.canceled) 
+        Debug.Log("swag");
+        if(ctx.started) 
         {
             Debug.Log("Toggle Auto Hover");
             movementSystem.useAutoHover = !movementSystem.useAutoHover;
@@ -57,7 +68,7 @@ public class Player : MonoBehaviour
 
     private void ToggleAirDash(InputAction.CallbackContext ctx) 
     {
-        if(ctx.canceled) 
+        if(ctx.started) 
         {
             Debug.Log("Toggle Air Dash");
             movementSystem.allowAirDash = !movementSystem.allowAirDash;

@@ -274,6 +274,7 @@ GameObject:
   - component: {fileID: 206922475}
   - component: {fileID: 206922476}
   - component: {fileID: 206922477}
+  - component: {fileID: 206922478}
   m_Layer: 0
   m_Name: PlayerTest
   m_TagString: Untagged
@@ -423,6 +424,38 @@ MonoBehaviour:
       m_Calls: []
     m_ActionId: 5a1434da-b06c-44ec-bb3a-0a7ac309dffa
     m_ActionName: 'Player/SnapAction[/XInputControllerWindows/buttonNorth]'
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 206922466}
+        m_TargetAssemblyTypeName: 
+        m_MethodName: 
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: 
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: a8c62f56-02ce-446e-a2e8-d9e506adc9e3
+    m_ActionName: 'ToggleMechanics/ToggleAutoHover[/XInputControllerWindows/rightTrigger]'
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 206922466}
+        m_TargetAssemblyTypeName: 
+        m_MethodName: 
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: 
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: b9cfd90b-d8c7-47fc-891d-7605a63016ed
+    m_ActionName: 'ToggleMechanics/ToggleAirDash[/XInputControllerWindows/dpad/right]'
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
   m_DefaultActionMap: Player
@@ -483,7 +516,7 @@ MonoBehaviour:
   maxJumpSpeed: 10
   bounceSpeed: 25
   dashForce: 20
-  maxDashDistance: 5
+  maxDashDistance: 10
   airDashForce: 5
   maxAirDashDistance: 5
   defaultDamping: 0
@@ -512,11 +545,11 @@ MonoBehaviour:
   hoverWobbleHeight: 0.5
   hoverStartDelay: 0.1
   wobbleFadeInFactor: 1
-  hoverActivationRadius: 0.75
+  hoverActivationRadius: 0.5
   hoverDuration: 1
   minHoverHeight: 4
   minHoverLinearDamping: 0.1
-  hoverLinearDamping: 40
+  hoverLinearDamping: 7
   groundProximityCheckDistance: 0.18
   minAirborneTimeBeforeIdle: 0.15
   distanceToSurfaceThreshold: 0.05
@@ -545,7 +578,7 @@ MonoBehaviour:
   forceCurveExponent: 0.75
   allowAirDash: 1
   landingBuffer: 0.1
-  fallTimer: 0.25
+  fallTimer: 0.125
   useAutoHover: 0
   isStraightJump: 0
   isDiagonalJumpRight: 0
@@ -589,6 +622,19 @@ MonoBehaviour:
   movementSystem: {fileID: 0}
   animationController: {fileID: 0}
   animator: {fileID: 0}
+--- !u!114 &206922478
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 206922466}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b70ef6cc127b7b498a643c64dc44775, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  inputActions: {fileID: -944628639613478452, guid: 9740b7f8f03c4a749a2e93320c4985da, type: 3}
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0

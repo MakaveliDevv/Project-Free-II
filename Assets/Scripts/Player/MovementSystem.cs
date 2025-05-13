@@ -275,7 +275,6 @@ public class MovementSystem : MonoBehaviour
     [Header("Test")]
     public float fallTimer = .25f;
     public bool useAutoHover = false;
-    private bool isTimerRunning = false;
 
     // ─────────────────────────────────────────────────────────────────────────
     // PUBLIC HIDDEN VARIABLES
@@ -455,11 +454,17 @@ public class MovementSystem : MonoBehaviour
         wallDescendingGravityStrength = gravityStrength * (wallGravityPercent * 0.1f);
     }
     
-    private IEnumerator Timer(float timer) 
+    private IEnumerator FallDelay() 
     {
-        isTimerRunning = true;
-        yield return new WaitForSeconds(timer);
-        isTimerRunning = false;
+        movementState = MovementState.NOTHING;
+
+        yield return new WaitForSeconds(fallTimer);
+        
+        ResetActionState();
+        ResetPhysicsSettings(false, true);
+
+        Debug.Log("Timer finished, starting descend...");
+
         yield break;
     }
 
@@ -483,23 +488,16 @@ public class MovementSystem : MonoBehaviour
             {
 
                 if(hasReachedTarget)
-                {                  
-                    movementState = MovementState.NOTHING;
-
-                    Debug.Log("Player reached target point");
-                    gravityStrength = gravityStrength / 100f * 10f;
-                    StartCoroutine(Timer(fallTimer));
-                    ResetActionState();
-                    ResetPhysicsSettings(false, true);
-
-                    if(isTimerRunning) 
-                    {
-                        Debug.Log("Timer running..."); 
-                        return; 
-                    } 
-                    
+                {        
+                    rb.linearDamping = 0;          
+                    StartCoroutine(FallDelay());    
                     movementState = MovementState.Descending;
-                
+
+                    // if(ActionInputDetected()) 
+                    // {
+                    //     StopCoroutine(FallDelay());
+                    //     Debug.Log("Coroutine stopped");   
+                    // }
                 }
             }
             else if(movementState == MovementState.Dashing) 
@@ -534,8 +532,6 @@ public class MovementSystem : MonoBehaviour
 
         if (southButtonPressed)
         {
-            allowAirDash = true;
-
             buttonHoldTimer += Time.deltaTime;
             if (actionReady && !actionInProgress && buttonHoldTimer >= maxHoldTime && buttonPressedLongEnough)
             {
@@ -569,7 +565,6 @@ public class MovementSystem : MonoBehaviour
                 break;
             case MovementState.Stucked:
                 actionInProgress = false;
-                allowAirDash = false;
                 break;
         }
     }
@@ -586,7 +581,7 @@ public class MovementSystem : MonoBehaviour
 
     void FixedUpdate()
     {
-        ApplyCustomGravity();
+        if(movementState != MovementState.Hovering) ApplyCustomGravity();
         GetLastCollidedSurface();
 
         isInAir = !IsCollidingWithSurface();
