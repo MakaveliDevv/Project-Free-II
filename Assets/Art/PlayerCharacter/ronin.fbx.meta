@@ -1,9 +1,24 @@
 fileFormatVersion: 2
-guid: 53417ccdc61fb9b4496f9e53c638d272
+guid: 4b7c49da572aab548b1eca40d1d0e782
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Hat
+    second: {fileID: 2100000, guid: 5e461b0b53e41544da3b4d831e5a6c9b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Ronin
+    second: {fileID: 2100000, guid: c31b908431f7cb44cad53c7bbac4f9cf, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Stok
+    second: {fileID: 2100000, guid: 46deb4f13715cb64bb4be3438511e6b6, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0

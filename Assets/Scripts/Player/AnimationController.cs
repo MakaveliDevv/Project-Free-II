@@ -32,6 +32,7 @@ public class AnimationController : MonoBehaviour
             case MovementSystem.MovementState.Jumping:
                 if(movementSystem.isDiagonalJump) // If jumping diagonal
                 {
+                  
                     if(movementSystem.rb.position.x > 0) 
                     {
                         // Invoke the diagonal jump anim
@@ -166,17 +167,46 @@ public class AnimationController : MonoBehaviour
 
     private void IdleAnim() // Idle
     {
+        animator.SetBool("Idle", true);
+        animator.SetBool("Charge", false);
+        animator.SetBool("JumpUp", false);
+        animator.SetBool("Hover", false);
+        animator.SetBool("Descent", false);
+        animator.SetBool("QuickDescent", false);
+        animator.SetBool("Landing",false);
+        animator.SetBool("DashR",false);
+        animator.SetBool("DashL",false);
+        animator.SetBool("Wallstick",false);
+
 
     }
 
     private void ChargingAnim() // Charging
     {
-        
+        animator.SetBool("Idle", false);
+        animator.SetBool("Charge", true);
+        animator.SetBool("JumpUp", false);
+        animator.SetBool("Hover", false);
+        animator.SetBool("Descent", false);
+        animator.SetBool("QuickDescent", false);
+        animator.SetBool("Landing",false);
+        animator.SetBool("DashR",false);
+        animator.SetBool("DashL",false);
+        animator.SetBool("Wallstick",false);
     }
 
     private void JumpStraightAnim() // Jumping upward in a straight line
     {
-        
+        animator.SetBool("Idle", false);
+        animator.SetBool("Charge", false);
+        animator.SetBool("JumpUp", true);
+        animator.SetBool("Hover", false);
+        animator.SetBool("Descent", false);
+        animator.SetBool("QuickDescent", false);
+        animator.SetBool("Landing",false);
+        animator.SetBool("DashR",false);
+        animator.SetBool("DashL",false);
+        animator.SetBool("Wallstick",false);
     }
 
     private void JumpDiagonalRightAnim()  // Jumping upward diagonal
@@ -236,27 +266,54 @@ public class AnimationController : MonoBehaviour
 
     private void GroundDashAnim() // Dash on the ground 
     {
-        
+           animator.SetBool("Idle", false);
+        animator.SetBool("Charge", false;)
+        animator.SetBool("JumpUp", false;)
+        animator.SetBool("Hover", false;)
+        animator.SetBool("Descent", false;)
+        animator.SetBool("QuickDescent", false;)
+        animator.SetBool("Landing",false;)
+        animator.SetBool("DashR",true;)
+        animator.SetBool("DashL",false;)
+        animator.SetBool("Wallstick",false;)
     }
 
     private void WallDashAnim() // Dash on the wall
     {
-
+        animator.SetBool("WallDash", true);
     }
 
     private void HoverAnim() // Hover anim
     {
-
+       animator.SetBool("Idle", false);
+        animator.SetBool("Charge", false);
+        animator.SetBool("JumpUp", false);
+        animator.SetBool("Hover", true);
+        animator.SetBool("Descent", false);
+        animator.SetBool("QuickDescent", false);
+        animator.SetBool("Landing",false);
+        animator.SetBool("DashR",false);
+        animator.SetBool("DashL",false);
+        animator.SetBool("Wallstick",false);
     }
 
     private void DescendingAnim() 
     {
-
+       animator.SetBool("Idle", false);
+        animator.SetBool("Charge", false);
+        animator.SetBool("JumpUp", false);
+        animator.SetBool("Hover", false);
+        animator.SetBool("Descent", true);
+        animator.SetBool("QuickDescent", false);
+        animator.SetBool("Landing",false);
+        animator.SetBool("DashR",false);
+        animator.SetBool("DashL",false);
+        animator.SetBool("Wallstick",false);
     }
 
     private void WallDescendingAnim() 
     {
-
+        
     }
 
     private void StuckedAnim() 
