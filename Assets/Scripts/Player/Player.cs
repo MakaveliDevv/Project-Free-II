@@ -85,50 +85,50 @@ public class Player : MonoBehaviour
         } 
     }
 
-    private void OnTriggerEnter(Collider collider) 
-    {
-        if(collider.CompareTag("Interactable")) 
-        {
-            inRangeForInteractable = true;
-            if(interactable.Count == 0) 
-            {
-                interactable.Add(collider.gameObject);
-                _interactable = interactable[0];
-            }
-        }
+    // private void OnTriggerEnter(Collider collider) 
+    // {
+    //     if(collider.CompareTag("Interactable")) 
+    //     {
+    //         inRangeForInteractable = true;
+    //         if(interactable.Count == 0) 
+    //         {
+    //             interactable.Add(collider.gameObject);
+    //             _interactable = interactable[0];
+    //         }
+    //     }
 
-        if(collider.CompareTag("Attackable")) 
-        {
-            inRangeForAttackable = true;
-            if(interactable.Count == 0) 
-            {
-                attackable.Add(collider.gameObject);
-                _attackable = attackable[0];
-            }
-        }
-    }
+    //     if(collider.CompareTag("Attackable")) 
+    //     {
+    //         inRangeForAttackable = true;
+    //         if(interactable.Count == 0) 
+    //         {
+    //             attackable.Add(collider.gameObject);
+    //             _attackable = attackable[0];
+    //         }
+    //     }
+    // }
 
-    private void OnTriggerExit(Collider collider) 
-    {
-        if(collider.CompareTag("Interactable")) 
-        {
-            inRangeForInteractable = false;
+    // private void OnTriggerExit(Collider collider) 
+    // {
+    //     if(collider.CompareTag("Interactable")) 
+    //     {
+    //         inRangeForInteractable = false;
 
-            if(interactable.Count > 0) 
-            {
-                interactable.Clear();
-                _interactable = null;
-            }
-        }
+    //         if(interactable.Count > 0) 
+    //         {
+    //             interactable.Clear();
+    //             _interactable = null;
+    //         }
+    //     }
 
-        if(collider.CompareTag("Attackable")) 
-        {
-            inRangeForAttackable = false;
-            if(interactable.Count == 0) 
-            {
-                attackable.Add(collider.gameObject);
-                _attackable = null;
-            }
-        }
-    }
+    //     if(collider.CompareTag("Attackable")) 
+    //     {
+    //         inRangeForAttackable = false;
+    //         if(interactable.Count == 0) 
+    //         {
+    //             attackable.Add(collider.gameObject);
+    //             _attackable = null;
+    //         }
+    //     }
+    // }
 }
