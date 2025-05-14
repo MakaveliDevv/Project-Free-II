@@ -1,80 +1,71 @@
-using System;
+using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
+[RequireComponent(typeof(BoxCollider))]
+[ExecuteAlways]
 public class Attackable : MonoBehaviour
 {
-    [SerializeField]
-    private float centerResetDelay = 1f;
-
-    [SerializeField] private float sitckMagnitudeThresh = .9f;
-
-    [SerializeField]
-    private MovementSystem movementSystem;
-
-    private static readonly string[] labels = { "E", "NE", "N", "NW", "W", "SW", "S", "SE" };
-
-    private string  startLabel = null;
-    private bool awaitingReset = false;
-    private float resetTimer = 0f;
-    private string previousEndLabel = null;
-
-    void Update()
+    public enum AttackDirection
     {
-        Vector2 raw = Gamepad.current?.rightStick.ReadUnprocessedValue() ?? Vector2.zero;
-        bool tilted = raw.magnitude > sitckMagnitudeThresh;
-        string snapped= tilted ? SnapTo8Label(raw) : "";
 
-        if (awaitingReset)
+        TopToBottom,           // ↓
+        BottomToTop,           // ↑
+        LeftToRight,           // →
+        RightToLeft,           // ←
+        BottomLeftToTopRight,  // ↗
+        TopRightToBottomLeft,  // ↙
+        BottomRightToTopLeft,  // ↖
+        TopLeftToBottomRight   // ↘
+    }
+
+    public AttackDirection attackDirection;
+
+    // Map "A-B" → AttackDirection
+    public readonly Dictionary<string, AttackDirection> directions = new()
+    {
+        { "N-S", AttackDirection.TopToBottom },
+        { "S-N", AttackDirection.BottomToTop },
+        { "W-E", AttackDirection.LeftToRight },
+        { "E-W", AttackDirection.RightToLeft },
+        { "SW-NE", AttackDirection.BottomLeftToTopRight },
+        { "NE-SW", AttackDirection.TopRightToBottomLeft },
+        { "SE-NW", AttackDirection.BottomRightToTopLeft },
+        { "NW-SE", AttackDirection.TopLeftToBottomRight },
+    };
+
+    private BoxCollider col;
+    public Vector3 colSize;
+    public Vector3 colOffset;
+
+
+    void Awake()
+    {
+        col = GetComponent<BoxCollider>();
+    }
+
+    void Start()
+    {
+        col.isTrigger = true;
+        col.size = colSize;
+        col.center = colOffset;
+    }
+
+    void OnValidate()
+    {
+        if (col == null)
+            col = GetComponent<BoxCollider>();
+
+        if (col != null)
         {
-            resetTimer += Time.deltaTime;
-            if (resetTimer >= centerResetDelay)
-            {
-                Debug.Log($"[Attackable] ↺ Auto-reset after {centerResetDelay}s; ready for next swipe");
-                awaitingReset = false;
-                resetTimer = 0f;
-            }
-            return;
-        }
-
-        if (startLabel == null)
-        {
-            if (!tilted) { return; } 
-
-            if (previousEndLabel != null && snapped == previousEndLabel) { return; }
-
-            startLabel = snapped;
-            previousEndLabel = null;  
-            Debug.Log($"[Attackable] → START at {startLabel}");
-            return;
-        }
-
-        if (!tilted) { return; } 
-
-        if (snapped != startLabel)
-        {
-            int aIdx = Array.IndexOf(labels, startLabel);
-            string opposite = labels[(aIdx + 4) % 8];
-            bool success = snapped == opposite;
-
-            if (success) { Debug.Log($"[Attackable] ✅ SUCCESS: {startLabel} → {snapped}"); }
-            else { Debug.Log($"[Attackable] ❌ FAILURE: {startLabel} → {snapped} (expected {opposite})"); }
-
-            previousEndLabel = snapped;
-            startLabel = null;
-            awaitingReset = true;
-            resetTimer = 0f;
+            col.isTrigger = false;
+            col.size = colSize;
+            col.center = colOffset;
         }
     }
 
-    private string SnapTo8Label(Vector2 raw)
+    void Update()
     {
-        if (raw.sqrMagnitude < movementSystem.minStickMagnitude * movementSystem.minStickMagnitude) { return ""; }
 
-        float angle = (Mathf.Atan2(raw.y, raw.x) * Mathf.Rad2Deg + 360f) % 360f;
-        float snapAngle = Mathf.Round(angle / 45f) * 45f;
-        int idx = Mathf.RoundToInt(snapAngle / 45f) % 8;
-        return labels[idx];
     }
 }
 

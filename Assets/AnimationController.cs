@@ -6,7 +6,7 @@ public class AnimationController : MonoBehaviour
     public MovementSystem movementSystem;
     public AnimationController animationController;
     public Animator animator;
-
+    public bool useDebugMessage = false;
     void Awake()
     {
         movementSystem = GetComponent<MovementSystem>();
@@ -140,31 +140,37 @@ public class AnimationController : MonoBehaviour
 
     private void ChargingAnim() 
     {
+        if(!useDebugMessage) return;
         Debug.Log("Invoke charging anim");
     }
 
     private void HoverAnim() 
     {
+        if(!useDebugMessage) return;
         Debug.Log("Invoke hover anim");
     }
 
     private void DescendingAnim() 
     {
+        if(!useDebugMessage) return;
         Debug.Log("Invoke descend anim");
     }
 
     private void RightWallDescendingAnim() 
     {
+        if(!useDebugMessage) return;
         Debug.Log("Invoke wall descend anim (right wall)");
     }
 
     private void LeftWallDescendingAnim() 
     {
+        if(!useDebugMessage) return;
         Debug.Log("Invoke wall descend anim (left wall)");
     }
 
     private void StuckedAnim() 
     {
+        if(!useDebugMessage) return;
         Debug.Log("Invoke stucked anim");
     }
 
@@ -173,16 +179,19 @@ public class AnimationController : MonoBehaviour
         // -- DEFAULT JUMP
         private void JumpStraightAnim() // VERTICAL UP
         {
+            if(!useDebugMessage) return;
             Debug.Log("Invoke jump straight anim");
         }
 
         private void JumpDiagonalRightAnim()  // DIAGONAL RIGHT
         {
+            if(!useDebugMessage) return;
             Debug.Log("Invoke jump diagonal anim (right)");
         }
 
         private void JumpDiagonalLeftAnim()  // DIAGONAL LEFT
         {
+            if(!useDebugMessage) return;
             Debug.Log("Invoke jump diagonal anim (left)");
         }
 
@@ -204,32 +213,38 @@ public class AnimationController : MonoBehaviour
         // Right wall
         private void RightWallJumpAscendAnim() // RIGHT WALL JUMP ASCEND
         {
+            if(!useDebugMessage) return;
             Debug.Log("Invoke right wall jump ascend anim");
         }
 
         private void RightWallJumpDescendAnim() // RIGHT WALL JUMP DESCEND
         {
+            if(!useDebugMessage) return;
             Debug.Log("Invoke right wall jump descend anim");
         }
 
         private void RightWallJumpHorizontal() // RIGHT WALL JUMP HORIZONTAL
         {
+            if(!useDebugMessage) return;
             Debug.Log("Invoke wall jump horizontal <--");
         }
 
         // Left wall
         private void LeftWallJumpAscendAnim() // LEFT WALL JUMP ASCEND
         {
+            if(!useDebugMessage) return;
             Debug.Log("Invoke left wall jump ascend anim");
         }
 
         private void LeftWallJumpDescendAnim() // LEFT WASLL JUMP DESCEND
         {
+            if(!useDebugMessage) return;
             Debug.Log("Invoke left wall jump descend anim");
         }
 
         private void LeftWallJumpHorizontal() // LEFT WALL JUMP HORIZONTAL
         {
+            if(!useDebugMessage) return;
             Debug.Log("Invoke left wall jump horizontal -->");
         }
 
@@ -241,16 +256,19 @@ public class AnimationController : MonoBehaviour
         {
             if(movementSystem.isRightGroundDash) { RightGroundDashAnim(); }
             else { LeftGroundDashAnim(); }
+            if(!useDebugMessage) return;
             Debug.Log("Invoke ground dash anim");
         }
 
         private void RightGroundDashAnim() // RIGHT ->> 
         {
+            if(!useDebugMessage) return;
             Debug.Log("Ground dash anim ->");
         }
 
         private void LeftGroundDashAnim() // LEFT <<-
         {
+            if(!useDebugMessage) return;
             Debug.Log("Ground dash anim <-");
         }
 
@@ -263,11 +281,13 @@ public class AnimationController : MonoBehaviour
 
         private void RightCeilingDashAnim() // RIGHT ->> 
         {
+            if(!useDebugMessage) return;
             Debug.Log("Ceiling dash anim ->");
         }
 
         private void LeftCeilingDashAnim() // LEFT <--
         {
+            if(!useDebugMessage) return;
             Debug.Log("Ceiling dash anim <-");
         }
 
@@ -277,16 +297,19 @@ public class AnimationController : MonoBehaviour
         {
             if(movementSystem.isUpWallDash) { UpRightWallDashAnim(); }
             else { DownRightWallDashAnim(); }
+            if(!useDebugMessage) return;
             Debug.Log("Invoke wall dash anim (right)");
         }
 
         private void UpRightWallDashAnim() // UP 
         {
+            if(!useDebugMessage) return;
             Debug.Log("Invoke upward dash on the right wall");
         }
 
         private void DownRightWallDashAnim() // DOWN 
         {
+            if(!useDebugMessage) return;
             Debug.Log("Invoke downward dash on the right wall");
         }
 
@@ -295,16 +318,19 @@ public class AnimationController : MonoBehaviour
         {
             if(movementSystem.isUpWallDash) { UpLeftWallDashAnim(); }
             else { DownLeftWallDashAnim(); }
+            if(!useDebugMessage) return;
             Debug.Log("Invoke wall dash anim (left)");
         }
 
         private void UpLeftWallDashAnim() // UP
         {
+            if(!useDebugMessage) return;
             Debug.Log("Invoke upward dash on the left wall");
         }
 
         private void DownLeftWallDashAnim() // DOWN
         {
+            if(!useDebugMessage) return;
             Debug.Log("Invoke downward dash on the left wall");
 
         }
@@ -314,41 +340,49 @@ public class AnimationController : MonoBehaviour
     #region Air Dash Animations
         private void AirDashVerticalAscend() // VERTICAL UP
         {
+            if(!useDebugMessage) return;
             Debug.Log("Invoke air dash straight up anim");
         }
 
         private void AirDashVerticalDescend() // VERTICAL DOWN
         {
+            if(!useDebugMessage) return;
             Debug.Log("Invoke air dash straight down anim");
         }
 
         private void AirDashHorizontalRight() // HORIZONTAL RIGHT
         {
+            if(!useDebugMessage) return;
             Debug.Log("Invoke air dash right anim (horizontal)");
         }
 
         private void AirDashHorizontalLeft() // HORIZONTAL LEFT
         {
+            if(!useDebugMessage) return;
             Debug.Log("Invoke air dash left anim (horizontal)");
         }
 
         private void AirDashDiagonalRightUp() // DIAGONAL RIGHT UP
         {
+            if(!useDebugMessage) return;
             Debug.Log("Invoke air dash up diagonally anim (right)");
         }
 
         private void AirDashDiagonalRightDown() // DIAGONAL RIGHT DOWN
         {
+            if(!useDebugMessage) return;
             Debug.Log("Invoke air dash down diagonally anim (right)");
         }
 
         private void AirDashDiagonalLeftUp() // DIAGONAL LEFT UP
         {
+            if(!useDebugMessage) return;
             Debug.Log("Invoke air dash up diagonally anim (left)");
         }
 
         private void AirDashDiagonalLeftDown() // DIAGONAL LEFT DOWN
         {
+            if(!useDebugMessage) return;
             Debug.Log("Invoke air dash down diagonally anim (left)");
         }
 

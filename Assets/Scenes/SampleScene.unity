@@ -274,6 +274,7 @@ GameObject:
   - component: {fileID: 206922475}
   - component: {fileID: 206922477}
   - component: {fileID: 206922478}
+  - component: {fileID: 206922479}
   m_Layer: 0
   m_Name: PlayerTest
   m_TagString: Untagged
@@ -545,7 +546,7 @@ MonoBehaviour:
   hoverStartDelay: 0.1
   wobbleFadeInFactor: 1
   hoverActivationRadius: 0.5
-  hoverDuration: 1
+  hoverDuration: 10
   minHoverHeight: 4
   minHoverLinearDamping: 0.1
   hoverLinearDamping: 7
@@ -609,6 +610,7 @@ MonoBehaviour:
   movementSystem: {fileID: 0}
   animationController: {fileID: 0}
   animator: {fileID: 0}
+  useDebugMessage: 0
 --- !u!114 &206922478
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -622,6 +624,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   inputActions: {fileID: -944628639613478452, guid: 9740b7f8f03c4a749a2e93320c4985da, type: 3}
+--- !u!114 &206922479
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 206922466}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 728de430de5673e4c8caf1a8723de09e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  centerResetDelay: 1
+  startHoldDelay: 1
+  stickMagnitudeThresh: 0.9
+  inRangeForCombat: 0
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0
@@ -1720,30 +1738,16 @@ GameObject:
   - component: {fileID: 8216665833287376822}
   - component: {fileID: 6870511562387888176}
   - component: {fileID: 5413093255523348522}
-  - component: {fileID: 8609359015012336423}
-  - component: {fileID: 1635672745380892362}
+  - component: {fileID: 8216665833287376825}
+  - component: {fileID: 8216665833287376824}
+  - component: {fileID: 8216665833287376823}
   m_Layer: 0
   m_Name: AttackableBox
-  m_TagString: AttackableBox
+  m_TagString: Attackable
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1635672745380892362
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 655236319544025638}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5b871fff75a65114982365fd67ff96c5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  centerResetDelay: 1
-  sitckMagnitudeThresh: 0.9
-  movementSystem: {fileID: 206922475}
 --- !u!23 &5413093255523348522
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -1806,14 +1810,42 @@ Transform:
   m_GameObject: {fileID: 655236319544025638}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 2.23, z: 4.92}
+  m_LocalPosition: {x: 0, y: 3.34, z: 1.67}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!135 &8609359015012336423
-SphereCollider:
+--- !u!114 &8216665833287376823
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 655236319544025638}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cf17ec2fc3cc18740954a5741381752c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  gizmoColor: {r: 0, g: 1, b: 0, a: 0.5}
+--- !u!114 &8216665833287376824
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 655236319544025638}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b871fff75a65114982365fd67ff96c5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  attackDirection: 0
+  colSize: {x: 2, y: 2, z: 2}
+  colOffset: {x: 0, y: 0, z: -1.5}
+--- !u!65 &8216665833287376825
+BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -1831,8 +1863,8 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 3
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Size: {x: 2, y: 2, z: 2}
+  m_Center: {x: 0, y: 0, z: -1.5}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

@@ -346,7 +346,6 @@ public class MovementSystem : MonoBehaviour
     private float hoverTimer = 0f;
     private float hoverWobbleTimer = 0f;
     private float buttonHoldTimer = 0f;
-    
 
     // ─ Input Tracking & Actions
     private string currentAction = "";
@@ -419,6 +418,8 @@ public class MovementSystem : MonoBehaviour
     // ─ Miscellaneous
     private SurfaceState lastWallSide;
     private Coroutine landingResetCoroutine;
+    private Collider[] colliders = new Collider[10]; // starting buffer size
+    private const int maxBufferSize = 1000;
 
     // ─────────────────────────────────────────────────────────────────────────
     // UNITY LIFECYCLE METHODS
@@ -588,7 +589,9 @@ public class MovementSystem : MonoBehaviour
         if(movementState != MovementState.Hovering) ApplyCustomGravity();
         GetLastCollidedSurface();
 
-        isInAir = !IsCollidingWithSurface();
+        // isInAir = !IsCollidingWithSurface();
+        isInAir = !CheckSurfaces();
+
         if (useHandleActionForces) { HandleActionForces(); }
         if (isDropping && !prevStickDownDrop  && !hasBurstDropped) { ApplyBurstDropForce(); }
         prevStickDownDrop = isDropping;
@@ -1366,6 +1369,9 @@ public class MovementSystem : MonoBehaviour
     private void HandleSurfaceState(Collision collision, out GameObject surfaceObject)
     {
         surfaceObject = null;
+        int targetLayer = LayerMask.NameToLayer("Surface");
+        if(collision.transform.gameObject.layer != targetLayer) return;
+        
         currentSurfaceState = SurfaceState.Air;
         SurfaceState detectedState = SurfaceState.Air;
         float bestDot = -1f;
@@ -1417,15 +1423,48 @@ public class MovementSystem : MonoBehaviour
     /// Checks for nearby colliders via Physics.OverlapSphere to determine if the Rigidbody is in contact with any surface.
     /// Drives isInAir logic and collision-based state transitions in StopMovementUponCollision.
     /// </summary>    
-    private bool IsCollidingWithSurface()
-    {
-        Collider[] cols = Physics.OverlapSphere(
-            rb.position,
-            GetComponent<Collider>().bounds.extents.y + 0.1f
-        );
-        return cols.Length > 1;
-    }
+    // private bool IsCollidingWithSurface()
+    // {
+    //     Collider[] cols = new Collider[1]; 
 
+    //     int hitCount = Physics.OverlapSphereNonAlloc(
+    //         rb.position,
+    //         GetComponent<Collider>().bounds.extents.y + 0.1f,
+    //         cols,
+    //         1 << LayerMask.NameToLayer("Surface") 
+    //     );
+
+    //     return cols.Length > 1;
+    // }
+
+    private bool CheckSurfaces()
+    {
+        float radius = GetComponent<Collider>().bounds.extents.y + 0.1f;
+        Vector3 position = rb.position;
+
+        int hitCount = Physics.OverlapSphereNonAlloc(
+            position,
+            radius,
+            colliders,
+            surfaceLayer
+        );
+
+        // Try to resize once if buffer is full, but don't exceed maxBufferSize
+        if (hitCount == colliders.Length && colliders.Length < maxBufferSize)
+        {
+            int newSize = Mathf.Min(colliders.Length * 2, maxBufferSize);
+            colliders = new Collider[newSize];
+
+            hitCount = Physics.OverlapSphereNonAlloc(
+                position,
+                radius,
+                colliders,
+                surfaceLayer
+            );
+        }
+
+        return hitCount > 0;
+    }
     /// <summary>
     /// Returns the last collided surface object if within surfaceMemoryDuration; otherwise null.
     /// Provides brief memory of the last surface post-collision.

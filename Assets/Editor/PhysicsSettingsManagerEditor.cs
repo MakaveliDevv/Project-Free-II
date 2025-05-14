@@ -15,7 +15,7 @@ public class PhysicsSettingsManagerEditor : Editor
         {
             manager.selectedRigidbodies.Clear();
 
-            Rigidbody[] allRBs = FindObjectsOfType<Rigidbody>();
+            Rigidbody[] allRBs = FindObjectsByType<Rigidbody>(FindObjectsSortMode.None);
             foreach (var rb in allRBs)
             {
                 manager.selectedRigidbodies.Add(rb);
