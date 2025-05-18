@@ -136,63 +136,103 @@ public class AnimationController : MonoBehaviour
         }
     }
 
-    private void IdleAnim() 
+    private void IdleAnim()
     {
         animator.SetBool("Idle", true);
         animator.SetBool("Charge", false);
         animator.SetBool("JumpUp", false);
+        animator.SetBool("JumpNE", false);
+        animator.SetBool("JumpNW", false);
+        animator.SetBool("JumpE", false);
+        animator.SetBool("JumpW", false);
         animator.SetBool("Hover", false);
         animator.SetBool("Descent", false);
         animator.SetBool("QuickDescent", false);
-        animator.SetBool("Landing",false);
-        animator.SetBool("DashR",false);
-        animator.SetBool("DashL",false);
-        animator.SetBool("Wallstick",false);
+        animator.SetBool("Landing", false);
+        animator.SetBool("DashR", false);
+        animator.SetBool("DashL", false);
+        animator.SetBool("StuckedR", false);
+        animator.SetBool("RWJumpA", false);
+        animator.SetBool("RWJumpH", false);
+        animator.SetBool("RWJumpD", false);
+        animator.SetBool("LWJumpA", false);
+        animator.SetBool("LWJumpH", false);
+        animator.SetBool("LWJumpD", false);   
     }
 
-    private void ChargingAnim() 
+    private void ChargingAnim()
     {
         Debug.Log("Invoke charging anim");
         animator.SetBool("Idle", false);
         animator.SetBool("Charge", true);
         animator.SetBool("JumpUp", false);
+        animator.SetBool("JumpNE", false);
+        animator.SetBool("JumpNW", false);
+        animator.SetBool("JumpE", false);
+        animator.SetBool("JumpW", false);
         animator.SetBool("Hover", false);
         animator.SetBool("Descent", false);
         animator.SetBool("QuickDescent", false);
-        animator.SetBool("Landing",false);
-        animator.SetBool("DashR",false);
-        animator.SetBool("DashL",false);
-        animator.SetBool("Wallstick",false);
+        animator.SetBool("Landing", false);
+        animator.SetBool("DashR", false);
+        animator.SetBool("DashL", false);
+        animator.SetBool("StuckedR", false);
+        animator.SetBool("RWJumpA", false);
+        animator.SetBool("RWJumpH", false);
+        animator.SetBool("RWJumpD", false);
+        animator.SetBool("LWJumpA", false);
+        animator.SetBool("LWJumpH", false);
+        animator.SetBool("LWJumpD", false);   
     }
 
-    private void HoverAnim() 
+    private void HoverAnim()
     {
         Debug.Log("Invoke hover anim");
         animator.SetBool("Idle", false);
         animator.SetBool("Charge", false);
         animator.SetBool("JumpUp", false);
+        animator.SetBool("JumpNE", false);
+        animator.SetBool("JumpNW", false);
+        animator.SetBool("JumpE", false);
+        animator.SetBool("JumpW", false);
         animator.SetBool("Hover", true);
         animator.SetBool("Descent", false);
         animator.SetBool("QuickDescent", false);
-        animator.SetBool("Landing",false);
-        animator.SetBool("DashR",false);
-        animator.SetBool("DashL",false);
-        animator.SetBool("Wallstick",false);
+        animator.SetBool("Landing", false);
+        animator.SetBool("DashR", false);
+        animator.SetBool("DashL", false);
+        animator.SetBool("StuckedR", false);
+        animator.SetBool("RWJumpA", false);
+        animator.SetBool("RWJumpH", false);
+        animator.SetBool("RWJumpD", false);
+        animator.SetBool("LWJumpA", false);
+        animator.SetBool("LWJumpH", false);
+        animator.SetBool("LWJumpD", false);   
     }
 
-    private void DescendingAnim() 
+    private void DescendingAnim()
     {
         Debug.Log("Invoke descend anim");
         animator.SetBool("Idle", false);
         animator.SetBool("Charge", false);
         animator.SetBool("JumpUp", false);
+        animator.SetBool("JumpNE", false);
+        animator.SetBool("JumpNW", false);
+        animator.SetBool("JumpE", false);
+        animator.SetBool("JumpW", false);
         animator.SetBool("Hover", false);
         animator.SetBool("Descent", true);
         animator.SetBool("QuickDescent", false);
-        animator.SetBool("Landing",false);
-        animator.SetBool("DashR",false);
-        animator.SetBool("DashL",false);
-        animator.SetBool("Wallstick",false);
+        animator.SetBool("Landing", false);
+        animator.SetBool("DashR", false);
+        animator.SetBool("DashL", false);
+        animator.SetBool("StuckedR", false);
+        animator.SetBool("RWJumpA", false);
+        animator.SetBool("RWJumpH", false);
+        animator.SetBool("RWJumpD", false);
+        animator.SetBool("LWJumpA", false);
+        animator.SetBool("LWJumpH", false);
+        animator.SetBool("LWJumpD", false);   
     }
 
     private void RightWallDescendingAnim() 
@@ -205,28 +245,53 @@ public class AnimationController : MonoBehaviour
         Debug.Log("Invoke wall descend anim (left wall)");
     }
 
-    private void StuckedAnim() 
+    private void StuckedAnim()
     {
         Debug.Log("Invoke stucked anim");
+        animator.SetBool("Idle", false);
+        animator.SetBool("Charge", false);
+        animator.SetBool("JumpUp", false);
+        animator.SetBool("JumpNE", false);
+        animator.SetBool("JumpNW", false);
+        animator.SetBool("JumpE", false);
+        animator.SetBool("JumpW", false);
+        animator.SetBool("Hover", false);
+        animator.SetBool("Descent", false);
+        animator.SetBool("QuickDescent", false);
+        animator.SetBool("Landing",false);
+        animator.SetBool("DashR",false);
+        animator.SetBool("DashL",false);
+        animator.SetBool("StuckedR",true);
+        
     }
 
     // Jump animations
     #region Jump Animations
-        // -- DEFAULT JUMP
-        private void JumpStraightAnim() // VERTICAL UP
-        {
-            Debug.Log("Invoke jump straight anim");
-            JumpParticles.Play();
-            animator.SetBool("Idle", false);
-            animator.SetBool("Charge", false);
-            animator.SetBool("JumpUp", true);
-            animator.SetBool("Hover", false);
-            animator.SetBool("Descent", false);
-            animator.SetBool("QuickDescent", false);
-            animator.SetBool("Landing",false);
-            animator.SetBool("DashR",false);
-            animator.SetBool("DashL",false);
-            animator.SetBool("Wallstick",false);
+    // -- DEFAULT JUMP
+    private void JumpStraightAnim() // VERTICAL UP
+    {
+        Debug.Log("Invoke jump straight anim");
+        JumpParticles.Play();
+        animator.SetBool("Idle", false);
+        animator.SetBool("Charge", false);
+        animator.SetBool("JumpUp", true);
+        animator.SetBool("JumpNE", false);
+        animator.SetBool("JumpNW", false);
+        animator.SetBool("JumpE", false);
+        animator.SetBool("JumpW", false);
+        animator.SetBool("Hover", false);
+        animator.SetBool("Descent", false);
+        animator.SetBool("QuickDescent", false);
+        animator.SetBool("Landing", false);
+        animator.SetBool("DashR", false);
+        animator.SetBool("DashL", false);
+        animator.SetBool("StuckedR", false);
+        animator.SetBool("RWJumpA", false);
+        animator.SetBool("RWJumpH", false);
+        animator.SetBool("RWJumpD", false);
+        animator.SetBool("LWJumpA", false);
+        animator.SetBool("LWJumpH", false);
+        animator.SetBool("LWJumpD", false);   
         }
 
         private void JumpDiagonalRightAnim()  // DIAGONAL RIGHT
@@ -234,14 +299,24 @@ public class AnimationController : MonoBehaviour
             Debug.Log("Invoke jump diagonal anim (right)");
             animator.SetBool("Idle", false);
             animator.SetBool("Charge", false);
-            animator.SetBool("JumpUp", true);
+            animator.SetBool("JumpUp", false);
+            animator.SetBool("JumpNE", true);
+            animator.SetBool("JumpNW", false);
+            animator.SetBool("JumpE", false);
+            animator.SetBool("JumpW", false);
             animator.SetBool("Hover", false);
             animator.SetBool("Descent", false);
             animator.SetBool("QuickDescent", false);
             animator.SetBool("Landing",false);
             animator.SetBool("DashR",false);
             animator.SetBool("DashL",false);
-            animator.SetBool("Wallstick",false);
+            animator.SetBool("StuckedR", false);
+            animator.SetBool("RWJumpA", false);
+            animator.SetBool("RWJumpH", false);
+            animator.SetBool("RWJumpD", false);
+            animator.SetBool("LWJumpA", false);
+            animator.SetBool("LWJumpH", false);
+            animator.SetBool("LWJumpD", false);   
         }
 
         private void JumpDiagonalLeftAnim()  // DIAGONAL LEFT
@@ -249,14 +324,24 @@ public class AnimationController : MonoBehaviour
             Debug.Log("Invoke jump diagonal anim (left)");
             animator.SetBool("Idle", false);
             animator.SetBool("Charge", false);
-            animator.SetBool("JumpUp", true);
+            animator.SetBool("JumpUp", false);
+            animator.SetBool("JumpNE", false);
+            animator.SetBool("JumpNW", true);
+            animator.SetBool("JumpE", false);
+            animator.SetBool("JumpW", false);
             animator.SetBool("Hover", false);
             animator.SetBool("Descent", false);
             animator.SetBool("QuickDescent", false);
             animator.SetBool("Landing",false);
             animator.SetBool("DashR",false);
             animator.SetBool("DashL",false);
-            animator.SetBool("Wallstick",false);
+            animator.SetBool("StuckedR", false);
+            animator.SetBool("RWJumpA", false);
+            animator.SetBool("RWJumpH", false);
+            animator.SetBool("RWJumpD", false);
+            animator.SetBool("LWJumpA", false);
+            animator.SetBool("LWJumpH", false);
+            animator.SetBool("LWJumpD", false);        
         }
 
         private void InvokeRightWallJumpAnim() // DONT TOUCH THIS METHOD
@@ -273,58 +358,187 @@ public class AnimationController : MonoBehaviour
             else { LeftWallJumpDescendAnim(); }
         }
 
-        // -- WALL JUMP
-        // Right wall
-        private void RightWallJumpAscendAnim() // RIGHT WALL JUMP ASCEND
-        {
-            Debug.Log("Invoke right wall jump ascend anim");
+    // -- WALL JUMP
+    // Right wall
+    private void RightWallJumpAscendAnim() // RIGHT WALL JUMP ASCEND
+    {
+        Debug.Log("Invoke right wall jump ascend anim");
+        animator.SetBool("Idle", false);
+        animator.SetBool("Charge", false);
+        animator.SetBool("JumpUp", false);
+        animator.SetBool("Hover", false);
+        animator.SetBool("Descent", false);
+        animator.SetBool("QuickDescent", false);
+        animator.SetBool("Landing", false);
+        animator.SetBool("DashR", false);
+        animator.SetBool("DashL", false);
+        animator.SetBool("StuckedR", false);
+        animator.SetBool("RWJumpA", true);
+        animator.SetBool("RWJumpH", false);
+        animator.SetBool("RWJumpD", false);
+        animator.SetBool("LWJumpA", false);
+         animator.SetBool("LWJumpH", false);
+         animator.SetBool("LWJumpD", false);        
         }
 
-        private void RightWallJumpDescendAnim() // RIGHT WALL JUMP DESCEND
-        {
-            Debug.Log("Invoke right wall jump descend anim");
+    private void RightWallJumpDescendAnim() // RIGHT WALL JUMP DESCEND
+    {
+        Debug.Log("Invoke right wall jump descend anim");
+        animator.SetBool("Idle", false);
+        animator.SetBool("Charge", false);
+        animator.SetBool("JumpUp", false);
+        animator.SetBool("Hover", false);
+        animator.SetBool("Descent", false);
+        animator.SetBool("QuickDescent", false);
+        animator.SetBool("Landing", false);
+        animator.SetBool("DashR", false);
+        animator.SetBool("DashL", false);
+        animator.SetBool("StuckedR", false);
+        animator.SetBool("RWJumpA", false);
+        animator.SetBool("RWJumpH", true);
+        animator.SetBool("RWJumpD", false);
+        animator.SetBool("LWJumpA", false);
+        animator.SetBool("LWJumpH", false);
+        animator.SetBool("LWJumpD", false);       
+            
+
         }
 
-        private void RightWallJumpHorizontal() // RIGHT WALL JUMP HORIZONTAL
-        {
-            Debug.Log("Invoke wall jump horizontal <--");
+    private void RightWallJumpHorizontal() // RIGHT WALL JUMP HORIZONTAL
+    {
+        Debug.Log("Invoke wall jump horizontal <--");
+            animator.SetBool("Idle", false);
+            animator.SetBool("Charge", false);
+            animator.SetBool("JumpUp", false);
+            animator.SetBool("Hover", false);
+            animator.SetBool("Descent", false);
+            animator.SetBool("QuickDescent", false);
+            animator.SetBool("Landing", false);
+            animator.SetBool("DashR", false);
+            animator.SetBool("DashL", false);
+            animator.SetBool("StuckedR", false);
+            animator.SetBool("RWJumpA", false);
+            animator.SetBool("RWJumpH", false);
+            animator.SetBool("RWJumpD", true);
+            
         }
 
-        // Left wall
-        private void LeftWallJumpAscendAnim() // LEFT WALL JUMP ASCEND
-        {
-            Debug.Log("Invoke left wall jump ascend anim");
+    // Left wall
+    private void LeftWallJumpAscendAnim() // LEFT WALL JUMP ASCEND
+    {
+        Debug.Log("Invoke left wall jump ascend anim");
+                        animator.SetBool("Idle", false);
+            animator.SetBool("Charge", false);
+            animator.SetBool("JumpUp", false);
+            animator.SetBool("JumpNE", false);
+            animator.SetBool("JumpNW", false);
+            animator.SetBool("JumpE", false);
+            animator.SetBool("JumpW", false);
+            animator.SetBool("Hover", false);
+            animator.SetBool("Descent", false);
+            animator.SetBool("QuickDescent", false);
+            animator.SetBool("Landing",false);
+            animator.SetBool("DashR",false);
+            animator.SetBool("DashL",false);
+            animator.SetBool("StuckedR", false);
+            animator.SetBool("RWJumpA", false);
+            animator.SetBool("RWJumpH", false);
+            animator.SetBool("RWJumpD", false);
+            animator.SetBool("LWJumpA", true);
+            animator.SetBool("LWJumpH", false);
+            animator.SetBool("LWJumpD", false);  
         }
 
-        private void LeftWallJumpDescendAnim() // LEFT WASLL JUMP DESCEND
-        {
-            Debug.Log("Invoke left wall jump descend anim");
+    private void LeftWallJumpDescendAnim() // LEFT WASLL JUMP DESCEND
+    {
+        Debug.Log("Invoke left wall jump descend anim");
+            
+             animator.SetBool("Idle", false);
+            animator.SetBool("Charge", false);
+            animator.SetBool("JumpUp", false);
+            animator.SetBool("JumpNE", false);
+            animator.SetBool("JumpNW", false);
+            animator.SetBool("JumpE", false);
+            animator.SetBool("JumpW", false);
+            animator.SetBool("Hover", false);
+            animator.SetBool("Descent", false);
+            animator.SetBool("QuickDescent", false);
+            animator.SetBool("Landing",false);
+            animator.SetBool("DashR",false);
+            animator.SetBool("DashL",false);
+            animator.SetBool("StuckedR", false);
+            animator.SetBool("RWJumpA", false);
+            animator.SetBool("RWJumpH", false);
+            animator.SetBool("RWJumpD", false);
+            animator.SetBool("LWJumpA", false);
+            animator.SetBool("LWJumpH", false);
+            animator.SetBool("LWJumpD", true);  
         }
 
-        private void LeftWallJumpHorizontal() // LEFT WALL JUMP HORIZONTAL
-        {
-            Debug.Log("Invoke left wall jump horizontal -->");
+    private void LeftWallJumpHorizontal() // LEFT WALL JUMP HORIZONTAL
+    {
+        Debug.Log("Invoke left wall jump horizontal -->");
+            animator.SetBool("Idle", false);
+            animator.SetBool("Charge", false);
+            animator.SetBool("JumpUp", false);
+            animator.SetBool("JumpNE", false);
+            animator.SetBool("JumpNW", false);
+            animator.SetBool("JumpE", false);
+            animator.SetBool("JumpW", false);
+            animator.SetBool("Hover", false);
+            animator.SetBool("Descent", false);
+            animator.SetBool("QuickDescent", false);
+            animator.SetBool("Landing",false);
+            animator.SetBool("DashR",false);
+            animator.SetBool("DashL",false);
+            animator.SetBool("StuckedR", false);
+            animator.SetBool("RWJumpA", false);
+            animator.SetBool("RWJumpH", false);
+            animator.SetBool("RWJumpD", false);
+            animator.SetBool("LWJumpA", true);
+            animator.SetBool("LWJumpH", false);
+            animator.SetBool("LWJumpD", false);  
         }
 
     #endregion Jump Animations
 
     #region Dash Animations
-        // -- GROUND DASH
-        private void GroundDashAnim() // DONT TOUCH THIS METHOD
-        {
-            if(movementSystem.isRightGroundDash) { RightGroundDashAnim(); }
-            else { LeftGroundDashAnim(); }
-            Debug.Log("Invoke ground dash anim");
+    // -- GROUND DASH
+    private void GroundDashAnim() // DONT TOUCH THIS METHOD
+    {
+        if (movementSystem.isRightGroundDash) { RightGroundDashAnim(); }
+        else { LeftGroundDashAnim(); }
+        Debug.Log("Invoke ground dash anim");
         }
 
         private void RightGroundDashAnim() // RIGHT ->> 
         {
             Debug.Log("Ground dash anim ->");
+            animator.SetBool("Idle", false);
+            animator.SetBool("Charge", false);
+            animator.SetBool("JumpUp", false);
+            animator.SetBool("Hover", false);
+            animator.SetBool("Descent", false);
+            animator.SetBool("QuickDescent", false);
+            animator.SetBool("Landing",false);
+            animator.SetBool("DashR",true);
+            animator.SetBool("DashL",false);
+            animator.SetBool("Wallstick",false);
         }
 
         private void LeftGroundDashAnim() // LEFT <<-
         {
             Debug.Log("Ground dash anim <-");
+            animator.SetBool("Idle", false);
+            animator.SetBool("Charge", false);
+            animator.SetBool("JumpUp", false);
+            animator.SetBool("Hover", false);
+            animator.SetBool("Descent", false);
+            animator.SetBool("QuickDescent", false);
+            animator.SetBool("Landing",false);
+            animator.SetBool("DashR",false);
+            animator.SetBool("DashL",true);
+            animator.SetBool("Wallstick",false);
         }
 
         // -- CEILING DASH
@@ -332,6 +546,7 @@ public class AnimationController : MonoBehaviour
         {
             if(movementSystem.isRightGroundDash) { RightCeilingDashAnim(); }
             else { LeftCeilingDashAnim(); }
+            
         }
 
         private void RightCeilingDashAnim() // RIGHT ->> 
