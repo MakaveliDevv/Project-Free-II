@@ -26,7 +26,7 @@ public class CombatController : MonoBehaviour
     // Combat collisions
     public bool inRangeForCombat = false;
     private Attackable attackable = null;
-
+    
     void Update()
     {
         ProcessRightStickSwipe();
@@ -53,14 +53,14 @@ public class CombatController : MonoBehaviour
 
         if (startLabel == null)
         {
-            if (!tilted) { return; } 
-            if (previousEndLabel != null && snapped == previousEndLabel) { return; } 
+            if (!tilted) { return; }
+            if (previousEndLabel != null && snapped == previousEndLabel) { return; }
 
             startLabel = snapped;
             centerHoldTimer = 0f;
             startHoldTimer = 0f;
             previousEndLabel = null;
-            
+
             Debug.Log($"[Attackable] → START at {startLabel}");
             return;
         }
@@ -112,14 +112,20 @@ public class CombatController : MonoBehaviour
         }
     }
 
+    public bool attacked = false;
+    public bool succes = false;
+
     private IEnumerator Processing(string key, bool pass)
     {
         if (attackable == null) { yield break; }
 
-        if (attackable.directions.TryGetValue(key, out var performed) 
+        attacked = true;
+
+        if (attackable.directions.TryGetValue(key, out var performed)
             && performed == attackable.attackDirection && pass)
         {
             Debug.Log($"[Attackable] ▶️ SUCCESS {key} → {performed}");
+            succes = true;
         }
         else
         {
@@ -143,7 +149,7 @@ public class CombatController : MonoBehaviour
 
     private string SnapTo8Label(Vector2 raw)
     {
-        if (raw.sqrMagnitude < stickMagnitudeThresh * stickMagnitudeThresh) { return ""; } 
+        if (raw.sqrMagnitude < stickMagnitudeThresh * stickMagnitudeThresh) { return ""; }
 
         float angle = (Mathf.Atan2(raw.y, raw.x) * Mathf.Rad2Deg + 360f) % 360f;
         float snapAngle = Mathf.Round(angle / 45f) * 45f;
