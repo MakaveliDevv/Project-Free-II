@@ -435,7 +435,8 @@ public class MovementSystem : MonoBehaviour
         rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
         rb.interpolation = RigidbodyInterpolation.Interpolate;
 
-        SetupInputActions();
+        // SetupInputActions();
+        InputController.Initialize(inputActions);
         BuildLabelToAngleMap();
     }
 
@@ -444,15 +445,15 @@ public class MovementSystem : MonoBehaviour
         initialGravityStrength = gravityStrength;
     }
 
-    void OnEnable()
-    {
-        RegisterInputCallbacks();
-    }
+    // void OnEnable()
+    // {
+    //     RegisterInputCallbacks();
+    // }
 
-    void OnDisable()
-    {
-        UnregisterInputCallbacks();
-    }
+    // void OnDisable()
+    // {
+    //     UnregisterInputCallbacks();
+    // }
 
     private void OnValidate()
     {
@@ -475,7 +476,40 @@ public class MovementSystem : MonoBehaviour
 
     void Update()
     {
+        InputController.Update();
+
         LeftAnalogStickInput();
+
+        if (InputController.MoveTriggerPressed)
+        {
+            buttonHoldTimer = 0;
+            southButtonPressed = true;
+
+            if (buttonHoldTimer <= 0)
+                buttonHoldTimer += Time.deltaTime;
+        }
+
+        // if (InputController.MoveTriggerHeld)
+        // {
+        //     southButtonPressed = false;
+        //     ResetActionState();
+        // }
+
+        if (InputController.MoveTriggerReleased)
+        {
+            southButtonPressed = false;
+            buttonPressedLongEnough = false;
+
+            if (snappedDir != Vector2.zero && movementState == MovementState.Charging) 
+            {
+
+                PerformMovementAction();
+            } 
+            else { ResetActionState(); }
+
+            actionReady = true;
+        }
+
         FetchActionType();
 
         if (southButtonPressed && buttonHoldTimer >= minButtonPressTime && !buttonPressedLongEnough)
@@ -537,7 +571,7 @@ public class MovementSystem : MonoBehaviour
 
         if (southButtonPressed)
         {
-            buttonHoldTimer += Time.deltaTime;
+            // buttonHoldTimer += Time.deltaTime;
             if (actionReady && !actionInProgress && buttonHoldTimer >= maxHoldTime && buttonPressedLongEnough)
             {
                 if(currentSurfaceState == SurfaceState.LeftWall || currentSurfaceState == SurfaceState.RightWall) 
@@ -576,12 +610,14 @@ public class MovementSystem : MonoBehaviour
 
     void LateUpdate()
     {
-        if(enableZLock) 
+        if (enableZLock)
         {
             Vector3 pos = rb.position;
             pos.z = 0;
             rb.position = pos;
         }
+
+        InputController.LateUpdate();
     }
 
     void FixedUpdate()
@@ -645,43 +681,43 @@ public class MovementSystem : MonoBehaviour
     // INPUT SETUP & CALLBACK REGISTRATION
     // ─────────────────────────────────────────────────────────────────────────
 
-    #region INPUT SETUP & CALLBACK REGISTRATION
+    // #region INPUT SETUP & CALLBACK REGISTRATION
     /// <summary>
     /// Initializes and enables the InputActionAsset maps for movement and jump.
     /// These actions are then subscribed in RegisterInputCallbacks and read each frame in LeftAnalogStickInput.
     /// </summary>
-    private void SetupInputActions()
-    {
-        var map = inputActions.FindActionMap("Player");
-        leftStick = map.FindAction("Movement");
-        southButton = map.FindAction("Jump");
+    // private void SetupInputActions()
+    // {
+    //     var map = inputActions.FindActionMap("Player");
+    //     leftStick = map.FindAction("Movement");
+    //     southButton = map.FindAction("Jump");
 
-        leftStick.Enable();
-        southButton.Enable();
-    }
+    //     leftStick.Enable();
+    //     southButton.Enable();
+    // }
 
     /// <summary>
     /// Subscribes south-button input events (started, performed, canceled).
     /// Paired with UnregisterInputCallbacks to manage event handlers’ lifecycle.
     /// </summary>
-    private void RegisterInputCallbacks()
-    {
-        southButton.started += OnSouthButtonStarted;
-        southButton.performed += OnSouthButtonPerformed;
-        southButton.canceled += OnSouthButtonCanceled;
-    }
+    // private void RegisterInputCallbacks()
+    // {
+    //     southButton.started += OnSouthButtonStarted;
+    //     southButton.performed += OnSouthButtonPerformed;
+    //     southButton.canceled += OnSouthButtonCanceled;
+    // }
 
     /// <summary>
     /// Unsubscribes south-button input events to prevent stale callbacks.
     /// Paired with RegisterInputCallbacks and called in OnDisable.
     /// </summary>
-    private void UnregisterInputCallbacks()
-    {
-        southButton.started -= OnSouthButtonStarted;
-        southButton.performed -= OnSouthButtonPerformed;
-        southButton.canceled -= OnSouthButtonCanceled;
-    }
-    #endregion
+    // private void UnregisterInputCallbacks()
+    // {
+    //     southButton.started -= OnSouthButtonStarted;
+    //     southButton.performed -= OnSouthButtonPerformed;
+    //     southButton.canceled -= OnSouthButtonCanceled;
+    // }
+    // #endregion
 
     // ─────────────────────────────────────────────────────────────────────────
     // INPUT PROCESSING
@@ -694,15 +730,23 @@ public class MovementSystem : MonoBehaviour
     /// </summary>
     private void LeftAnalogStickInput()
     {
-        if (Gamepad.current == null) { return; }
+        // if (Gamepad.current == null) { return; }
 
-        if (useRawInput) { leftStickInput = Gamepad.current.leftStick.ReadUnprocessedValue(); }
-        else { leftStickInput = leftStick.ReadValue<Vector2>(); }
+        // if (useRawInput) { leftStickInput = Gamepad.current.leftStick.ReadUnprocessedValue(); }
+        // else { leftStickInput = leftStick.ReadValue<Vector2>(); }
 
-        leftStickMovement = leftStickInput.magnitude > minStickMagnitude;
+        // leftStickMovement = leftStickInput.magnitude > minStickMagnitude;
+
+        // if (leftStickMovement) { snappedDir = GetSnappedDirection(leftStickInput).normalized; }
+        // else { leftStickInput = snappedDir = Vector2.zero; }
         
-        if (leftStickMovement) { snappedDir = GetSnappedDirection(leftStickInput).normalized; }
-        else { leftStickInput = snappedDir = Vector2.zero; }
+        Vector2 input = useRawInput 
+            ? Gamepad.current?.leftStick.ReadUnprocessedValue() ?? Vector2.zero 
+            : InputController.LeftStickValue;
+
+        leftStickMovement = input.magnitude > minStickMagnitude;
+        if (leftStickMovement) { snappedDir = GetSnappedDirection(input).normalized; }
+        else { snappedDir = Vector2.zero; }
 
         // bool inAir = currentSurfaceState == SurfaceState.Air;
         bool canDrop = currentSurfaceState == SurfaceState.Air || movementState == MovementState.Stucked;
@@ -726,43 +770,43 @@ public class MovementSystem : MonoBehaviour
     /// Handler for when the south (“jump”) button is pressed.
     /// Resets hold timers and flags southButtonPressed; paired with OnSouthButtonCanceled.
     /// </summary>
-    public void OnSouthButtonStarted(InputAction.CallbackContext ctx)
-    {
-        if (ctx.started)
-        {
-            buttonHoldTimer = 0;
-            southButtonPressed = true;
-        }
-    }
+    // public void OnSouthButtonStarted(InputAction.CallbackContext ctx)
+    // {
+    //     if (ctx.started)
+    //     {
+    //         buttonHoldTimer = 0;
+    //         southButtonPressed = true;
+    //     }
+    // }
 
-    public void OnSouthButtonPerformed(InputAction.CallbackContext ctx) { }
+    // public void OnSouthButtonPerformed(InputAction.CallbackContext ctx) { }
 
     /// <summary>
     /// Handler for when the south (“jump”) button is released.
     /// Clears input flags and either triggers PerformMovementAction (if charging) or calls ResetActionState.
     /// </summary>
-    public void OnSouthButtonCanceled(InputAction.CallbackContext ctx)
-    {
-        if (ctx.canceled)
-        {
-            southButtonPressed = false;
-            buttonPressedLongEnough = false;
+    // public void OnSouthButtonCanceled(InputAction.CallbackContext ctx)
+    // {
+    //     if (ctx.canceled)
+    //     {
+    //         southButtonPressed = false;
+    //         buttonPressedLongEnough = false;
 
-            if (snappedDir != Vector2.zero && movementState == MovementState.Charging) 
-            {
-                // if(currentSurfaceState == SurfaceState.LeftWall || currentSurfaceState == SurfaceState.RightWall) 
-                // {
-                //     fetchedAction = "WallJump";
-                //     allowedToMove = true;
-                // }
+    //         if (snappedDir != Vector2.zero && movementState == MovementState.Charging) 
+    //         {
+    //             // if(currentSurfaceState == SurfaceState.LeftWall || currentSurfaceState == SurfaceState.RightWall) 
+    //             // {
+    //             //     fetchedAction = "WallJump";
+    //             //     allowedToMove = true;
+    //             // }
 
-                PerformMovementAction();
-            } 
-            else { ResetActionState(); }
+    //             PerformMovementAction();
+    //         } 
+    //         else { ResetActionState(); }
 
-            actionReady = true;
-        }
-    }
+    //         actionReady = true;
+    //     }
+    // }
     #endregion
 
     // ─────────────────────────────────────────────────────────────────────────

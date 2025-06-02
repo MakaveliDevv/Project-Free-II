@@ -6,7 +6,7 @@
             "id": "c2881882-af0d-48cb-8a39-f2eefe9b9ebc",
             "actions": [
                 {
-                    "name": "Jump",
+                    "name": "MovementTrigger",
                     "type": "Button",
                     "id": "a032fde9-8cbe-4006-ae84-b67cca55b8ea",
                     "expectedControlType": "",
@@ -15,31 +15,13 @@
                     "initialStateCheck": false
                 },
                 {
-                    "name": "Movement",
+                    "name": "DirCalculation",
                     "type": "Value",
                     "id": "35767c20-166a-415b-af9a-ec6262e27067",
                     "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": true
-                },
-                {
-                    "name": "OnPause",
-                    "type": "Button",
-                    "id": "129e45d5-8ec5-4ea8-8538-fb086bcd2eeb",
-                    "expectedControlType": "",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": false
-                },
-                {
-                    "name": "SnapAction",
-                    "type": "Button",
-                    "id": "5a1434da-b06c-44ec-bb3a-0a7ac309dffa",
-                    "expectedControlType": "",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -50,7 +32,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Jump",
+                    "action": "MovementTrigger",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
@@ -61,7 +43,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Movement",
+                    "action": "DirCalculation",
                     "isComposite": true,
                     "isPartOfComposite": false
                 },
@@ -72,7 +54,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Movement",
+                    "action": "DirCalculation",
                     "isComposite": false,
                     "isPartOfComposite": true
                 },
@@ -83,7 +65,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Movement",
+                    "action": "DirCalculation",
                     "isComposite": false,
                     "isPartOfComposite": true
                 },
@@ -94,7 +76,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Movement",
+                    "action": "DirCalculation",
                     "isComposite": false,
                     "isPartOfComposite": true
                 },
@@ -105,31 +87,9 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Movement",
+                    "action": "DirCalculation",
                     "isComposite": false,
                     "isPartOfComposite": true
-                },
-                {
-                    "name": "",
-                    "id": "04c4dceb-0301-44ad-acb6-9f16635ea240",
-                    "path": "<Gamepad>/select",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "OnPause",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "05e64f0a-0850-4824-a046-0f287433e512",
-                    "path": "<Gamepad>/buttonNorth",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "SnapAction",
-                    "isComposite": false,
-                    "isPartOfComposite": false
                 }
             ]
         },
