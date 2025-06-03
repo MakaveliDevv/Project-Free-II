@@ -653,8 +653,8 @@ public class MovementSystem : MonoBehaviour
     private void SetupInputActions()
     {
         var map = inputActions.FindActionMap("Player");
-        leftStick = map.FindAction("Movement");
-        southButton = map.FindAction("Jump");
+        leftStick = map.FindAction("DirCalculation");
+        southButton = map.FindAction("MovementTrigger");
 
         leftStick.Enable();
         southButton.Enable();
