@@ -3,6 +3,8 @@ using UnityEngine;
 
 public class Attackable : MonoBehaviour
 {
+    private RewardSystem rewardSystem;
+
     // === Public Enums ===
     public enum AttackDirection
     {
@@ -38,7 +40,7 @@ public class Attackable : MonoBehaviour
     };
 
     private GameObject player;
-    private CombatController combatCtrl;
+    private CombatController combatController;
 
     private int currentIndex = 0;
     private bool successTriggered = false;
@@ -49,7 +51,8 @@ public class Attackable : MonoBehaviour
         if (Application.isPlaying)
         {
             player = GameObject.FindGameObjectWithTag("Player");
-            combatCtrl = player.GetComponent<CombatController>();
+            combatController = player.GetComponent<CombatController>();
+            rewardSystem = FindFirstObjectByType <RewardSystem>(); 
         }
     }
 
@@ -66,7 +69,7 @@ public class Attackable : MonoBehaviour
         {
             isPlayerInside = true;
 
-            // if (Input.GetKeyDown(KeyCode.E))
+            // if (combatController.attacked && combatController.succes)
             // {
             //     LatestHitResult = DetermineHitResult(currentIndex);
             //     Debug.Log($"✅ {LatestHitResult} hit in collider {currentIndex + 1}");
@@ -75,10 +78,14 @@ public class Attackable : MonoBehaviour
             //     successTriggered = true;
             // }
 
-            if (combatCtrl.attacked && combatCtrl.succes)
+            if (combatController.attacked && combatController.succes)
             {
                 LatestHitResult = DetermineHitResult(currentIndex);
                 Debug.Log($"✅ {LatestHitResult} hit in collider {currentIndex + 1}");
+
+                // int score = rewardSystem.CalculatePoints(LatestHitResult);
+                // rewardSystem.ApplyScore(score);
+                rewardSystem.ApplyScore(LatestHitResult);
 
                 DisableAllOtherColliders();
                 successTriggered = true;

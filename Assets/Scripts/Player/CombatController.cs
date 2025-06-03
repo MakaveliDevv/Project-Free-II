@@ -26,6 +26,9 @@ public class CombatController : MonoBehaviour
     // Combat collisions
     public bool inRangeForCombat = false;
     private Attackable attackable = null;
+
+    public string LastDirectionKey { get; private set; } = "";
+    public string EndDirection => previousEndLabel;
     
     void Update()
     {
@@ -102,6 +105,8 @@ public class CombatController : MonoBehaviour
             Debug.Log($"[Attackable] ❌ FAILURE: {startLabel} → {snapped} (expected {opposite})");
 
         previousEndLabel = snapped;
+
+        LastDirectionKey = key;
 
         Reset();
 
