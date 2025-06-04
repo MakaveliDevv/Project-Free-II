@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!114 &-124591283020152909
+--- !u!114 &-8716372177189416664
 MonoBehaviour:
   m_ObjectHideFlags: 11
   m_CorrespondingSourceObject: {fileID: 0}
@@ -20,8 +20,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: M_TargetObject
-  m_Shader: {fileID: -6465566751694194690, guid: 0226de203891b14438dee834257c0b7c, type: 3}
+  m_Name: M_TargetObj_ripple
+  m_Shader: {fileID: -6465566751694194690, guid: bdc7cba17dcedfd4098a34532fa7969b, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -65,6 +65,10 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _MainTexture:
+        m_Texture: {fileID: 10300, guid: 0000000000000000f000000000000000, type: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _MetallicGlossMap:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
@@ -102,7 +106,7 @@ Material:
     - _AddPrecomputedVelocity: 0
     - _AlphaClip: 0
     - _AlphaToMask: 0
-    - _Amplitude: 2.04
+    - _Amplitude: 1
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
     - _BumpScale: 1
@@ -114,42 +118,50 @@ Material:
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
     - _DstBlendAlpha: 0
-    - _Edge_Blend: 0.75
-    - _Effect_Radius: 6.85
+    - _Edge_Blend: 0.16
+    - _Effect_Radius: 1.6
     - _EnvironmentReflections: 1
-    - _Frequency: 0.78
+    - _Frequency: 1
+    - _GeneralWaveSpeed: 0.5
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
-    - _GlowIntensity: 500
-    - _GlowPower: 5
-    - _Gradient_Edge: 0.26
+    - _GlowIntensity: 2
+    - _GlowPower: 2
+    - _Gradient_Edge: 1
     - _GrowAmount: 0.0005
     - _Metallic: 0
     - _OcclusionStrength: 1
+    - _PanDirection_A: -1
+    - _PanDirection_B: 1
+    - _PanSpeed: 0.5
     - _Parallax: 0.005
     - _QueueControl: 0
     - _QueueOffset: 0
     - _ReceiveShadows: 1
-    - _Ripple_Density: 1.11
-    - _Ripple_Density_Multiplier: 0.74
-    - _Ripple_Frequency_Multiplier: 0.6
+    - _Ripple_Density: 3.8
+    - _Ripple_Density_Multiplier: 1
+    - _Ripple_Frequency_Multiplier: -1
     - _Smoothness: 0.5
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
-    - _Speed: 4
+    - _Speed: 3.5
+    - _Speed_1: 5
     - _SrcBlend: 1
     - _SrcBlendAlpha: 1
     - _Surface: 0
+    - _WaveHeight: 0.1
+    - _WaveSpeed_A: 0.5
+    - _WaveSpeed_B: 0.5
     - _WorkflowMode: 1
     - _ZWrite: 1
     m_Colors:
-    - _BaseColor: {r: 0.51572317, g: 0.17677295, b: 0.17677295, a: 1}
+    - _BaseColor: {r: 0.64779866, g: 0.19159484, b: 0.120189026, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _GlowColor: {r: 0.6226415, g: 0.02410225, b: 0, a: 1}
-    - _Gradient_Color: {r: 0, g: 0, b: 0, a: 0}
-    - _MovementDirection: {r: 0, g: 0, b: 0, a: 0}
+    - _GlowColor: {r: 2.475991, g: 0.32770845, b: 0.16350849, a: 1}
+    - _Gradient_Color: {r: 1, g: 0, b: 0, a: 0}
+    - _MovementDirection: {r: 0, g: 0, b: 0.001, a: 0}
     - _Ripple_Origin: {r: 0, g: 0, b: 0, a: 0}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
