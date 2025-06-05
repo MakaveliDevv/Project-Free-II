@@ -98,6 +98,12 @@ public class CombatController : MonoBehaviour
         string opposite = labels[oppositeIndex];
         bool pass = snapped == opposite;
         string key = $"{startLabel}-{snapped}";
+        
+        if (inRangeForCombat)
+        {
+            Debug.Log("In range for combat, start processing...");
+            StartCoroutine(Processing(key, pass));
+        }
 
         if (pass)
             Debug.Log($"[Attackable] ✅ SUCCESS: {startLabel} → {snapped}");
@@ -109,16 +115,10 @@ public class CombatController : MonoBehaviour
         LastDirectionKey = key;
 
         Reset();
-
-        if (inRangeForCombat)
-        {
-            Debug.Log("In range for combat, start processing...");
-            StartCoroutine(Processing(key, pass));
-        }
     }
 
     public bool attacked = false;
-    public bool succes = false;
+    public bool success = false;
 
     private IEnumerator Processing(string key, bool pass)
     {
@@ -130,7 +130,7 @@ public class CombatController : MonoBehaviour
             && performed == attackable.attackDirection && pass)
         {
             Debug.Log($"[Attackable] ▶️ SUCCESS {key} → {performed}");
-            succes = true;
+            success = true;
         }
         else
         {

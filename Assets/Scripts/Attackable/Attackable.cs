@@ -69,16 +69,7 @@ public class Attackable : MonoBehaviour
         {
             isPlayerInside = true;
 
-            // if (combatController.attacked && combatController.succes)
-            // {
-            //     LatestHitResult = DetermineHitResult(currentIndex);
-            //     Debug.Log($"✅ {LatestHitResult} hit in collider {currentIndex + 1}");
-
-            //     DisableAllOtherColliders();
-            //     successTriggered = true;
-            // }
-
-            if (combatController.attacked && combatController.succes)
+            if (combatController.attacked && combatController.success)
             {
                 LatestHitResult = DetermineHitResult(currentIndex);
                 Debug.Log($"✅ {LatestHitResult} hit in collider {currentIndex + 1}");
@@ -89,6 +80,8 @@ public class Attackable : MonoBehaviour
 
                 DisableAllOtherColliders();
                 successTriggered = true;
+                combatController.attacked = false;
+                combatController.success = false;
             }
         }
         else if (isPlayerInside)
