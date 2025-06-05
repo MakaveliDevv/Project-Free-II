@@ -1,273 +1,13 @@
-// using UnityEngine;
-
-// public class RewardSystem : MonoBehaviour
-// {
-//     [SerializeField] private ScoreDisplay scoreDisplay;
-
-//     public int TotalScore { get; private set; } = 0;
-//     public int ComboMultiplier { get; private set; } = 1;
-//     public int PerfectComboCount { get; private set; } = 0;
-
-//     public int PerfectCount { get; private set; }
-//     public int GoodCount { get; private set; }
-//     public int EarlyCount { get; private set; }
-//     public int LateCount { get; private set; }
-//     public int HighestComboAchieved { get; private set; }
-
-//     /// <summary>
-//     /// Calculates base score for a given HitResult.
-//     /// </summary>
-//     public int CalculateBasePoints(Attackable.HitResult hitResult)
-//     {
-//         return hitResult switch
-//         {
-//             Attackable.HitResult.Perfect => 100,
-//             Attackable.HitResult.Good => 75,
-//             Attackable.HitResult.Early => 50,
-//             Attackable.HitResult.Late => 10,
-//             _ => 0
-//         };
-//     }
-
-//     /// <summary>
-//     /// Applies the score with combo multiplier and updates the total.
-//     /// </summary>
-//     // public void ApplyScore(Attackable.HitResult result)
-//     // {
-//     //     UpdateCombo(result);
-
-//     //     int basePoints = CalculateBasePoints(result);
-//     //     int finalPoints = basePoints * ComboMultiplier;
-
-//     //     TotalScore += finalPoints;
-
-//     //     Debug.Log($"🎯 Hit: {result} | Base: {basePoints} | Combo x{ComboMultiplier} → +{finalPoints} points | Total: {TotalScore}");
-
-//     //     if (scoreDisplay != null) { scoreDisplay.UpdateUI(result); }
-//     // }
-
-//     public void ApplyScore(Attackable.HitResult result)
-//     {
-//         UpdateCombo(result);
-//         TrackHitCount(result);
-
-//         int basePoints = CalculateBasePoints(result);
-//         int finalPoints = basePoints * ComboMultiplier;
-
-//         TotalScore += finalPoints;
-
-//         if (ComboMultiplier > HighestComboAchieved)
-//             HighestComboAchieved = ComboMultiplier;
-
-//         Debug.Log($"🎯 Hit: {result} | Base: {basePoints} | Combo x{ComboMultiplier} → +{finalPoints} | Total: {TotalScore}");
-
-//         if (scoreDisplay != null)
-//             scoreDisplay.UpdateUI(result);
-//     }
-
-//     /// <summary>
-//     /// Handles combo logic: increment on Perfect, reset otherwise.
-//     /// </summary>
-//     private void UpdateCombo(Attackable.HitResult result)
-//     {
-//         if (result == Attackable.HitResult.Perfect)
-//         {
-//             PerfectComboCount++;
-//             ComboMultiplier = 1 + PerfectComboCount / 2; // e.g., 2 perfects = x2, 4 perfects = x3
-//         }
-//         else
-//         {
-//             PerfectComboCount = 0;
-//             ComboMultiplier = 1;
-//         }
-//     }
-
-//     private void TrackHitCount(Attackable.HitResult result)
-//     {
-//         switch (result)
-//         {
-//             case Attackable.HitResult.Perfect: PerfectCount++; break;
-//             case Attackable.HitResult.Good: GoodCount++; break;
-//             case Attackable.HitResult.Early: EarlyCount++; break;
-//             case Attackable.HitResult.Late: LateCount++; break;
-//         }
-//     }
-
-//     public void ResetScore()
-//     {
-//         TotalScore = 0;
-//         ComboMultiplier = 1;
-//         PerfectComboCount = 0;
-//     }
-// }
-
-
-// using UnityEngine;
-
-// public class RewardSystem : MonoBehaviour
-// {
-//     public int TotalScore { get; private set; } = 0;
-
-//     public int GoodComboCount { get; private set; } = 0;
-//     public int PerfectComboCount { get; private set; } = 0;
-
-//     public int HighestGoodCombo { get; private set; } = 0;
-//     public int HighestPerfectCombo { get; private set; } = 0;
-
-//     private bool goodComboActive = false;
-//     private bool perfectComboActive = false;
-//     private bool goodComboPaused = false;
-
-//     private int pendingPerfect = 0;
-
-//     private ScoreDisplay scoreDisplay;
-
-//     void Awake()
-//     {
-//         scoreDisplay = FindFirstObjectByType <ScoreDisplay>();
-//     }
-
-//     public void ApplyScore(Attackable.HitResult result)
-//     {
-//         int basePoints = CalculateBasePoints(result);
-//         TotalScore += basePoints;
-
-//         HandleComboLogic(result);
-
-//         Debug.Log($"🎯 Hit: {result} | +{basePoints} | Score: {TotalScore} | Good x{GoodComboCount} | Perfect x{PerfectComboCount}");
-
-//         if (scoreDisplay != null)
-//             scoreDisplay.UpdateUI(result);
-//     }
-
-//     private int CalculateBasePoints(Attackable.HitResult result)
-//     {
-//         return result switch
-//         {
-//             Attackable.HitResult.Perfect => 100,
-//             Attackable.HitResult.Good => 75,
-//             Attackable.HitResult.Early => 50,
-//             Attackable.HitResult.Late => 10,
-//             _ => 0
-//         };
-//     }
-
-//     private void HandleComboLogic(Attackable.HitResult result)
-//     {
-//         switch (result)
-//         {
-//             case Attackable.HitResult.Perfect:
-//                 if (perfectComboActive)
-//                 {
-//                     PerfectComboCount++;
-//                     UpdateHighestCombo();
-//                 }
-//                 else
-//                 {
-//                     if (pendingPerfect == 1)
-//                     {
-//                         // This is the second perfect → start combo
-//                         perfectComboActive = true;
-//                         PerfectComboCount = 2; // first one was pending, second is this one
-//                         pendingPerfect = 0;
-//                         goodComboActive = false;
-//                         goodComboPaused = false;
-//                         GoodComboCount = 0;
-//                     }
-//                     else
-//                     {
-//                         pendingPerfect = 1;
-
-//                         if (goodComboActive)
-//                         {
-//                             goodComboPaused = true;
-//                         }
-//                     }
-//                 }
-//                 break;
-
-//             case Attackable.HitResult.Good:
-//                 if (perfectComboActive)
-//                 {
-//                     // Perfect streak broken → stop perfect combo
-//                     perfectComboActive = false;
-//                     pendingPerfect = 0;
-//                     PerfectComboCount = 0;
-
-//                     // Resume paused good combo
-//                     if (goodComboPaused)
-//                     {
-//                         goodComboPaused = false;
-//                         goodComboActive = true;
-//                         GoodComboCount++;
-//                         UpdateHighestCombo();
-//                     }
-//                     else
-//                     {
-//                         // No paused combo → start fresh good combo
-//                         goodComboActive = true;
-//                         GoodComboCount = 1;
-//                     }
-//                 }
-//                 else if (goodComboActive || goodComboPaused)
-//                 {
-//                     goodComboActive = true;
-//                     goodComboPaused = false;
-//                     GoodComboCount++;
-//                     UpdateHighestCombo();
-//                 }
-//                 else
-//                 {
-//                     goodComboActive = true;
-//                     GoodComboCount = 1;
-//                 }
-
-//                 pendingPerfect = 0;
-//                 break;
-
-//             case Attackable.HitResult.Early:
-//             case Attackable.HitResult.Late:
-//             case Attackable.HitResult.None:
-//                 // Any of these → reset everything
-//                 goodComboActive = false;
-//                 goodComboPaused = false;
-//                 perfectComboActive = false;
-//                 pendingPerfect = 0;
-
-//                 GoodComboCount = 0;
-//                 PerfectComboCount = 0;
-//                 break;
-//         }
-//     }
-
-//     private void UpdateHighestCombo()
-//     {
-//         if (GoodComboCount > HighestGoodCombo)
-//             HighestGoodCombo = GoodComboCount;
-
-//         if (PerfectComboCount > HighestPerfectCombo)
-//             HighestPerfectCombo = PerfectComboCount;
-//     }
-
-//     public void ResetScore()
-//     {
-//         TotalScore = 0;
-//         GoodComboCount = 0;
-//         PerfectComboCount = 0;
-//         HighestGoodCombo = 0;
-//         HighestPerfectCombo = 0;
-
-//         goodComboActive = false;
-//         goodComboPaused = false;
-//         perfectComboActive = false;
-//         pendingPerfect = 0;
-//     }
-// }
-
 using UnityEngine;
 
 public class RewardSystem : MonoBehaviour
 {
+    [SerializeField] private float comboMaxDelay = 2f;
+    [SerializeField] private float comboWarningTime = 1.5f; 
+
+    public bool IsComboAboutToExpire => Time.time - lastComboTime > comboWarningTime 
+                                     && Time.time - lastComboTime <= comboMaxDelay;
+
     public int TotalScore { get; private set; } = 0;
 
     public int GoodComboCount { get; private set; } = 0;
@@ -276,12 +16,14 @@ public class RewardSystem : MonoBehaviour
     public int HighestGoodCombo { get; private set; } = 0;
     public int HighestPerfectCombo { get; private set; } = 0;
 
+    private float lastComboTime = -100f;
     private bool goodComboActive = false;
     private bool perfectComboActive = false;
     private bool goodComboPaused = false;
 
     private int pendingGood = 0;
     private int pendingPerfect = 0;
+
 
     private ScoreDisplay scoreDisplay;
 
@@ -292,6 +34,13 @@ public class RewardSystem : MonoBehaviour
 
     public void ApplyScore(Attackable.HitResult result)
     {
+        bool comboRunning = goodComboActive || perfectComboActive || pendingGood > 0 || pendingPerfect > 0;
+        if (comboRunning && Time.time - lastComboTime > comboMaxDelay)
+        {
+            Debug.Log("<color=red>⏳ Combo window expired – resetting combos.</color>");
+            ResetCombos();
+        }
+
         int basePoints = CalculateBasePoints(result);
         TotalScore += basePoints;
 
@@ -301,6 +50,8 @@ public class RewardSystem : MonoBehaviour
 
         if (scoreDisplay != null)
             scoreDisplay.UpdateUI(result);
+
+        lastComboTime = Time.time;
     }
 
     private int CalculateBasePoints(Attackable.HitResult result)
