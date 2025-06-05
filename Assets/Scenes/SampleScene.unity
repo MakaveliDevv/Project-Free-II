@@ -959,7 +959,7 @@ MonoBehaviour:
   defaultDropMultiplier: 2
   wallDropMultiplier: 1.2
   maxFallSpeed: 40
-  dropAngleTolerance: 15
+  dropAngleTolerance: 45
   dropForceMode: 2
   fallForceMode: 5
   useHoverWobble: 1
@@ -1046,6 +1046,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   inputActions: {fileID: -944628639613478452, guid: 9740b7f8f03c4a749a2e93320c4985da, type: 3}
+  mode: 0
 --- !u!114 &206922479
 MonoBehaviour:
   m_ObjectHideFlags: 0

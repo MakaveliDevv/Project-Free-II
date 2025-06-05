@@ -16,7 +16,7 @@ public class MovementSystem : MonoBehaviour
     public enum GravityDirection { Down, Up, Left, Right }
 
     // ─ Class References
-    protected Player player;
+    // protected Player player;
 
     // ─ Movement State
     [Header("Movement State")]
@@ -353,11 +353,6 @@ public class MovementSystem : MonoBehaviour
     // ─ Input Tracking & Actions
     private string currentAction = "";
     private string fetchedAction = "";
-    private InputAction leftStick;
-    private InputAction southButton;
-    private Vector2 leftStickInput = Vector2.zero;
-    private bool southButtonPressed;
-    private bool leftStickMovement = false;
     private bool actionReady = true;
 
     // ─ Physics & Gravity State
@@ -405,7 +400,6 @@ public class MovementSystem : MonoBehaviour
     private Vector3 predictedTargetPoint;
 
     // ─ Surface Memory
-    private GameObject nearbySurface = null;
     private float lastSurfaceCheckTime;
     private const float surfaceMemoryDuration = 0.2f;
 
@@ -432,30 +426,19 @@ public class MovementSystem : MonoBehaviour
     {
         InputSystem.settings.maxEventBytesPerUpdate = 0;
 
-        player = GetComponent<Player>();
         rb = GetComponent<Rigidbody>();
         col = GetComponent<Collider>();
 
         rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
         rb.interpolation = RigidbodyInterpolation.Interpolate;
 
-        SetupInputActions();
+        InputManager.Initialize(inputActions, useRawInput, minStickMagnitude);
         BuildLabelToAngleMap();
     }
 
     void Start()
     {
         initialGravityStrength = gravityStrength;
-    }
-
-    void OnEnable()
-    {
-        RegisterInputCallbacks();
-    }
-
-    void OnDisable()
-    {
-        UnregisterInputCallbacks();
     }
 
     private void OnValidate()
@@ -479,82 +462,111 @@ public class MovementSystem : MonoBehaviour
 
     void Update()
     {
-        LeftAnalogStickInput();
+        InputManager.UpdateInput();
+        Vector2 stick = InputManager.LeftStickInput;
+
         FetchActionType();
 
-        if (southButtonPressed && buttonHoldTimer >= minButtonPressTime && !buttonPressedLongEnough)
+        bool stickMoving = InputManager.HasStickMovement();
+        bool jumpHeld = InputManager.SouthButtonPressed;
+
+        if (stickMoving)
+        {
+            snappedDir = GetSnappedDirection(stick).normalized;
+        }
+        else
+        {
+            snappedDir = Vector2.zero;
+        }
+
+        // Determine downward stick angle
+        bool canDrop = currentSurfaceState == SurfaceState.Air || movementState == MovementState.Stucked;
+        bool rawDown = false;
+
+        if (stickMoving)
+        {
+            float rawAngle = Mathf.Atan2(stick.y, stick.x) * Mathf.Rad2Deg;
+            rawAngle = (rawAngle + 360f) % 360f;
+            float angleDiff = Mathf.DeltaAngle(rawAngle, 270f); // 270° is straight down
+            rawDown = Mathf.Abs(angleDiff) <= dropAngleTolerance;
+        }
+
+        isDropping = Gamepad.current != null &&
+                    Gamepad.current.buttonEast.isPressed &&
+                    rawDown &&
+                    canDrop &&
+                    movementState != MovementState.Idle &&
+                    movementState != MovementState.Charging &&
+                    !ActionInputDetected();
+
+        if (jumpHeld && buttonHoldTimer >= minButtonPressTime && !buttonPressedLongEnough)
         {
             buttonPressedLongEnough = true;
-            if (movementState != MovementState.Charging && ActionInputDetected() && allowedToMove) { movementState = MovementState.Charging; }
+            if (movementState != MovementState.Charging && stickMoving && allowedToMove)
+            {
+                movementState = MovementState.Charging;
+            }
         }
-        
-        if(movementState == MovementState.Jumping || movementState == MovementState.WallJump || movementState == MovementState.Dashing 
-            || movementState == MovementState.AirDashing) { CheckArrivalAtTarget(); } 
 
-        if(!useAutoHover && movementState == MovementState.Jumping || 
-            movementState == MovementState.WallJump || 
-            movementState == MovementState.AirDashing) 
+        if (movementState == MovementState.Jumping || movementState == MovementState.WallJump || movementState == MovementState.Dashing || movementState == MovementState.AirDashing)
+        {
+            CheckArrivalAtTarget();
+        }
+
+        if (!useAutoHover && (movementState == MovementState.Jumping || movementState == MovementState.WallJump || movementState == MovementState.AirDashing))
+        {
+            if (hasReachedTarget)
             {
-
-                if(hasReachedTarget)
-                {        
-                    rb.linearDamping = 0;          
-                    StartCoroutine(FallDelay());    
-                    movementState = MovementState.Descending;
-
-                    // if(ActionInputDetected()) 
-                    // {
-                    //     StopCoroutine(FallDelay());
-                    //     Debug.Log("Coroutine stopped");   
-                    // }
-                }
+                rb.linearDamping = 0;
+                StartCoroutine(FallDelay());
+                movementState = MovementState.Descending;
             }
-            else if(movementState == MovementState.Dashing) 
+        }
+        else if (movementState == MovementState.Dashing)
+        {
+            float traveled = Vector3.Distance(rb.position, dashStartPos);
+
+            if (hasReachedTarget || (traveled > TravelEpsilon && rb.linearVelocity.magnitude <= 0.01f))
             {
-                float traveled = Vector3.Distance(rb.position, dashStartPos);
-
-                if(hasReachedTarget) 
-                {
-                    ResetActionState();
-                    ResetPhysicsSettings(true, true);
-                    movementState = MovementState.Idle;
-                }
-                else if(!hasReachedTarget && traveled > TravelEpsilon && rb.linearVelocity.magnitude <= 0.01f) 
-                {
-                    ResetActionState();
-                    ResetPhysicsSettings(true, true);
-                    movementState = MovementState.Idle;
-                }
+                ResetActionState();
+                ResetPhysicsSettings(true, true);
+                movementState = MovementState.Idle;
             }
+        }
 
-        // if (stateChanged)
-        // {
-        //     stateTimer += Time.deltaTime;
-        //     if (stateTimer >= stateBuffer)
-        //     {
-        //         stateChanged = false;
-        //         stateTimer = 0f;
-        //     }
-        // }
+        if (isInAir) currentSurfaceState = SurfaceState.Air;
 
-        if (isInAir) { currentSurfaceState = SurfaceState.Air; }
-
-        if (southButtonPressed)
+        if (jumpHeld)
         {
             buttonHoldTimer += Time.deltaTime;
             if (actionReady && !actionInProgress && buttonHoldTimer >= maxHoldTime && buttonPressedLongEnough)
             {
-                if(currentSurfaceState == SurfaceState.LeftWall || currentSurfaceState == SurfaceState.RightWall) 
+                if (currentSurfaceState == SurfaceState.LeftWall || currentSurfaceState == SurfaceState.RightWall)
                 {
                     fetchedAction = "WallJump";
                     allowedToMove = true;
                 }
-
                 PerformMovementAction();
                 actionReady = false;
             }
         }
-        
+
+        if (InputManager.SouthButtonReleased)
+        {
+            buttonPressedLongEnough = false;
+
+            if (snappedDir != Vector2.zero && movementState == MovementState.Charging)
+            {
+                PerformMovementAction();
+            }
+            else
+            {
+                ResetActionState();
+            }
+
+            actionReady = true;
+        }
+
         switch (movementState)
         {
             case MovementState.Idle:
@@ -576,6 +588,8 @@ public class MovementSystem : MonoBehaviour
                 actionInProgress = false;
                 break;
         }
+
+        InputManager.ResetFrameInputs();
     }
 
     void LateUpdate()
@@ -616,12 +630,13 @@ public class MovementSystem : MonoBehaviour
     private void OnCollisionEnter(Collision collision)
     {
         HandleSurfaceState(collision, out _);
+        StopMovementUponCollision();
 
-        if (player.mode != Player.Mode.AdvancedMovement) { StopMovementUponCollision(); }
-        else
-        {
+        // if (player.mode != Player.Mode.AdvancedMovement) { StopMovementUponCollision(); }
+        // else
+        // {
 
-        }
+        // }
         
         Invoke(nameof(ResetActionState), .1f);
 
@@ -651,130 +666,6 @@ public class MovementSystem : MonoBehaviour
     #endregion
 
     // ─────────────────────────────────────────────────────────────────────────
-    // INPUT SETUP & CALLBACK REGISTRATION
-    // ─────────────────────────────────────────────────────────────────────────
-
-    #region INPUT SETUP & CALLBACK REGISTRATION
-    /// <summary>
-    /// Initializes and enables the InputActionAsset maps for movement and jump.
-    /// These actions are then subscribed in RegisterInputCallbacks and read each frame in LeftAnalogStickInput.
-    /// </summary>
-    private void SetupInputActions()
-    {
-        var map = inputActions.FindActionMap("Player");
-        leftStick = map.FindAction("DirCalculation");
-        southButton = map.FindAction("MovementTrigger");
-
-        leftStick.Enable();
-        southButton.Enable();
-    }
-
-    /// <summary>
-    /// Subscribes south-button input events (started, performed, canceled).
-    /// Paired with UnregisterInputCallbacks to manage event handlers’ lifecycle.
-    /// </summary>
-    private void RegisterInputCallbacks()
-    {
-        southButton.started += OnSouthButtonStarted;
-        southButton.performed += OnSouthButtonPerformed;
-        southButton.canceled += OnSouthButtonCanceled;
-    }
-
-    /// <summary>
-    /// Unsubscribes south-button input events to prevent stale callbacks.
-    /// Paired with RegisterInputCallbacks and called in OnDisable.
-    /// </summary>
-    private void UnregisterInputCallbacks()
-    {
-        southButton.started -= OnSouthButtonStarted;
-        southButton.performed -= OnSouthButtonPerformed;
-        southButton.canceled -= OnSouthButtonCanceled;
-    }
-    #endregion
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // INPUT PROCESSING
-    // ─────────────────────────────────────────────────────────────────────────
-
-    #region INPUT PROCESSING
-    /// <summary>
-    /// Reads the left analog stick value (raw or processed), updates movement flags (leftStickMovement, isDropping),
-    /// and computes snappedDir. Feeds into ActionInputDetected, PerformMovementAction, and dash/jump logic in Update.
-    /// </summary>
-    private void LeftAnalogStickInput()
-    {
-        if (Gamepad.current == null) { return; }
-
-        if (useRawInput) { leftStickInput = Gamepad.current.leftStick.ReadUnprocessedValue(); }
-        else { leftStickInput = leftStick.ReadValue<Vector2>(); }
-
-        leftStickMovement = leftStickInput.magnitude > minStickMagnitude;
-        
-        if (leftStickMovement) { snappedDir = GetSnappedDirection(leftStickInput).normalized; }
-        else { leftStickInput = snappedDir = Vector2.zero; }
-
-        // bool inAir = currentSurfaceState == SurfaceState.Air;
-        bool canDrop = currentSurfaceState == SurfaceState.Air || movementState == MovementState.Stucked;
-        bool rawDown = false;
-
-        if (leftStickMovement)
-        {
-            float rawAngle = Mathf.Atan2(leftStickInput.y, leftStickInput.x) * Mathf.Rad2Deg;
-            rawAngle = (rawAngle + 360f) % 360f;
-            float angleDiff = Mathf.DeltaAngle(rawAngle, 270f);
-            rawDown = Mathf.Abs(angleDiff) <= dropAngleTolerance;
-        }
-
-        isDropping = Gamepad.current.buttonEast.isPressed && rawDown && canDrop && 
-            movementState != MovementState.Idle && 
-            movementState != MovementState.Charging && 
-            !ActionInputDetected();
-    }
-
-    /// <summary>
-    /// Handler for when the south (“jump”) button is pressed.
-    /// Resets hold timers and flags southButtonPressed; paired with OnSouthButtonCanceled.
-    /// </summary>
-    public void OnSouthButtonStarted(InputAction.CallbackContext ctx)
-    {
-        if (ctx.started)
-        {
-            buttonHoldTimer = 0;
-            southButtonPressed = true;
-        }
-    }
-
-    public void OnSouthButtonPerformed(InputAction.CallbackContext ctx) { }
-
-    /// <summary>
-    /// Handler for when the south (“jump”) button is released.
-    /// Clears input flags and either triggers PerformMovementAction (if charging) or calls ResetActionState.
-    /// </summary>
-    public void OnSouthButtonCanceled(InputAction.CallbackContext ctx)
-    {
-        if (ctx.canceled)
-        {
-            southButtonPressed = false;
-            buttonPressedLongEnough = false;
-
-            if (snappedDir != Vector2.zero && movementState == MovementState.Charging) 
-            {
-                // if(currentSurfaceState == SurfaceState.LeftWall || currentSurfaceState == SurfaceState.RightWall) 
-                // {
-                //     fetchedAction = "WallJump";
-                //     allowedToMove = true;
-                // }
-
-                PerformMovementAction();
-            } 
-            else { ResetActionState(); }
-
-            actionReady = true;
-        }
-    }
-    #endregion
-
-    // ─────────────────────────────────────────────────────────────────────────
     // ACTION DETECTION & HANDLING
     // ─────────────────────────────────────────────────────────────────────────
     #region ACTION DETECTION & HANDLING
@@ -784,10 +675,10 @@ public class MovementSystem : MonoBehaviour
     /// </summary>
     private bool ActionInputDetected()
     {
-        if (leftStickMovement && southButtonPressed && buttonHoldTimer >= minButtonPressTime) { return true; }
+        if (InputManager.HasStickMovement() && InputManager.SouthButtonPressed && buttonHoldTimer >= minButtonPressTime) { return true; }
 
         buttonHoldTimer = 0;
-        southButtonPressed = false;
+        // InputManager.SouthButtonPressed = false;
         return false;
     }
 
@@ -1429,23 +1320,9 @@ public class MovementSystem : MonoBehaviour
     }
 
     /// <summary>
-    /// Checks for nearby colliders via Physics.OverlapSphere to determine if the Rigidbody is in contact with any surface.
+    /// Checks for nearby colliders via Physics.OverlapSphereAlloc to determine if the Rigidbody is in contact with any surface.
     /// Drives isInAir logic and collision-based state transitions in StopMovementUponCollision.
     /// </summary>    
-    // private bool IsCollidingWithSurface()
-    // {
-    //     Collider[] cols = new Collider[1]; 
-
-    //     int hitCount = Physics.OverlapSphereNonAlloc(
-    //         rb.position,
-    //         GetComponent<Collider>().bounds.extents.y + 0.1f,
-    //         cols,
-    //         1 << LayerMask.NameToLayer("Surface") 
-    //     );
-
-    //     return cols.Length > 1;
-    // }
-
     private bool CheckSurfaces()
     {
         float radius = GetComponent<Collider>().bounds.extents.y + 0.1f;
@@ -1474,6 +1351,7 @@ public class MovementSystem : MonoBehaviour
 
         return hitCount > 0;
     }
+
     /// <summary>
     /// Returns the last collided surface object if within surfaceMemoryDuration; otherwise null.
     /// Provides brief memory of the last surface post-collision.
@@ -1545,15 +1423,6 @@ public class MovementSystem : MonoBehaviour
             FreezePlayer();
             isMoving = false;
         }
-    }
-
-    private void BounceFromSurfaceUponCollision()
-    {
-        // Not just simply bounce away from the surface
-
-        // But fetch the snapped dir from the moment the player almost reaches the surface until colliding with the surface
-
-        // Bounce away from the surface towards the fetched dir
     }
 
     /// <summary>
@@ -1629,7 +1498,7 @@ public class MovementSystem : MonoBehaviour
     /// </summary>
     private void ResetActionState()
     {
-        southButtonPressed = false;
+        // southButtonPressed = false;
         buttonHoldTimer = 0;
         actionInProgress = false;
         hasReachedTarget = false;
@@ -1806,7 +1675,7 @@ public class MovementSystem : MonoBehaviour
             {
                 float angle    = i * angleStep;
                 float angleRad = angle * Mathf.Deg2Rad;
-                Vector3 dir    = new Vector3(Mathf.Cos(angleRad), Mathf.Sin(angleRad), 0f);
+                Vector3 dir    = new(Mathf.Cos(angleRad), Mathf.Sin(angleRad), 0f);
                 Vector3 endPt  = transform.position + dir * directionLineLength;
 
                 Gizmos.DrawLine(transform.position, endPt);
@@ -1846,7 +1715,7 @@ public class MovementSystem : MonoBehaviour
                 if (labelToAngle.TryGetValue(label, out float angle))
                 {
                     float angleRad = angle * Mathf.Deg2Rad;
-                    Vector3 dir = new Vector3(Mathf.Cos(angleRad), Mathf.Sin(angleRad), 0f);
+                    Vector3 dir = new(Mathf.Cos(angleRad), Mathf.Sin(angleRad), 0f);
                     
                     Gizmos.color = allowedJumpColor;
                     Gizmos.DrawLine(rb.position, rb.position + dir.normalized * directionLineLength);
@@ -1873,7 +1742,7 @@ public class MovementSystem : MonoBehaviour
                 if (!IsDashDirectionAllowed(label)) continue;
 
                 float angleRad = angle * Mathf.Deg2Rad;
-                Vector3 dir = new Vector3(Mathf.Cos(angleRad), Mathf.Sin(angleRad), 0f);
+                Vector3 dir = new(Mathf.Cos(angleRad), Mathf.Sin(angleRad), 0f);
 
                 Gizmos.color = dashDirectionColor;
                 Gizmos.DrawLine(rb.position, rb.position + dir.normalized * directionLineLength);
@@ -1889,7 +1758,7 @@ public class MovementSystem : MonoBehaviour
         }
 
         
-        if (Application.isPlaying && leftStickInput.sqrMagnitude > 0.01f)
+        if (Application.isPlaying && InputManager.HasStickMovement())
         {
             Gizmos.color = snappedInputColor;
             Vector3 start = rb.position;
