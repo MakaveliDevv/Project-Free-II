@@ -907,7 +907,6 @@ MonoBehaviour:
   movementSettings:
     movementState: 0
     currentSurfaceState: 0
-    inputActions: {fileID: -944628639613478452, guid: 9740b7f8f03c4a749a2e93320c4985da, type: 3}
     useRawInput: 1
     snapDirectionsEnabled: 1
     directionCount: 16
@@ -981,11 +980,11 @@ MonoBehaviour:
     useHandleActionForces: 1
     isMovingThreshold: 0.2
     forceCurveExponent: 1
-    allowAirDash: 0
+    allowAirDash: 1
     landingBuffer: 0.1
     fallTimer: 0.25
     useAutoHover: 1
-  inputActions: {fileID: -944628639613478452, guid: 9740b7f8f03c4a749a2e93320c4985da, type: 3}
+  inputActionAsset: {fileID: -944628639613478452, guid: 9740b7f8f03c4a749a2e93320c4985da, type: 3}
   mode: 0
 --- !u!114 &206922479
 MonoBehaviour:

@@ -14,10 +14,10 @@ namespace Assets.MovementSystem.Scripts.Player
         [Tooltip("Surface the character is currently on")]
         public SurfaceState currentSurfaceState = SurfaceState.Ground;
 
-        // ─ Input Settings
-        [Header("Input Settings")]
-        [Tooltip("Reference to the InputActionAsset defining stick and button actions")]
-        public InputActionAsset inputActions;
+        // // ─ Input Settings
+        // [Header("Input Settings")]
+        // [Tooltip("Reference to the InputActionAsset defining stick and button actions")]
+        // public InputActionAsset inputActions;
 
         [Tooltip("If true, bypasses Unity’s smoothing to use raw input values from inputActions")]
         public bool useRawInput = true;

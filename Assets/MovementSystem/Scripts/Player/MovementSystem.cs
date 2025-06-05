@@ -422,11 +422,13 @@ namespace Assets.MovementSystem.Scripts.Player
         private Coroutine landingResetCoroutine;
         private Collider[] colliders = new Collider[10]; // starting buffer size
         private const int maxBufferSize = 1000;
+        readonly InputActionAsset inputActionAsset;
 
-        public MovementSystem(MonoBehaviour mono, MovementSettings settings)
+        public MovementSystem(MonoBehaviour mono, MovementSettings settings, InputActionAsset inputActionAsset)
         {
             this.settings = settings;
             this.mono = mono;
+            this.inputActionAsset = inputActionAsset; 
         }
 
         // ─────────────────────────────────────────────────────────────────────────
@@ -443,7 +445,8 @@ namespace Assets.MovementSystem.Scripts.Player
             rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
             rb.interpolation = RigidbodyInterpolation.Interpolate;
 
-            InputManager.Initialize(settings.inputActions, settings.useRawInput, settings.minStickMagnitude);
+            Debug.Log($"[MovementSystem.Awake] asset = {inputActionAsset.name}");
+            InputManager.Initialize(inputActionAsset, settings.useRawInput, settings.minStickMagnitude);
             BuildLabelToAngleMap();
         }
 
@@ -478,7 +481,12 @@ namespace Assets.MovementSystem.Scripts.Player
 
             Debug.Log($"Jump Pressed: {InputManager.SouthButtonPressed} | Released: {InputManager.SouthButtonReleased}");
 
+            if (InputManager.SouthButtonPressed)
+                Debug.Log($"  [HoldTimer] = {buttonHoldTimer:F2} / {settings.minButtonPressTime}");
+
             FetchActionType();
+            Debug.Log($"  [Fetch] curSurface = {settings.currentSurfaceState} | isInAir = {isInAir} | dirLabel = {GetClosestDirectionLabel(snappedDir)} | isJumpAllowed = {isJumpAllowed}");
+
 
             bool stickMoving = InputManager.HasStickMovement();
             bool jumpHeld = InputManager.SouthButtonPressed;
@@ -626,6 +634,7 @@ namespace Assets.MovementSystem.Scripts.Player
             isInAir = !CheckSurfaces();
 
             if (settings.useHandleActionForces) { HandleActionForces(); }
+            Debug.Log($"isDropping = {isDropping}, prevStickDownDrop = {prevStickDownDrop}, hasBurstDropped = {hasBurstDropped}");
             if (isDropping && !prevStickDownDrop && !hasBurstDropped) { ApplyBurstDropForce(); }
             prevStickDownDrop = isDropping;
 
@@ -697,6 +706,7 @@ namespace Assets.MovementSystem.Scripts.Player
             return false;
         }
 
+        bool isJumpAllowed;
         private void FetchActionType()
         {
             allowedToMove = false;
@@ -704,7 +714,7 @@ namespace Assets.MovementSystem.Scripts.Player
 
             string dirLabel = GetClosestDirectionLabel(snappedDir);
 
-            bool isJumpAllowed = settings.currentSurfaceState != SurfaceState.LeftWall
+            isJumpAllowed = settings.currentSurfaceState != SurfaceState.LeftWall
                 && settings.currentSurfaceState != SurfaceState.RightWall
                 && IsJumpDirectionAllowed(dirLabel);
 

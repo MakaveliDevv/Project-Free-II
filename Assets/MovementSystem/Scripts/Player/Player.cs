@@ -21,7 +21,7 @@ namespace Assets.MovementSystem.Scripts.Player
         private GameObject _interactable;
         private GameObject _attackable;
 
-        public InputActionAsset inputActions;
+        public InputActionAsset inputActionAsset;
         private InputAction dPadUp;
         private InputAction dPadRight;
 
@@ -33,8 +33,10 @@ namespace Assets.MovementSystem.Scripts.Player
         void Awake()
         {
             SetupInputActions();
-            movementSystem = new MovementSystem(this, movementSettings);
+            movementSystem = new MovementSystem(this, movementSettings, inputActionAsset);
             movementSystem.Awake();
+            movementSettings.currentSurfaceState = SurfaceState.Ground;
+
             mode = Mode.Normal;
         }
 
@@ -45,7 +47,7 @@ namespace Assets.MovementSystem.Scripts.Player
 
         private void SetupInputActions()
         {
-            var map = inputActions.FindActionMap("ToggleMechanics");
+            var map = inputActionAsset.FindActionMap("ToggleMechanics");
             dPadUp = map.FindAction("ToggleAutoHover");
             dPadRight = map.FindAction("ToggleAirDash");
 
