@@ -17,11 +17,18 @@ public class Player : MonoBehaviour
     public InputActionAsset inputActions;
     private InputAction dPadUp;
     private InputAction dPadRight;
-    
+
+    // ---------------------------------------
+
+    public enum Mode { Normal, AdvancedMovement, Attack }
+    public Mode mode;
+
     private void Awake()
     {
         movementSystem = GetComponent<MovementSystem>();
         SetupInputActions();
+        
+        mode = Mode.Normal;
     }
 
     private void SetupInputActions()

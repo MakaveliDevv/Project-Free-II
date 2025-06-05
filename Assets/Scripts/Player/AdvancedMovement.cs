@@ -1,6 +1,6 @@
 using UnityEngine.InputSystem;
 
-public class AdvancedMovement : MovementSystemm
+public class AdvancedMovement : MovementSystem
 {
     private InputAction leftShoulder, rightShoulder;
     private bool leftShoulderPerformed = false, rightShoulderPerformed = false;
@@ -16,11 +16,21 @@ public class AdvancedMovement : MovementSystemm
         if (leftShoulderPerformed && !isAdvancedMovementActive)
         {
             isAdvancedMovementActive = true;
+            player.mode = Player.Mode.AdvancedMovement;
+        }
 
-            if (isAdvancedMovementActive)
-            {
-                allowAirDash = true;   
-            }
+        switch (player.mode)
+        {
+            case Player.Mode.AdvancedMovement:
+                    allowAirDash = true;
+
+                break;
+            case Player.Mode.Attack:
+
+                break;
+
+            default:
+                break;
         }
     }
 

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Collections;
 
 [RequireComponent(typeof(Rigidbody))]
-public class MovementSystemm : MonoBehaviour
+public class AnalogStickReader : MonoBehaviour
 {
     // ─────────────────────────────────────────────────────────────────────────
     // PUBLIC VARIABLES

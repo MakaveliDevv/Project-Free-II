@@ -9,11 +9,14 @@ public class MovementSystem : MonoBehaviour
     // ─────────────────────────────────────────────────────────────────────────
     // PUBLIC VARIABLES
     // ─────────────────────────────────────────────────────────────────────────
-
+    
     // ─ Movement Enums
     public enum MovementState { Idle, Charging, Jumping, WallJump, Hovering, Descending, Dashing, AirDashing, WallDashing, Stucked, WallDescending, NOTHING }
     public enum SurfaceState { Ground, LeftWall, RightWall, Ceiling, Air }
     public enum GravityDirection { Down, Up, Left, Right }
+
+    // ─ Class References
+    protected Player player;
 
     // ─ Movement State
     [Header("Movement State")]
@@ -429,6 +432,7 @@ public class MovementSystem : MonoBehaviour
     {
         InputSystem.settings.maxEventBytesPerUpdate = 0;
 
+        player = GetComponent<Player>();
         rb = GetComponent<Rigidbody>();
         col = GetComponent<Collider>();
 
@@ -612,7 +616,12 @@ public class MovementSystem : MonoBehaviour
     private void OnCollisionEnter(Collision collision)
     {
         HandleSurfaceState(collision, out _);
-        StopMovementUponCollision();
+
+        if (player.mode != Player.Mode.AdvancedMovement) { StopMovementUponCollision(); }
+        else
+        {
+
+        }
         
         Invoke(nameof(ResetActionState), .1f);
 
@@ -1536,6 +1545,15 @@ public class MovementSystem : MonoBehaviour
             FreezePlayer();
             isMoving = false;
         }
+    }
+
+    private void BounceFromSurfaceUponCollision()
+    {
+        // Not just simply bounce away from the surface
+
+        // But fetch the snapped dir from the moment the player almost reaches the surface until colliding with the surface
+
+        // Bounce away from the surface towards the fetched dir
     }
 
     /// <summary>
