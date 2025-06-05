@@ -2,15 +2,16 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-namespace Assets.Scripts.Player
+namespace Assets.MovementSystem.Scripts.Player
 {
     public enum MovementState { Idle, Charging, Jumping, WallJump, Hovering, Descending, Dashing, AirDashing, WallDashing, Stucked, WallDescending, NOTHING }
     public enum SurfaceState { Ground, LeftWall, RightWall, Ceiling, Air }
     public enum GravityDirection { Down, Up, Left, Right }
-    
+
     public class Player : MonoBehaviour
     {
         private MovementSystem movementSystem;
+        public MovementSettings movementSettings;
         private bool inRangeForInteractable = false;
         private bool inRangeForAttackable = false;
 
@@ -29,12 +30,17 @@ namespace Assets.Scripts.Player
         public enum Mode { Normal, AdvancedMovement, Attack }
         public Mode mode;
 
-        private void Awake()
+        void Awake()
         {
-            movementSystem = GetComponent<MovementSystem>();
             SetupInputActions();
-
+            movementSystem = new MovementSystem(this, movementSettings);
+            movementSystem.Awake();
             mode = Mode.Normal;
+        }
+
+        void Start()
+        {
+            movementSystem.Start();
         }
 
         private void SetupInputActions()
@@ -75,7 +81,7 @@ namespace Assets.Scripts.Player
             if (ctx.started)
             {
                 Debug.Log("Toggle Auto Hover");
-                movementSystem.useAutoHover = !movementSystem.useAutoHover;
+                movementSettings.useAutoHover = !movementSettings.useAutoHover;
             }
         }
 
@@ -84,12 +90,20 @@ namespace Assets.Scripts.Player
             if (ctx.started)
             {
                 Debug.Log("Toggle Air Dash");
-                movementSystem.allowAirDash = !movementSystem.allowAirDash;
+                movementSettings.allowAirDash = !movementSettings.allowAirDash;
             }
         }
 
-        private void Update()
+        // void OnValidate()
+        // {
+        //     if (Application.isPlaying)
+        //         movementSystem.OnValidate();
+        // }
+
+        void Update()
         {
+            movementSystem.Update();
+
             if (inRangeForInteractable && interactable.Count == 1)
             {
                 // If player pressed the button for the gravitational pull
@@ -97,6 +111,33 @@ namespace Assets.Scripts.Player
                 // Then activate the gravitational pull method
             }
         }
+
+        void LateUpdate()
+        {
+            movementSystem.LateUpdate();
+        }
+
+        void FixedUpdate()
+        {
+            movementSystem.FixedUpdate();
+        }
+
+        void OnCollisionEnter(Collision collision)
+        {
+            movementSystem.OnCollisionEnter(collision);
+        }
+
+        void OnCollisionExit(Collision collision)
+        {
+            movementSystem.OnCollisionExit(collision);
+        }
+
+        void OnDrawGizmos()
+        {
+            if(Application.isPlaying)
+                movementSystem.OnDrawGizmos();
+        }
+
 
         // private void OnTriggerEnter(Collider collider) 
         // {

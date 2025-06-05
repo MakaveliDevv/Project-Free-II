@@ -3,7 +3,7 @@ using UnityEngine.InputSystem;
 using System.Collections.Generic;
 using System.Collections;
 
-namespace Assets.Scripts.Player
+namespace Assets.MovementSystem.Scripts.Player
 {
     // [RequireComponent(typeof(Rigidbody))]
     public class MovementSystem
@@ -423,13 +423,9 @@ namespace Assets.Scripts.Player
         private Collider[] colliders = new Collider[10]; // starting buffer size
         private const int maxBufferSize = 1000;
 
-        public MovementSystem(MovementSettings settings)
+        public MovementSystem(MonoBehaviour mono, MovementSettings settings)
         {
             this.settings = settings;
-        }
-
-        public MovementSystem(MonoBehaviour mono)
-        {
             this.mono = mono;
         }
 
@@ -437,7 +433,7 @@ namespace Assets.Scripts.Player
         // UNITY LIFECYCLE METHODS
         // ─────────────────────────────────────────────────────────────────────────
         #region UNITY LIFECYCLE
-        void Awake()
+        public void Awake()
         {
             InputSystem.settings.maxEventBytesPerUpdate = 0;
 
@@ -451,19 +447,19 @@ namespace Assets.Scripts.Player
             BuildLabelToAngleMap();
         }
 
-        void Start()
+        public void Start()
         {
             initialGravityStrength = settings.gravityStrength;
         }
 
-        private void OnValidate()
+        public void OnValidate()
         {
             wallDescendingGravityStrength = settings.gravityStrength * (settings.wallGravityPercent * 0.1f);
         }
 
         private IEnumerator FallDelay()
         {
-            movementState = MovementState.NOTHING;
+            settings.movementState = MovementState.NOTHING;
 
             yield return new WaitForSeconds(settings.fallTimer);
 
@@ -475,10 +471,12 @@ namespace Assets.Scripts.Player
             yield break;
         }
 
-        void Update()
+        public void Update()
         {
             InputManager.UpdateInput();
             Vector2 stick = InputManager.LeftStickInput;
+
+            Debug.Log($"Jump Pressed: {InputManager.SouthButtonPressed} | Released: {InputManager.SouthButtonReleased}");
 
             FetchActionType();
 
@@ -493,9 +491,9 @@ namespace Assets.Scripts.Player
             {
                 snappedDir = Vector2.zero;
             }
-
+            
             // Determine downward stick angle
-            bool canDrop = currentSurfaceState == SurfaceState.Air || movementState == MovementState.Stucked;
+            bool canDrop = settings.currentSurfaceState == SurfaceState.Air || settings.movementState == MovementState.Stucked;
             bool rawDown = false;
 
             if (stickMoving)
@@ -510,34 +508,36 @@ namespace Assets.Scripts.Player
                         Gamepad.current.buttonEast.isPressed &&
                         rawDown &&
                         canDrop &&
-                        movementState != MovementState.Idle &&
-                        movementState != MovementState.Charging &&
+                        settings.movementState != MovementState.Idle &&
+                        settings.movementState != MovementState.Charging &&
                         !ActionInputDetected();
 
             if (jumpHeld && buttonHoldTimer >= settings.minButtonPressTime && !buttonPressedLongEnough)
             {
                 buttonPressedLongEnough = true;
-                if (movementState != MovementState.Charging && stickMoving && allowedToMove)
+                Debug.Log("✓ Button held long enough → charge initiated");
+
+                if (settings.movementState != MovementState.Charging && stickMoving && allowedToMove)
                 {
-                    movementState = MovementState.Charging;
+                    settings.movementState = MovementState.Charging;
                 }
             }
 
-            if (movementState == MovementState.Jumping || movementState == MovementState.WallJump || movementState == MovementState.Dashing || movementState == MovementState.AirDashing)
+            if (settings.movementState == MovementState.Jumping || settings.movementState == MovementState.WallJump || settings.movementState == MovementState.Dashing || settings.movementState == MovementState.AirDashing)
             {
                 CheckArrivalAtTarget();
             }
 
-            if (!settings.useAutoHover && (movementState == MovementState.Jumping || movementState == MovementState.WallJump || movementState == MovementState.AirDashing))
+            if (!settings.useAutoHover && (settings.movementState == MovementState.Jumping || settings.movementState == MovementState.WallJump || settings.movementState == MovementState.AirDashing))
             {
                 if (hasReachedTarget)
                 {
                     rb.linearDamping = 0;
                     mono.StartCoroutine(FallDelay());
-                    movementState = MovementState.Descending;
+                    settings.movementState = MovementState.Descending;
                 }
             }
-            else if (movementState == MovementState.Dashing)
+            else if (settings.movementState == MovementState.Dashing)
             {
                 float traveled = Vector3.Distance(rb.position, dashStartPos);
 
@@ -545,18 +545,18 @@ namespace Assets.Scripts.Player
                 {
                     ResetActionState();
                     ResetPhysicsSettings(true, true);
-                    movementState = MovementState.Idle;
+                    settings.movementState = MovementState.Idle;
                 }
             }
 
-            if (isInAir) currentSurfaceState = SurfaceState.Air;
+            if (isInAir) settings.currentSurfaceState = SurfaceState.Air;
 
             if (jumpHeld)
             {
                 buttonHoldTimer += Time.deltaTime;
                 if (actionReady && !actionInProgress && buttonHoldTimer >= settings.maxHoldTime && buttonPressedLongEnough)
                 {
-                    if (currentSurfaceState == SurfaceState.LeftWall || currentSurfaceState == SurfaceState.RightWall)
+                    if (settings.currentSurfaceState == SurfaceState.LeftWall || settings.currentSurfaceState == SurfaceState.RightWall)
                     {
                         fetchedAction = "WallJump";
                         allowedToMove = true;
@@ -570,7 +570,7 @@ namespace Assets.Scripts.Player
             {
                 buttonPressedLongEnough = false;
 
-                if (snappedDir != Vector2.zero && movementState == MovementState.Charging)
+                if (snappedDir != Vector2.zero && settings.movementState == MovementState.Charging)
                 {
                     PerformMovementAction();
                 }
@@ -582,10 +582,10 @@ namespace Assets.Scripts.Player
                 actionReady = true;
             }
 
-            switch (movementState)
+            switch (settings.movementState)
             {
                 case MovementState.Idle:
-                    currentSurfaceState = SurfaceState.Ground;
+                    settings.currentSurfaceState = SurfaceState.Ground;
                     hasTriggeredHover = false;
                     break;
                 case MovementState.Descending:
@@ -594,7 +594,7 @@ namespace Assets.Scripts.Player
                     break;
                 case MovementState.WallDescending:
                     actionInProgress = false;
-                    gravityStrength = wallDescendingGravityStrength;
+                    settings.gravityStrength = wallDescendingGravityStrength;
                     break;
                 case MovementState.Hovering:
                     isJumping = false;
@@ -607,7 +607,7 @@ namespace Assets.Scripts.Player
             InputManager.ResetFrameInputs();
         }
 
-        void LateUpdate()
+        public void LateUpdate()
         {
             if (settings.enableZLock)
             {
@@ -617,9 +617,9 @@ namespace Assets.Scripts.Player
             }
         }
 
-        void FixedUpdate()
+        public void FixedUpdate()
         {
-            if (movementState != MovementState.Hovering) ApplyCustomGravity();
+            if (settings.movementState != MovementState.Hovering) ApplyCustomGravity();
             GetLastCollidedSurface();
 
             // isInAir = !IsCollidingWithSurface();
@@ -633,16 +633,16 @@ namespace Assets.Scripts.Player
 
             isMoving = rb.linearVelocity.sqrMagnitude > settings.isMovingThreshold;
 
-            if ((movementState == MovementState.Jumping ||
-                movementState == MovementState.WallJump ||
-                movementState == MovementState.AirDashing) &&
+            if ((settings.movementState == MovementState.Jumping ||
+                settings.movementState == MovementState.WallJump ||
+                settings.movementState == MovementState.AirDashing) &&
                 (!isDropping || !fastFalling)) { TryStartHoverEffect(); }
-            else if (movementState == MovementState.Hovering && (!isDropping || !fastFalling)) { WobbleEffect(); }
+            else if (settings.movementState == MovementState.Hovering && (!isDropping || !fastFalling)) { WobbleEffect(); }
 
             ForceIdleState();
         }
 
-        private void OnCollisionEnter(Collision collision)
+        public void OnCollisionEnter(Collision collision)
         {
             HandleSurfaceState(collision, out _);
             StopMovementUponCollision();
@@ -655,10 +655,10 @@ namespace Assets.Scripts.Player
 
             mono.Invoke(nameof(ResetActionState), .1f);
 
-            if (movementState == MovementState.WallDescending &&
-                currentSurfaceState == SurfaceState.Ground && !hasBounced) { OnWallDescendingBounce(); }
+            if (settings.movementState == MovementState.WallDescending &&
+                settings.currentSurfaceState == SurfaceState.Ground && !hasBounced) { OnWallDescendingBounce(); }
 
-            if (currentSurfaceState == SurfaceState.Ground)
+            if (settings.currentSurfaceState == SurfaceState.Ground)
             {
                 var contact = collision.contacts[0];
                 SnapToGround(contact.point);
@@ -668,7 +668,7 @@ namespace Assets.Scripts.Player
             }
         }
 
-        private void OnCollisionExit(Collision collision)
+        public void OnCollisionExit(Collision collision)
         {
             if (landingResetCoroutine != null)
             {
@@ -690,7 +690,7 @@ namespace Assets.Scripts.Player
         /// </summary>
         private bool ActionInputDetected()
         {
-            if (InputManager.HasStickMovement() && InputManager.SouthButtonPressed && buttonHoldTimer >= minButtonPressTime) { return true; }
+            if (InputManager.HasStickMovement() && InputManager.SouthButtonPressed && buttonHoldTimer >= settings.minButtonPressTime) { return true; }
 
             buttonHoldTimer = 0;
             // InputManager.SouthButtonPressed = false;
@@ -704,13 +704,13 @@ namespace Assets.Scripts.Player
 
             string dirLabel = GetClosestDirectionLabel(snappedDir);
 
-            bool isJumpAllowed = currentSurfaceState != SurfaceState.LeftWall
-                && currentSurfaceState != SurfaceState.RightWall
+            bool isJumpAllowed = settings.currentSurfaceState != SurfaceState.LeftWall
+                && settings.currentSurfaceState != SurfaceState.RightWall
                 && IsJumpDirectionAllowed(dirLabel);
 
-            bool isWallJumpAllowed = (movementState == MovementState.Stucked || movementState == MovementState.WallDescending || movementState == MovementState.Charging)
-                && (currentSurfaceState == SurfaceState.LeftWall
-                || currentSurfaceState == SurfaceState.RightWall)
+            bool isWallJumpAllowed = (settings.movementState == MovementState.Stucked || settings.movementState == MovementState.WallDescending || settings.movementState == MovementState.Charging)
+                && (settings.currentSurfaceState == SurfaceState.LeftWall
+                || settings.currentSurfaceState == SurfaceState.RightWall)
                 && IsJumpDirectionAllowed(dirLabel);
 
             bool isDashAllowed = IsDashDirectionAllowed(dirLabel);
@@ -817,7 +817,7 @@ namespace Assets.Scripts.Player
 
             if (action == "Dash")
             {
-                movementState = MovementState.Dashing;
+                settings.movementState = MovementState.Dashing;
 
                 isJumping = false;
                 isWallJumping = false;
@@ -826,18 +826,18 @@ namespace Assets.Scripts.Player
 
                 rb.useGravity = true;
                 dashStartPos = rb.position;
-                movementForceMode = dashForceMode;
+                settings.movementForceMode = settings.dashForceMode;
 
-                if (currentSurfaceState == SurfaceState.Ground ||
-                    currentSurfaceState == SurfaceState.Ceiling)
+                if (settings.currentSurfaceState == SurfaceState.Ground ||
+                    settings.currentSurfaceState == SurfaceState.Ceiling)
                 {
                     if (dirLabel == "E") { isRightGroundDash = true; }
                     else if (dirLabel == "W") { isRightGroundDash = false; }
 
                     // Debug.Log($"dirLabel = {dirLabel}");
                 }
-                else if (currentSurfaceState == SurfaceState.LeftWall ||
-                    currentSurfaceState == SurfaceState.RightWall)
+                else if (settings.currentSurfaceState == SurfaceState.LeftWall ||
+                    settings.currentSurfaceState == SurfaceState.RightWall)
                 {
                     if (dirLabel == "N") { isUpWallDash = true; }
                     else if (dirLabel == "S") { isUpWallDash = false; }
@@ -846,7 +846,7 @@ namespace Assets.Scripts.Player
             }
             else if (action == "Jump")
             {
-                movementState = MovementState.Jumping;
+                settings.movementState = MovementState.Jumping;
 
                 // Movement flags
                 isDashing = false;
@@ -856,7 +856,7 @@ namespace Assets.Scripts.Player
 
                 rb.useGravity = false;
                 jumpStartPos = rb.position;
-                movementForceMode = jumpForceMode;
+                settings.movementForceMode = settings.jumpForceMode;
 
                 if (dirLabel == "N") { isStraightJump = true; }
                 else { isStraightJump = false; }
@@ -867,7 +867,7 @@ namespace Assets.Scripts.Player
             }
             else if (action == "WallJump")
             {
-                movementState = MovementState.WallJump;
+                settings.movementState = MovementState.WallJump;
 
                 isJumping = false;
                 isDashing = false;
@@ -878,13 +878,13 @@ namespace Assets.Scripts.Player
                 jumpStartPos = rb.position;
                 settings.movementForceMode = settings.jumpForceMode;
 
-                if (currentSurfaceState == SurfaceState.RightWall)
+                if (settings.currentSurfaceState == SurfaceState.RightWall)
                 {
                     isWallJumpRight = true;
                     if (dirLabel == "W") { isWallJumpHorizontal = true; }
                     else { isWallJumpHorizontal = false; }
                 }
-                else if (currentSurfaceState == SurfaceState.LeftWall)
+                else if (settings.currentSurfaceState == SurfaceState.LeftWall)
                 {
                     isWallJumpRight = false;
                     if (dirLabel == "E") { isWallJumpHorizontal = true; }
@@ -896,7 +896,7 @@ namespace Assets.Scripts.Player
             }
             else if (action == "AirDash")
             {
-                movementState = MovementState.AirDashing;
+                settings.movementState = MovementState.AirDashing;
 
                 isJumping = false;
                 isDashing = false;
@@ -939,7 +939,7 @@ namespace Assets.Scripts.Player
         /// </summary>
         private void HandleActionForces()
         {
-            if (movementState == MovementState.Dashing &&
+            if (settings.movementState == MovementState.Dashing &&
                 !hasAppliedForce && snappedDir.sqrMagnitude > settings.minStickMagnitude)
             {
                 rb.linearVelocity = Vector3.zero;
@@ -974,9 +974,9 @@ namespace Assets.Scripts.Player
             yield return new WaitForSeconds(settings.landingBuffer);
 
             // Only reset if we’re still grounded and not performing an action
-            if (currentSurfaceState == SurfaceState.Ground && !actionInProgress)
+            if (settings.currentSurfaceState == SurfaceState.Ground && !actionInProgress)
             {
-                movementState = MovementState.Idle;
+                settings.movementState = MovementState.Idle;
                 isLandingBuffered = true;
                 hasBounced = false;
                 hasBurstDropped = false;
@@ -1000,7 +1000,7 @@ namespace Assets.Scripts.Player
         /// </summary>
         private void SmoothMovement()
         {
-            if (movementState != MovementState.Jumping && movementState != MovementState.WallJump && movementState != MovementState.AirDashing) return;
+            if (settings.movementState != MovementState.Jumping && settings.movementState != MovementState.WallJump && settings.movementState != MovementState.AirDashing) return;
 
             Vector3 toTarget = predictedTargetPoint - rb.position;
             float remaining = toTarget.magnitude;
@@ -1026,7 +1026,7 @@ namespace Assets.Scripts.Player
             float dynamicForce = forceMagnitude * ratio;
             rb.AddForce(dir * dynamicForce, settings.movementForceMode);
 
-            if (rb.linearVelocity.magnitude > settings.maxJumpSpeed) { rb.linearVelocity = rb.linearVelocity.normalized * maxJumpSpeed; }
+            if (rb.linearVelocity.magnitude > settings.maxJumpSpeed) { rb.linearVelocity = rb.linearVelocity.normalized * settings.maxJumpSpeed; }
 
             float closeRange = 1.0f;
 
@@ -1076,7 +1076,7 @@ namespace Assets.Scripts.Player
         /// </summary>
         private bool TryStartHoverEffect()
         {
-            if (!isInAir || movementState == MovementState.Hovering ||
+            if (!isInAir || settings.movementState == MovementState.Hovering ||
                 hasTriggeredHover || isDropping || fastFalling) { return false; }
 
             Vector3 toTarget = predictedTargetPoint - rb.position;
@@ -1108,7 +1108,7 @@ namespace Assets.Scripts.Player
 
         private void Hover()
         {
-            movementState = MovementState.Hovering;
+            settings.movementState = MovementState.Hovering;
             settings.gravityStrength = 0;
             rb.linearDamping = settings.hoverLinearDamping;
             hoverTimer = settings.hoverDuration;
@@ -1145,7 +1145,7 @@ namespace Assets.Scripts.Player
         /// </summary>
         private void UpdateHoverTimer()
         {
-            if (movementState != MovementState.Hovering) return;
+            if (settings.movementState != MovementState.Hovering) return;
             hoverTimer -= Time.fixedDeltaTime;
             if (hoverTimer <= 0f) ExitHover();
         }
@@ -1156,7 +1156,7 @@ namespace Assets.Scripts.Player
         /// </summary>    
         private void ExitHover()
         {
-            movementState = MovementState.Descending;
+            settings.movementState = MovementState.Descending;
             hoverTimer = 0f;
             hoverWobbleTimer = 0f;
             rb.linearDamping = settings.defaultDamping;
@@ -1180,8 +1180,8 @@ namespace Assets.Scripts.Player
             float dropGravity = 0;
             if (fastFalling)
             {
-                if (currentSurfaceState == SurfaceState.Air) dropGravity = initialGravityStrength * settings.defaultDropMultiplier;
-                else if (currentSurfaceState == SurfaceState.LeftWall || currentSurfaceState == SurfaceState.RightWall) dropGravity = initialGravityStrength * wallDescendingGravityStrength;
+                if (settings.currentSurfaceState == SurfaceState.Air) dropGravity = initialGravityStrength * settings.defaultDropMultiplier;
+                else if (settings.currentSurfaceState == SurfaceState.LeftWall || settings.currentSurfaceState == SurfaceState.RightWall) dropGravity = initialGravityStrength * wallDescendingGravityStrength;
 
                 rb.AddForce(dir * dropGravity, settings.fallForceMode);
 
@@ -1218,11 +1218,11 @@ namespace Assets.Scripts.Player
 
             float burstStrength;
 
-            if (movementState == MovementState.Stucked && isStuckFrozen) { ExitStuckState(); }
-            if (movementState == MovementState.Hovering) { ExitHover(); mono.StopAllCoroutines(); }
+            if (settings.movementState == MovementState.Stucked && isStuckFrozen) { ExitStuckState(); }
+            if (settings.movementState == MovementState.Hovering) { ExitHover(); mono.StopAllCoroutines(); }
 
-            if (currentSurfaceState == SurfaceState.LeftWall ||
-                currentSurfaceState == SurfaceState.RightWall) { burstStrength = initialGravityStrength * settings.wallDropMultiplier; }
+            if (settings.currentSurfaceState == SurfaceState.LeftWall ||
+                settings.currentSurfaceState == SurfaceState.RightWall) { burstStrength = initialGravityStrength * settings.wallDropMultiplier; }
             else { burstStrength = initialGravityStrength * settings.defaultDropMultiplier; }
 
             rb.linearDamping = settings.defaultDamping;
@@ -1238,9 +1238,9 @@ namespace Assets.Scripts.Player
             ResetActionState();
 
             // switch to the appropriate descending state
-            if (currentSurfaceState == SurfaceState.LeftWall ||
-                currentSurfaceState == SurfaceState.RightWall) { movementState = MovementState.WallDescending; }
-            else { movementState = MovementState.Descending; }
+            if (settings.currentSurfaceState == SurfaceState.LeftWall ||
+                settings.currentSurfaceState == SurfaceState.RightWall) { settings.movementState = MovementState.WallDescending; }
+            else { settings.movementState = MovementState.Descending; }
         }
 
         /// <summary>
@@ -1250,20 +1250,20 @@ namespace Assets.Scripts.Player
         private Vector3 DetermineGravityDirection()
         {
             Vector3 finalDir = settings.gravityDir.normalized;
-            switch (currentSurfaceState)
+            switch (settings.currentSurfaceState)
             {
                 case SurfaceState.Ground:
-                    finalDir = ConvertToVector(gravityDirectionGround);
+                    finalDir = ConvertToVector(settings.gravityDirectionGround);
                     fastFalling = false;
                     break;
                 case SurfaceState.Ceiling:
-                    finalDir = ConvertToVector(gravityDirectionCeiling);
+                    finalDir = ConvertToVector(settings.gravityDirectionCeiling);
                     break;
                 case SurfaceState.LeftWall:
-                    finalDir = ConvertToVector(gravityDirectionLeftWall);
+                    finalDir = ConvertToVector(settings.gravityDirectionLeftWall);
                     break;
                 case SurfaceState.RightWall:
-                    finalDir = ConvertToVector(gravityDirectionRightWall);
+                    finalDir = ConvertToVector(settings.gravityDirectionRightWall);
                     break;
             }
             if (isInAir && Time.time - lastContactTime > NO_CONTACT_THRESHOLD)
@@ -1287,7 +1287,7 @@ namespace Assets.Scripts.Player
             int targetLayer = LayerMask.NameToLayer("Surface");
             if (collision.transform.gameObject.layer != targetLayer) return;
 
-            currentSurfaceState = SurfaceState.Air;
+            settings.currentSurfaceState = SurfaceState.Air;
             SurfaceState detectedState = SurfaceState.Air;
             float bestDot = -1f;
 
@@ -1331,7 +1331,7 @@ namespace Assets.Scripts.Player
                 lastSurfaceCheckTime = Time.time;
             }
 
-            if (detectedState != currentSurfaceState) { currentSurfaceState = detectedState; }
+            if (detectedState != settings.currentSurfaceState) { settings.currentSurfaceState = detectedState; }
         }
 
         /// <summary>
@@ -1412,26 +1412,26 @@ namespace Assets.Scripts.Player
         /// </summary>
         private void StopMovementUponCollision()
         {
-            if (isMoving && movementState == MovementState.Dashing &&
-                (currentSurfaceState == SurfaceState.LeftWall ||
-                currentSurfaceState == SurfaceState.RightWall)) { movementState = MovementState.Idle; return; }
+            if (isMoving && settings.movementState == MovementState.Dashing &&
+                (settings.currentSurfaceState == SurfaceState.LeftWall ||
+                settings.currentSurfaceState == SurfaceState.RightWall)) { settings.movementState = MovementState.Idle; return; }
 
 
-            if (isMoving && (movementState == MovementState.Jumping || movementState == MovementState.WallJump || movementState == MovementState.AirDashing))
+            if (isMoving && (settings.movementState == MovementState.Jumping || settings.movementState == MovementState.WallJump || settings.movementState == MovementState.AirDashing))
             {
-                if (movementState == MovementState.WallDescending) return;
+                if (settings.movementState == MovementState.WallDescending) return;
 
-                if ((currentSurfaceState == SurfaceState.LeftWall || currentSurfaceState == SurfaceState.RightWall)
-                    && currentSurfaceState != SurfaceState.Ground)
+                if ((settings.currentSurfaceState == SurfaceState.LeftWall || settings.currentSurfaceState == SurfaceState.RightWall)
+                    && settings.currentSurfaceState != SurfaceState.Ground)
                 {
-                    movementState = MovementState.Stucked;
-                    stuckTimer = stuckDurationWall;
+                    settings.movementState = MovementState.Stucked;
+                    stuckTimer = settings.stuckDurationWall;
                     isStuckFrozen = true;
                 }
-                else if (currentSurfaceState == SurfaceState.Ceiling)
+                else if (settings.currentSurfaceState == SurfaceState.Ceiling)
                 {
-                    movementState = MovementState.Stucked;
-                    stuckTimer = stuckDurationCeiling;
+                    settings.movementState = MovementState.Stucked;
+                    stuckTimer = settings.stuckDurationCeiling;
                     isStuckFrozen = true;
                 }
 
@@ -1454,12 +1454,12 @@ namespace Assets.Scripts.Player
                 isStuckFrozen = false;
                 rb.isKinematic = false;
 
-                if (currentSurfaceState == SurfaceState.LeftWall || currentSurfaceState == SurfaceState.RightWall)
+                if (settings.currentSurfaceState == SurfaceState.LeftWall || settings.currentSurfaceState == SurfaceState.RightWall)
                 {
-                    lastWallSide = currentSurfaceState;
-                    movementState = MovementState.WallDescending;
+                    lastWallSide = settings.currentSurfaceState;
+                    settings.movementState = MovementState.WallDescending;
                 }
-                else { movementState = MovementState.Descending; }
+                else { settings.movementState = MovementState.Descending; }
             }
             else
             {
@@ -1490,21 +1490,21 @@ namespace Assets.Scripts.Player
         /// </summary>
         private void ForceIdleState()
         {
-            if (movementState == MovementState.Charging ||
-                movementState == MovementState.Jumping ||
-                movementState == MovementState.WallJump ||
-                movementState == MovementState.Dashing ||
-                currentSurfaceState == SurfaceState.Ceiling ||
+            if (settings.movementState == MovementState.Charging ||
+                settings.movementState == MovementState.Jumping ||
+                settings.movementState == MovementState.WallJump ||
+                settings.movementState == MovementState.Dashing ||
+                settings.currentSurfaceState == SurfaceState.Ceiling ||
                 actionInProgress)
                 return;
 
-            if (rb.linearVelocity.sqrMagnitude < 0.01f && currentSurfaceState == SurfaceState.Ground)
+            if (rb.linearVelocity.sqrMagnitude < 0.01f && settings.currentSurfaceState == SurfaceState.Ground)
             {
-                movementState = MovementState.Idle;
+                settings.movementState = MovementState.Idle;
                 ResetPhysicsSettings(false, true);
             }
 
-            if (movementState == MovementState.Idle && currentSurfaceState == SurfaceState.Ground) { isLandingBuffered = false; }
+            if (settings.movementState == MovementState.Idle && settings.currentSurfaceState == SurfaceState.Ground) { isLandingBuffered = false; }
         }
 
         /// <summary>
@@ -1545,7 +1545,7 @@ namespace Assets.Scripts.Player
             stuckTimer = 0f;
             isStuckFrozen = false;
             rb.isKinematic = false;
-            movementState = MovementState.WallDescending;
+            settings.movementState = MovementState.WallDescending;
         }
 
         #endregion
@@ -1603,10 +1603,10 @@ namespace Assets.Scripts.Player
         /// </summary>
         private bool IsDashDirectionAllowed(string label)
         {
-            if (currentSurfaceState == SurfaceState.Ground || currentSurfaceState == SurfaceState.Ceiling)
+            if (settings.currentSurfaceState == SurfaceState.Ground || settings.currentSurfaceState == SurfaceState.Ceiling)
             { return label == "W" || label == "E"; }
 
-            if (currentSurfaceState == SurfaceState.LeftWall || currentSurfaceState == SurfaceState.RightWall)
+            if (settings.currentSurfaceState == SurfaceState.LeftWall || settings.currentSurfaceState == SurfaceState.RightWall)
             { return label == "N" || label == "S"; }
 
             return false;
@@ -1621,24 +1621,24 @@ namespace Assets.Scripts.Player
         {
             if (label == "W" || label == "E")
             {
-                if (currentSurfaceState == SurfaceState.LeftWall ||
-                    currentSurfaceState == SurfaceState.RightWall)
+                if (settings.currentSurfaceState == SurfaceState.LeftWall ||
+                    settings.currentSurfaceState == SurfaceState.RightWall)
                 {
                     return true;
                 }
                 return false;
             }
 
-            if ((currentSurfaceState == SurfaceState.LeftWall || currentSurfaceState == SurfaceState.RightWall) &&
+            if ((settings.currentSurfaceState == SurfaceState.LeftWall || settings.currentSurfaceState == SurfaceState.RightWall) &&
                 (label == "N" || label == "S")) { return false; }
 
-            return allowedMoveLabels.TryGetValue(currentSurfaceState, out var allowed) &&
+            return allowedMoveLabels.TryGetValue(settings.currentSurfaceState, out var allowed) &&
                 System.Array.Exists(allowed, l => l == label);
         }
 
         private bool IsAirDashDirectionAllowed(string label)
         {
-            return allowedMoveLabels.TryGetValue(currentSurfaceState, out var allowed) &&
+            return allowedMoveLabels.TryGetValue(settings.currentSurfaceState, out var allowed) &&
                 System.Array.Exists(allowed, l => l == label);
         }
 
@@ -1678,9 +1678,8 @@ namespace Assets.Scripts.Player
         // DIRECTION & LABEL MAPPING
         // ─────────────────────────────────────────────────────────────────────────
         #region GIZMOS
-        void OnDrawGizmos()
+        public void OnDrawGizmos()
         {
-
             if (settings.snapDirectionsEnabled)
             {
                 Gizmos.color = settings.baseDirectionColor;
@@ -1721,9 +1720,9 @@ namespace Assets.Scripts.Player
             }
 
 
-            if (Application.isPlaying && labelToAngle != null && allowedMoveLabels.ContainsKey(currentSurfaceState))
+            if (Application.isPlaying && labelToAngle != null && allowedMoveLabels.ContainsKey(settings.currentSurfaceState))
             {
-                string[] labels = allowedMoveLabels[currentSurfaceState];
+                string[] labels = allowedMoveLabels[settings.currentSurfaceState];
 
                 foreach (var label in labels)
                 {

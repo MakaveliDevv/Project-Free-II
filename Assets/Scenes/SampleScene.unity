@@ -713,8 +713,6 @@ GameObject:
   - component: {fileID: 206922468}
   - component: {fileID: 206922473}
   - component: {fileID: 206922472}
-  - component: {fileID: 206922475}
-  - component: {fileID: 206922477}
   - component: {fileID: 206922478}
   - component: {fileID: 206922479}
   m_Layer: 0
@@ -847,37 +845,21 @@ MonoBehaviour:
     m_ActionId: 35767c20-166a-415b-af9a-ec6262e27067
     m_ActionName: 'Player/Movement[/XInputControllerWindows/leftStick/up,/XInputControllerWindows/leftStick/down,/XInputControllerWindows/leftStick/left,/XInputControllerWindows/leftStick/right]'
   - m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 206922466}
-        m_TargetAssemblyTypeName: 
-        m_MethodName: 
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: 
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
     m_ActionId: a8c62f56-02ce-446e-a2e8-d9e506adc9e3
     m_ActionName: 'ToggleMechanics/ToggleAutoHover[/XInputControllerWindows/rightTrigger]'
   - m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 206922466}
-        m_TargetAssemblyTypeName: 
-        m_MethodName: 
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: 
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
     m_ActionId: b9cfd90b-d8c7-47fc-891d-7605a63016ed
     m_ActionName: 'ToggleMechanics/ToggleAirDash[/XInputControllerWindows/dpad/right]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 8ce40233-896f-4481-b1cf-c58b36c43d05
+    m_ActionName: 'Player/AdvancedMovementMode[/XInputControllerWindows/leftShoulder]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 9f6e0a0b-02fd-433b-bd0d-05f41bce439d
+    m_ActionName: 'Player/CombatMode[/XInputControllerWindows/rightShoulder]'
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
   m_DefaultActionMap: Player
@@ -910,129 +892,6 @@ Rigidbody:
   m_Interpolate: 1
   m_Constraints: 112
   m_CollisionDetection: 2
---- !u!114 &206922475
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 206922466}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e73a204e22094714a9f84eacf9c1a916, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  movementState: 0
-  currentSurfaceState: 0
-  inputActions: {fileID: -944628639613478452, guid: 9740b7f8f03c4a749a2e93320c4985da, type: 3}
-  useRawInput: 1
-  snapDirectionsEnabled: 1
-  directionCount: 16
-  stuckDurationWall: 20
-  stuckDurationCeiling: 1.5
-  stuckCooldownDuration: 1
-  showDirectionLabels: 1
-  useCardinalLabels: 1
-  jumpForce: 35
-  maxJumpDistance: 10
-  maxJumpSpeed: 10
-  bounceSpeed: 25
-  dashForce: 20
-  maxDashDistance: 10
-  airDashForce: 5
-  maxAirDashDistance: 5
-  defaultDamping: 0
-  movementForceMode: 0
-  jumpForceMode: 2
-  dashForceMode: 1
-  airDashForceMode: 1
-  gravityStrength: 9.81
-  useDynamicGravityStrenght: 1
-  wallGravityPercent: 100
-  gravityDir: {x: 0, y: -1, z: 0}
-  gravityDirectionGround: 0
-  gravityDirectionCeiling: 0
-  gravityDirectionLeftWall: 0
-  gravityDirectionRightWall: 0
-  lowJumpMultiplier: 2.5
-  fallMultiplier: 2
-  defaultDropMultiplier: 2
-  wallDropMultiplier: 1.2
-  maxFallSpeed: 40
-  dropAngleTolerance: 45
-  dropForceMode: 2
-  fallForceMode: 5
-  useHoverWobble: 1
-  hoverWobbleSpeed: 25
-  hoverWobbleHeight: 0.5
-  hoverStartDelay: 0.1
-  wobbleFadeInFactor: 1
-  hoverActivationRadius: 0.5
-  hoverDuration: 10
-  minHoverHeight: 4
-  minHoverLinearDamping: 0.1
-  hoverLinearDamping: 7
-  groundProximityCheckDistance: 0.18
-  minAirborneTimeBeforeIdle: 0.15
-  distanceToSurfaceThreshold: 0.05
-  checkDistance: 0.5
-  surfaceLayer:
-    serializedVersion: 2
-    m_Bits: 512
-  minStickHoldTime: 0.2
-  minStickMagnitude: 0.2
-  minButtonPressTime: 0.1
-  maxHoldTime: 0.5
-  gizmoScale: 2
-  directionLineLength: 1.5
-  baseDirectionColor: {r: 0.9559822, g: 1, b: 0, a: 1}
-  allowedJumpColor: {r: 0, g: 1, b: 0, a: 1}
-  dashDirectionColor: {r: 0, g: 1, b: 1, a: 1}
-  snappedInputColor: {r: 1, g: 0.015686274, b: 0.06364239, a: 1}
-  jumpTargetColor: {r: 0, g: 0.023826122, b: 1, a: 1}
-  landingPointColor: {r: 1, g: 0.20127597, b: 0, a: 1}
-  groundCheckDistanceColor: {r: 1, g: 0, b: 0.67214394, a: 1}
-  arrivalRadius: 0.05
-  lerpAmount: 0.85
-  enableZLock: 1
-  useHandleActionForces: 1
-  isMovingThreshold: 0.2
-  forceCurveExponent: 0.75
-  allowAirDash: 0
-  landingBuffer: 0.1
-  fallTimer: 0.125
-  useAutoHover: 0
-  isStraightJump: 0
-  isDiagonalJumpRight: 0
-  isRightGroundDash: 0
-  isUpWallDash: 0
-  isVerticalAirDash: 0
-  isHorizontalAirDash: 0
-  isRightAirDash: 0
-  isRightDiagonalAirDash: 0
-  isAirDashAscend: 0
-  isWallJumpRight: 0
-  isWallJumpAscend: 0
-  isWallJumpHorizontal: 0
-  snappedDir: {x: 0, y: 0}
-  rb: {fileID: 0}
-  lastSurfaceObject: {fileID: 0}
---- !u!114 &206922477
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 206922466}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 42180d6faf6c6bf4089dd106f56dee1b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  movementSystem: {fileID: 0}
-  animationController: {fileID: 0}
-  animator: {fileID: 0}
-  useDebugMessage: 0
 --- !u!114 &206922478
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1045,6 +904,87 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9b70ef6cc127b7b498a643c64dc44775, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  movementSettings:
+    movementState: 0
+    currentSurfaceState: 0
+    inputActions: {fileID: -944628639613478452, guid: 9740b7f8f03c4a749a2e93320c4985da, type: 3}
+    useRawInput: 1
+    snapDirectionsEnabled: 1
+    directionCount: 16
+    stuckDurationWall: 1
+    stuckDurationCeiling: 1.5
+    stuckCooldownDuration: 1
+    showDirectionLabels: 1
+    useCardinalLabels: 1
+    jumpForce: 5
+    maxJumpDistance: 5
+    maxJumpSpeed: 10
+    bounceSpeed: 5
+    dashForce: 5
+    maxDashDistance: 5
+    airDashForce: 5
+    maxAirDashDistance: 5
+    defaultDamping: 0
+    movementForceMode: 0
+    jumpForceMode: 2
+    dashForceMode: 1
+    airDashForceMode: 1
+    gravityStrength: 9.81
+    useDynamicGravityStrenght: 1
+    wallGravityPercent: 10
+    gravityDir: {x: 0, y: -1, z: 0}
+    gravityDirectionGround: 0
+    gravityDirectionCeiling: 0
+    gravityDirectionLeftWall: 3
+    gravityDirectionRightWall: 2
+    lowJumpMultiplier: 4
+    fallMultiplier: 1
+    defaultDropMultiplier: 2
+    wallDropMultiplier: 2
+    maxFallSpeed: 40
+    dropAngleTolerance: 15
+    dropForceMode: 1
+    fallForceMode: 5
+    useHoverWobble: 1
+    hoverWobbleSpeed: 2
+    hoverWobbleHeight: 0.2
+    hoverStartDelay: 0.1
+    wobbleFadeInFactor: 0.25
+    hoverActivationRadius: 1.5
+    hoverDuration: 2
+    minHoverHeight: 2
+    minHoverLinearDamping: 0
+    hoverLinearDamping: 5
+    groundProximityCheckDistance: 1
+    minAirborneTimeBeforeIdle: 0.15
+    distanceToSurfaceThreshold: 0.05
+    checkDistance: 0
+    surfaceLayer:
+      serializedVersion: 2
+      m_Bits: 0
+    minStickHoldTime: 0.1
+    minStickMagnitude: 0.2
+    minButtonPressTime: 0.1
+    maxHoldTime: 0.5
+    gizmoScale: 2
+    directionLineLength: 1.5
+    baseDirectionColor: {r: 0, g: 0, b: 1, a: 1}
+    allowedJumpColor: {r: 0, g: 1, b: 0, a: 1}
+    dashDirectionColor: {r: 0, g: 1, b: 1, a: 1}
+    snappedInputColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+    jumpTargetColor: {r: 1, g: 0, b: 0, a: 1}
+    landingPointColor: {r: 0, g: 1, b: 0, a: 1}
+    groundCheckDistanceColor: {r: 0, g: 0, b: 0, a: 0}
+    arrivalRadius: 0.05
+    lerpAmount: 0.85
+    enableZLock: 1
+    useHandleActionForces: 1
+    isMovingThreshold: 0.2
+    forceCurveExponent: 1
+    allowAirDash: 0
+    landingBuffer: 0.1
+    fallTimer: 0.25
+    useAutoHover: 1
   inputActions: {fileID: -944628639613478452, guid: 9740b7f8f03c4a749a2e93320c4985da, type: 3}
   mode: 0
 --- !u!114 &206922479
