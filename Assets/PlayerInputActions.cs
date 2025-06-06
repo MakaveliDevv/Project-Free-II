@@ -108,6 +108,24 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": true
+                },
+                {
+                    ""name"": ""AdvancedMovementMode"",
+                    ""type"": ""Button"",
+                    ""id"": ""8ce40233-896f-4481-b1cf-c58b36c43d05"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""CombatMode"",
+                    ""type"": ""Button"",
+                    ""id"": ""9f6e0a0b-02fd-433b-bd0d-05f41bce439d"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -176,6 +194,28 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
                     ""action"": ""DirCalculation"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""aad87169-67b8-4d9f-b746-10096b519430"",
+                    ""path"": ""<Gamepad>/leftShoulder"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""AdvancedMovementMode"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""3b557441-f1c9-405b-9a91-c03aea03bdc1"",
+                    ""path"": ""<Gamepad>/rightShoulder"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""CombatMode"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         },
@@ -234,6 +274,8 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
         m_Player = asset.FindActionMap("Player", throwIfNotFound: true);
         m_Player_MovementTrigger = m_Player.FindAction("MovementTrigger", throwIfNotFound: true);
         m_Player_DirCalculation = m_Player.FindAction("DirCalculation", throwIfNotFound: true);
+        m_Player_AdvancedMovementMode = m_Player.FindAction("AdvancedMovementMode", throwIfNotFound: true);
+        m_Player_CombatMode = m_Player.FindAction("CombatMode", throwIfNotFound: true);
         // ToggleMechanics
         m_ToggleMechanics = asset.FindActionMap("ToggleMechanics", throwIfNotFound: true);
         m_ToggleMechanics_ToggleAutoHover = m_ToggleMechanics.FindAction("ToggleAutoHover", throwIfNotFound: true);
@@ -321,6 +363,8 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
     private List<IPlayerActions> m_PlayerActionsCallbackInterfaces = new List<IPlayerActions>();
     private readonly InputAction m_Player_MovementTrigger;
     private readonly InputAction m_Player_DirCalculation;
+    private readonly InputAction m_Player_AdvancedMovementMode;
+    private readonly InputAction m_Player_CombatMode;
     /// <summary>
     /// Provides access to input actions defined in input action map "Player".
     /// </summary>
@@ -340,6 +384,14 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
         /// Provides access to the underlying input action "Player/DirCalculation".
         /// </summary>
         public InputAction @DirCalculation => m_Wrapper.m_Player_DirCalculation;
+        /// <summary>
+        /// Provides access to the underlying input action "Player/AdvancedMovementMode".
+        /// </summary>
+        public InputAction @AdvancedMovementMode => m_Wrapper.m_Player_AdvancedMovementMode;
+        /// <summary>
+        /// Provides access to the underlying input action "Player/CombatMode".
+        /// </summary>
+        public InputAction @CombatMode => m_Wrapper.m_Player_CombatMode;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
@@ -372,6 +424,12 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
             @DirCalculation.started += instance.OnDirCalculation;
             @DirCalculation.performed += instance.OnDirCalculation;
             @DirCalculation.canceled += instance.OnDirCalculation;
+            @AdvancedMovementMode.started += instance.OnAdvancedMovementMode;
+            @AdvancedMovementMode.performed += instance.OnAdvancedMovementMode;
+            @AdvancedMovementMode.canceled += instance.OnAdvancedMovementMode;
+            @CombatMode.started += instance.OnCombatMode;
+            @CombatMode.performed += instance.OnCombatMode;
+            @CombatMode.canceled += instance.OnCombatMode;
         }
 
         /// <summary>
@@ -389,6 +447,12 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
             @DirCalculation.started -= instance.OnDirCalculation;
             @DirCalculation.performed -= instance.OnDirCalculation;
             @DirCalculation.canceled -= instance.OnDirCalculation;
+            @AdvancedMovementMode.started -= instance.OnAdvancedMovementMode;
+            @AdvancedMovementMode.performed -= instance.OnAdvancedMovementMode;
+            @AdvancedMovementMode.canceled -= instance.OnAdvancedMovementMode;
+            @CombatMode.started -= instance.OnCombatMode;
+            @CombatMode.performed -= instance.OnCombatMode;
+            @CombatMode.canceled -= instance.OnCombatMode;
         }
 
         /// <summary>
@@ -550,6 +614,20 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnDirCalculation(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "AdvancedMovementMode" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnAdvancedMovementMode(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "CombatMode" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnCombatMode(InputAction.CallbackContext context);
     }
     /// <summary>
     /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "ToggleMechanics" which allows adding and removing callbacks.

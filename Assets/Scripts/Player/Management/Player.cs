@@ -2,133 +2,212 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class Player : MonoBehaviour 
+namespace Assets.Scripts.Player
 {
-    private MovementSystem movementSystem;
-    private bool inRangeForInteractable = false;
-    private bool inRangeForAttackable = false;
+    public enum MovementState { Idle, Charging, Jumping, WallJump, Hovering, Descending, Dashing, AirDashing, WallDashing, Stucked, WallDescending, NOTHING }
+    public enum SurfaceState { Ground, LeftWall, RightWall, Ceiling, Air }
+    public enum GravityDirection { Down, Up, Left, Right }
+    public enum Mode { Normal, AdvancedMovement, Attack }
 
-    private List<GameObject> interactable = new();
-    private List<GameObject> attackable = new();
-
-    private GameObject _interactable;
-    private GameObject _attackable;
-
-    public InputActionAsset inputActions;
-    private InputAction dPadUp;
-    private InputAction dPadRight;
-    
-    private void Awake()
+    [RequireComponent(typeof(Rigidbody))]
+    public class Player : MonoBehaviour
     {
-        movementSystem = GetComponent<MovementSystem>();
-        SetupInputActions();
-    }
+        public InputActionAsset inputActionAsset;
 
-    private void SetupInputActions()
-    {
-        var map = inputActions.FindActionMap("ToggleMechanics");
-        dPadUp = map.FindAction("ToggleAutoHover");
-        dPadRight = map.FindAction("ToggleAirDash");
+        // ─ Class References
+        public MovementSettings movementSettings;
+        public CombatSettings combatSettings;
+        private MovementSystem movementSystem;
+        [HideInInspector] public CombatController combatController;
 
-        dPadUp.Enable();
-        dPadRight.Enable();
-    }
+        [HideInInspector] public Mode mode;
 
-    void OnEnable()
-    {
-        RegisterInputCallbacks();
-    }
+        private bool inRangeForInteractable = false;
+        private bool inRangeForAttackable = false;
 
-    void OnDisable()
-    {
-        UnregisterInputCallbacks();
-    }
+        private List<GameObject> interactable = new();
+        private List<GameObject> attackable = new();
 
-    private void RegisterInputCallbacks()
-    {
-        dPadUp.started += ToggleAutoHover;
-        dPadRight.started += ToggleAirDash;
-    }
+        private GameObject _interactable;
+        private GameObject _attackable;
 
-    private void UnregisterInputCallbacks()
-    {
-        dPadUp.started -= ToggleAutoHover;
-        dPadRight.started -= ToggleAirDash;
-    }
+        private InputAction dPadUp;
+        private InputAction dPadRight;
 
-    private void ToggleAutoHover(InputAction.CallbackContext ctx) 
-    {
-        Debug.Log("swag");
-        if(ctx.started) 
+        // ---------------------------------------
+
+        void Awake()
         {
-            Debug.Log("Toggle Auto Hover");
-            movementSystem.useAutoHover = !movementSystem.useAutoHover;
+            InputManager.Initialize(inputActionAsset, movementSettings.useRawInput, movementSettings.minStickMagnitude);
+
+            movementSystem = new MovementSystem(this, movementSettings, inputActionAsset);
+            combatController = new CombatController(this, combatSettings);
+
+            movementSystem.Awake();
+            movementSettings.currentSurfaceState = SurfaceState.Ground;
+
+            mode = Mode.Normal;
+
+            SetupInputActions();
         }
-    }
 
-    private void ToggleAirDash(InputAction.CallbackContext ctx) 
-    {
-        if(ctx.started) 
+        void Start()
         {
-            Debug.Log("Toggle Air Dash");
-            movementSystem.allowAirDash = !movementSystem.allowAirDash;
+            movementSystem.Start();
         }
-    }
-    
-    private void Update()
-    {
-        if(inRangeForInteractable && interactable.Count == 1) 
+
+        private void SetupInputActions()
         {
-            // If player pressed the button for the gravitational pull
+            var map = inputActionAsset.FindActionMap("ToggleMechanics");
+            dPadUp = map.FindAction("ToggleAutoHover");
+            dPadRight = map.FindAction("ToggleAirDash");
 
-            // Then activate the gravitational pull method
-        } 
-    }
+            dPadUp.Enable();
+            dPadRight.Enable();
+        }
 
-    // private void OnTriggerEnter(Collider collider) 
-    // {
-    //     if(collider.CompareTag("Interactable")) 
-    //     {
-    //         inRangeForInteractable = true;
-    //         if(interactable.Count == 0) 
-    //         {
-    //             interactable.Add(collider.gameObject);
-    //             _interactable = interactable[0];
-    //         }
-    //     }
+        void OnEnable()
+        {
+            RegisterInputCallbacks();
+        }
 
-    //     if(collider.CompareTag("Attackable")) 
-    //     {
-    //         inRangeForAttackable = true;
-    //         if(interactable.Count == 0) 
-    //         {
-    //             attackable.Add(collider.gameObject);
-    //             _attackable = attackable[0];
-    //         }
-    //     }
-    // }
+        void OnDisable()
+        {
+            UnregisterInputCallbacks();
+        }
 
-    // private void OnTriggerExit(Collider collider) 
-    // {
-    //     if(collider.CompareTag("Interactable")) 
-    //     {
-    //         inRangeForInteractable = false;
+        private void RegisterInputCallbacks()
+        {
+            dPadUp.started += ToggleAutoHover;
+            dPadRight.started += ToggleAirDash;
+        }
 
-    //         if(interactable.Count > 0) 
-    //         {
-    //             interactable.Clear();
-    //             _interactable = null;
-    //         }
-    //     }
+        private void UnregisterInputCallbacks()
+        {
+            dPadUp.started -= ToggleAutoHover;
+            dPadRight.started -= ToggleAirDash;
+        }
 
-    //     if(collider.CompareTag("Attackable")) 
-    //     {
-    //         inRangeForAttackable = false;
-    //         if(interactable.Count == 0) 
-    //         {
-    //             attackable.Add(collider.gameObject);
-    //             _attackable = null;
-    //         }
-    //     }
-    // }
+        private void ToggleAutoHover(InputAction.CallbackContext ctx)
+        {
+            Debug.Log("swag");
+            if (ctx.started)
+            {
+                Debug.Log("Toggle Auto Hover");
+                movementSettings.useAutoHover = !movementSettings.useAutoHover;
+            }
+        }
+
+        private void ToggleAirDash(InputAction.CallbackContext ctx)
+        {
+            if (ctx.started)
+            {
+                Debug.Log("Toggle Air Dash");
+                movementSettings.allowAirDash = !movementSettings.allowAirDash;
+            }
+        }
+
+        void OnValidate()
+        {
+            if (Application.isPlaying)
+                movementSystem.OnValidate();
+        }
+
+        void Update()
+        {
+            movementSystem.Update();
+            combatController.Update();
+
+            if (inRangeForInteractable && interactable.Count == 1)
+            {
+                // If player pressed the button for the gravitational pull
+
+                // Then activate the gravitational pull method
+            }
+        }
+
+        void LateUpdate()
+        {
+            movementSystem.LateUpdate();
+        }
+
+        void FixedUpdate()
+        {
+            movementSystem.FixedUpdate();
+        }
+
+        void OnCollisionEnter(Collision collision)
+        {
+            movementSystem.OnCollisionEnter(collision);
+        }
+
+        void OnCollisionExit(Collision collision)
+        {
+            movementSystem.OnCollisionExit(collision);
+        }
+
+        void OnTriggerEnter(Collider collider)
+        {
+            combatController.OnTriggerEnter(collider);
+        }
+
+        void OnTriggerExit(Collider collider)
+        {
+            combatController.OnTriggerExit(collider);
+        }
+
+        void OnDrawGizmos()
+        {
+            if (Application.isPlaying)
+                movementSystem.OnDrawGizmos();
+        }
+
+
+        // private void OnTriggerEnter(Collider collider) 
+        // {
+        //     if(collider.CompareTag("Interactable")) 
+        //     {
+        //         inRangeForInteractable = true;
+        //         if(interactable.Count == 0) 
+        //         {
+        //             interactable.Add(collider.gameObject);
+        //             _interactable = interactable[0];
+        //         }
+        //     }
+
+        //     if(collider.CompareTag("Attackable")) 
+        //     {
+        //         inRangeForAttackable = true;
+        //         if(interactable.Count == 0) 
+        //         {
+        //             attackable.Add(collider.gameObject);
+        //             _attackable = attackable[0];
+        //         }
+        //     }
+        // }
+
+        // private void OnTriggerExit(Collider collider) 
+        // {
+        //     if(collider.CompareTag("Interactable")) 
+        //     {
+        //         inRangeForInteractable = false;
+
+        //         if(interactable.Count > 0) 
+        //         {
+        //             interactable.Clear();
+        //             _interactable = null;
+        //         }
+        //     }
+
+        //     if(collider.CompareTag("Attackable")) 
+        //     {
+        //         inRangeForAttackable = false;
+        //         if(interactable.Count == 0) 
+        //         {
+        //             attackable.Add(collider.gameObject);
+        //             _attackable = null;
+        //         }
+        //     }
+        // }
+    }   
 }
