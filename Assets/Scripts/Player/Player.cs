@@ -7,7 +7,7 @@ namespace Assets.Scripts.Player
     public enum MovementState { Idle, Charging, Jumping, WallJump, Hovering, Descending, Dashing, AirDashing, WallDashing, Stucked, WallDescending, NOTHING }
     public enum SurfaceState { Ground, LeftWall, RightWall, Ceiling, Air }
     public enum GravityDirection { Down, Up, Left, Right }
-    public enum Mode { Normal, AdvancedMovement, Attack }
+    public enum Mode { Normal, AdvancedMovement, Combat }
 
     [RequireComponent(typeof(Rigidbody))]
     public class Player : MonoBehaviour
@@ -18,9 +18,10 @@ namespace Assets.Scripts.Player
         public MovementSettings movementSettings;
         public CombatSettings combatSettings;
         private MovementSystem movementSystem;
+        private AdvancedMovement advancedMovement;
         [HideInInspector] public CombatController combatController;
 
-        [HideInInspector] public Mode mode;
+        public Mode mode;
 
         private bool inRangeForInteractable = false;
         private bool inRangeForAttackable = false;
@@ -40,8 +41,9 @@ namespace Assets.Scripts.Player
         {
             InputManager.Initialize(inputActionAsset, movementSettings.useRawInput, movementSettings.minStickMagnitude);
 
-            movementSystem = new MovementSystem(this, movementSettings, inputActionAsset);
-            combatController = new CombatController(this, combatSettings);
+            movementSystem = new(this, movementSettings, inputActionAsset);
+            advancedMovement = new(this, movementSettings, inputActionAsset);
+            combatController = new(this, combatSettings);
 
             movementSystem.Awake();
             movementSettings.currentSurfaceState = SurfaceState.Ground;
@@ -109,13 +111,21 @@ namespace Assets.Scripts.Player
 
         void OnValidate()
         {
-            if (Application.isPlaying)
-                movementSystem.OnValidate();
+            if (!Application.isPlaying)
+                return;
+
+            // Only call OnValidate on movementSystem if it has already been constructed
+
+            movementSystem?.OnValidate();
         }
+
 
         void Update()
         {
+            InputManager.UpdateInput();
+            
             movementSystem.Update();
+            advancedMovement.Update();
             combatController.Update();
 
             if (inRangeForInteractable && interactable.Count == 1)
@@ -124,6 +134,33 @@ namespace Assets.Scripts.Player
 
                 // Then activate the gravitational pull method
             }
+
+            switch (mode)
+            {
+                case Mode.Normal:
+                    advancedMovement.isAdvancedMovementActive = false;
+                    combatController.isCombatModeActive = false;
+                    movementSettings.allowAirDash = false;
+
+                    break;
+                case Mode.AdvancedMovement:
+                    combatController.isCombatModeActive = false;
+                    advancedMovement.isAdvancedMovementActive = true;
+                    movementSettings.allowAirDash = true;
+
+                    break;
+                case Mode.Combat:
+                    advancedMovement.isAdvancedMovementActive = false;
+                    movementSettings.allowAirDash = false;
+                    combatController.isCombatModeActive = true;
+
+                    break;
+
+                default:
+                    break;
+            }
+
+            InputManager.ResetFrameInputs();
         }
 
         void LateUpdate()

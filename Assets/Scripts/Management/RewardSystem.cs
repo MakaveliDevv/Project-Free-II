@@ -3,9 +3,9 @@ using UnityEngine;
 public class RewardSystem : MonoBehaviour
 {
     [SerializeField] private float comboMaxDelay = 2f;
-    [SerializeField] private float comboWarningTime = 1.5f; 
+    [SerializeField] private float comboWarningTime = 1.5f;
 
-    public bool IsComboAboutToExpire => Time.time - lastComboTime > comboWarningTime 
+    public bool IsComboAboutToExpire => Time.time - lastComboTime > comboWarningTime
                                      && Time.time - lastComboTime <= comboMaxDelay;
 
     public int TotalScore { get; private set; } = 0;
@@ -29,7 +29,7 @@ public class RewardSystem : MonoBehaviour
 
     void Awake()
     {
-        scoreDisplay = FindFirstObjectByType <ScoreDisplay>();
+        scoreDisplay = FindFirstObjectByType<ScoreDisplay>();
     }
 
     public void ApplyScore(Attackable.HitResult result)

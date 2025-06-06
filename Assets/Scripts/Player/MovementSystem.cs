@@ -47,8 +47,8 @@ namespace Assets.Scripts.Player
         // ─────────────────────────────────────────────────────────────────────────
 
         // ─ Class References
-        private readonly MovementSettings settings;
-        private readonly MonoBehaviour mono;
+        protected readonly MovementSettings settings;
+        protected readonly Player player;
 
         // ─ Movement Flags
         private bool isJumping = false;
@@ -150,10 +150,10 @@ namespace Assets.Scripts.Player
         private const int maxBufferSize = 1000;
         readonly InputActionAsset inputActionAsset;
 
-        public MovementSystem(MonoBehaviour mono, MovementSettings settings, InputActionAsset inputActionAsset)
+        public MovementSystem(Player player, MovementSettings settings, InputActionAsset inputActionAsset)
         {
+            this.player = player;
             this.settings = settings;
-            this.mono = mono;
             this.inputActionAsset = inputActionAsset; 
         }
 
@@ -165,8 +165,8 @@ namespace Assets.Scripts.Player
         {
             InputSystem.settings.maxEventBytesPerUpdate = 0;
 
-            rb = mono.GetComponent<Rigidbody>();
-            col = mono.GetComponent<Collider>();
+            rb = player.GetComponent<Rigidbody>();
+            col = player.GetComponent<Collider>();
 
             rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
             rb.interpolation = RigidbodyInterpolation.Interpolate;
@@ -202,7 +202,7 @@ namespace Assets.Scripts.Player
 
         public void Update()
         {
-            InputManager.UpdateInput();
+            // InputManager.UpdateInput();
             Vector2 stick = InputManager.LeftStickInput;
 
             Debug.Log($"Jump Pressed: {InputManager.SouthButtonPressed} | Released: {InputManager.SouthButtonReleased}");
@@ -267,7 +267,7 @@ namespace Assets.Scripts.Player
                 if (hasReachedTarget)
                 {
                     rb.linearDamping = 0;
-                    mono.StartCoroutine(FallDelay());
+                    player.StartCoroutine(FallDelay());
                     settings.movementState = MovementState.Descending;
                 }
             }
@@ -338,7 +338,7 @@ namespace Assets.Scripts.Player
                     break;
             }
 
-            InputManager.ResetFrameInputs();
+            // InputManager.ResetFrameInputs();
         }
 
         public void LateUpdate()
@@ -388,7 +388,7 @@ namespace Assets.Scripts.Player
 
             // }
 
-            mono.Invoke(nameof(ResetActionState), .1f);
+            player.Invoke(nameof(ResetActionState), .1f);
 
             if (settings.movementState == MovementState.WallDescending &&
                 settings.currentSurfaceState == SurfaceState.Ground && !hasBounced) { OnWallDescendingBounce(); }
@@ -398,8 +398,8 @@ namespace Assets.Scripts.Player
                 var contact = collision.contacts[0];
                 SnapToGround(contact.point);
                 surfaceContactTime = Time.time;
-                if (landingResetCoroutine != null) { mono.StopCoroutine(landingResetCoroutine); }
-                landingResetCoroutine = mono.StartCoroutine(DelayedLandingReset());
+                if (landingResetCoroutine != null) { player.StopCoroutine(landingResetCoroutine); }
+                landingResetCoroutine = player.StartCoroutine(DelayedLandingReset());
             }
         }
 
@@ -407,7 +407,7 @@ namespace Assets.Scripts.Player
         {
             if (landingResetCoroutine != null)
             {
-                mono.StopCoroutine(landingResetCoroutine);
+                player.StopCoroutine(landingResetCoroutine);
                 landingResetCoroutine = null;
             }
 
@@ -511,7 +511,7 @@ namespace Assets.Scripts.Player
 
             if (landingResetCoroutine != null)
             {
-                mono.StopCoroutine(landingResetCoroutine);
+                player.StopCoroutine(landingResetCoroutine);
                 landingResetCoroutine = null;
             }
 
@@ -543,7 +543,7 @@ namespace Assets.Scripts.Player
             float hold = HoldRatio;
             targetDistance = maxTravelDistance * hold;
             forceMagnitude = force * Mathf.Pow(hold, settings.forceCurveExponent);
-            predictedTargetPoint = mono.transform.position + (Vector3)snappedDir * targetDistance;
+            predictedTargetPoint = player.transform.position + (Vector3)snappedDir * targetDistance;
             hasAppliedForce = false;
             currentAction = action;
 
@@ -852,7 +852,7 @@ namespace Assets.Scripts.Player
             originalHoverPosition = rb.position;
             hasTriggeredHover = true;
 
-            mono.StartCoroutine(SmoothHoverTransition());
+            player.StartCoroutine(SmoothHoverTransition());
             WobbleEffect();
         }
 
@@ -948,14 +948,14 @@ namespace Assets.Scripts.Player
         {
             if (landingResetCoroutine != null)
             {
-                mono.StopCoroutine(landingResetCoroutine);
+                player.StopCoroutine(landingResetCoroutine);
                 landingResetCoroutine = null;
             }
 
             float burstStrength;
 
             if (settings.movementState == MovementState.Stucked && isStuckFrozen) { ExitStuckState(); }
-            if (settings.movementState == MovementState.Hovering) { ExitHover(); mono.StopAllCoroutines(); }
+            if (settings.movementState == MovementState.Hovering) { ExitHover(); player.StopAllCoroutines(); }
 
             if (settings.currentSurfaceState == SurfaceState.LeftWall ||
                 settings.currentSurfaceState == SurfaceState.RightWall) { burstStrength = initialGravityStrength * settings.wallDropMultiplier; }
@@ -1077,7 +1077,7 @@ namespace Assets.Scripts.Player
         private bool CheckSurfaces()
         {
             float radius = 0;
-            if (mono.TryGetComponent<Collider>(out var col))
+            if (player.TryGetComponent<Collider>(out var col))
             {
                 radius = col.bounds.extents.y + 0.1f;
             }
@@ -1432,9 +1432,9 @@ namespace Assets.Scripts.Player
                     float angle = i * angleStep;
                     float angleRad = angle * Mathf.Deg2Rad;
                     Vector3 dir = new(Mathf.Cos(angleRad), Mathf.Sin(angleRad), 0f);
-                    Vector3 endPt = mono.transform.position + dir * settings.directionLineLength;
+                    Vector3 endPt = player.transform.position + dir * settings.directionLineLength;
 
-                    Gizmos.DrawLine(mono.transform.position, endPt);
+                    Gizmos.DrawLine(player.transform.position, endPt);
 
     #if UNITY_EDITOR
 
@@ -1452,7 +1452,7 @@ namespace Assets.Scripts.Player
             {
                 if (rb == null)
                 {
-                    rb = mono.GetComponent<Rigidbody>();
+                    rb = player.GetComponent<Rigidbody>();
                     if (rb == null) return;
                 }
 
