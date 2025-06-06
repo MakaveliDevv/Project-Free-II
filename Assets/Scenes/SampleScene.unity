@@ -960,7 +960,7 @@ MonoBehaviour:
     checkDistance: 0
     surfaceLayer:
       serializedVersion: 2
-      m_Bits: 0
+      m_Bits: 512
     minStickHoldTime: 0.1
     minStickMagnitude: 0.2
     minButtonPressTime: 0.1
@@ -980,7 +980,7 @@ MonoBehaviour:
     useHandleActionForces: 1
     isMovingThreshold: 0.2
     forceCurveExponent: 1
-    allowAirDash: 1
+    allowAirDash: 0
     landingBuffer: 0.1
     fallTimer: 0.25
     useAutoHover: 1

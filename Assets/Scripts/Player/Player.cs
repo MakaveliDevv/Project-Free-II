@@ -2,16 +2,26 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-namespace Assets.MovementSystem.Scripts.Player
+namespace Assets.Scripts.Player
 {
     public enum MovementState { Idle, Charging, Jumping, WallJump, Hovering, Descending, Dashing, AirDashing, WallDashing, Stucked, WallDescending, NOTHING }
     public enum SurfaceState { Ground, LeftWall, RightWall, Ceiling, Air }
     public enum GravityDirection { Down, Up, Left, Right }
+    public enum Mode { Normal, AdvancedMovement, Attack }
 
+    [RequireComponent(typeof(Rigidbody))]
     public class Player : MonoBehaviour
     {
-        private MovementSystem movementSystem;
+        public InputActionAsset inputActionAsset;
+
+        // ─ Class References
         public MovementSettings movementSettings;
+        public CombatSettings combatSettings;
+        private MovementSystem movementSystem;
+        [HideInInspector] public CombatController combatController;
+
+        [HideInInspector] public Mode mode;
+
         private bool inRangeForInteractable = false;
         private bool inRangeForAttackable = false;
 
@@ -21,23 +31,24 @@ namespace Assets.MovementSystem.Scripts.Player
         private GameObject _interactable;
         private GameObject _attackable;
 
-        public InputActionAsset inputActionAsset;
         private InputAction dPadUp;
         private InputAction dPadRight;
 
         // ---------------------------------------
 
-        public enum Mode { Normal, AdvancedMovement, Attack }
-        public Mode mode;
-
         void Awake()
         {
-            SetupInputActions();
+            InputManager.Initialize(inputActionAsset, movementSettings.useRawInput, movementSettings.minStickMagnitude);
+
             movementSystem = new MovementSystem(this, movementSettings, inputActionAsset);
+            combatController = new CombatController(this, combatSettings);
+
             movementSystem.Awake();
             movementSettings.currentSurfaceState = SurfaceState.Ground;
 
             mode = Mode.Normal;
+
+            SetupInputActions();
         }
 
         void Start()
@@ -96,15 +107,16 @@ namespace Assets.MovementSystem.Scripts.Player
             }
         }
 
-        // void OnValidate()
-        // {
-        //     if (Application.isPlaying)
-        //         movementSystem.OnValidate();
-        // }
+        void OnValidate()
+        {
+            if (Application.isPlaying)
+                movementSystem.OnValidate();
+        }
 
         void Update()
         {
             movementSystem.Update();
+            combatController.Update();
 
             if (inRangeForInteractable && interactable.Count == 1)
             {
@@ -134,9 +146,19 @@ namespace Assets.MovementSystem.Scripts.Player
             movementSystem.OnCollisionExit(collision);
         }
 
+        void OnTriggerEnter(Collider collider)
+        {
+            combatController.OnTriggerEnter(collider);
+        }
+
+        void OnTriggerExit(Collider collider)
+        {
+            combatController.OnTriggerExit(collider);
+        }
+
         void OnDrawGizmos()
         {
-            if(Application.isPlaying)
+            if (Application.isPlaying)
                 movementSystem.OnDrawGizmos();
         }
 

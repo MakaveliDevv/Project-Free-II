@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Assets.Scripts.Player;
 using UnityEngine;
 
 public class Attackable : MonoBehaviour
@@ -40,7 +41,8 @@ public class Attackable : MonoBehaviour
     };
 
     private GameObject player;
-    private CombatController combatController;
+    private Player Player;
+    // private CombatController combatController;
 
     private int currentIndex = 0;
     private bool successTriggered = false;
@@ -51,7 +53,8 @@ public class Attackable : MonoBehaviour
         if (Application.isPlaying)
         {
             player = GameObject.FindGameObjectWithTag("Player");
-            combatController = player.GetComponent<CombatController>();
+            // combatController = player.GetComponent<CombatController>();
+            Player = player.GetComponent<Player>();
             rewardSystem = FindFirstObjectByType <RewardSystem>(); 
         }
     }
@@ -69,7 +72,7 @@ public class Attackable : MonoBehaviour
         {
             isPlayerInside = true;
 
-            if (combatController.attacked && combatController.success)
+            if (Player.combatController.attacked && Player.combatController.success)
             {
                 LatestHitResult = DetermineHitResult(currentIndex);
                 Debug.Log($"✅ {LatestHitResult} hit in collider {currentIndex + 1}");
@@ -80,8 +83,8 @@ public class Attackable : MonoBehaviour
 
                 DisableAllOtherColliders();
                 successTriggered = true;
-                combatController.attacked = false;
-                combatController.success = false;
+                Player.combatController.attacked = false;
+                Player.combatController.success = false;
             }
         }
         else if (isPlayerInside)

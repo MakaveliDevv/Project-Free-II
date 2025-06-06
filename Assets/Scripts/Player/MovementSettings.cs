@@ -1,8 +1,7 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
 
-namespace Assets.MovementSystem.Scripts.Player
-{ 
+namespace Assets.Scripts.Player
+{
     [System.Serializable]
     public class MovementSettings
     {
@@ -13,11 +12,6 @@ namespace Assets.MovementSystem.Scripts.Player
 
         [Tooltip("Surface the character is currently on")]
         public SurfaceState currentSurfaceState = SurfaceState.Ground;
-
-        // // ─ Input Settings
-        // [Header("Input Settings")]
-        // [Tooltip("Reference to the InputActionAsset defining stick and button actions")]
-        // public InputActionAsset inputActions;
 
         [Tooltip("If true, bypasses Unity’s smoothing to use raw input values from inputActions")]
         public bool useRawInput = true;
@@ -266,6 +260,17 @@ namespace Assets.MovementSystem.Scripts.Player
         [Header("Test")]
         public float fallTimer = .25f;
         public bool useAutoHover = false;
+    }
+
+    [System.Serializable]
+    public class CombatSettings
+    {
+        [Tooltip("How long after a swipe to wait before allowing the next one")]
+        public float centerResetDelay = 1f;
+        [Tooltip("How long staying at A without moving before cancelling swipe")]
+        public float startHoldDelay = 1f;
+        [Tooltip("Stick magnitude threshold")]
+        public float stickMagnitudeThresh = .9f;
     }
 }
 
