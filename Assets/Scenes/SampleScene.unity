@@ -714,7 +714,6 @@ GameObject:
   - component: {fileID: 206922473}
   - component: {fileID: 206922472}
   - component: {fileID: 206922478}
-  - component: {fileID: 206922479}
   m_Layer: 0
   m_Name: PlayerTest
   m_TagString: Player
@@ -904,6 +903,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9b70ef6cc127b7b498a643c64dc44775, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  inputActionAsset: {fileID: -944628639613478452, guid: 9740b7f8f03c4a749a2e93320c4985da, type: 3}
   movementSettings:
     movementState: 0
     currentSurfaceState: 0
@@ -984,26 +984,11 @@ MonoBehaviour:
     landingBuffer: 0.1
     fallTimer: 0.25
     useAutoHover: 1
-  inputActionAsset: {fileID: -944628639613478452, guid: 9740b7f8f03c4a749a2e93320c4985da, type: 3}
+  combatSettings:
+    centerResetDelay: 1
+    startHoldDelay: 1
+    stickMagnitudeThresh: 0.9
   mode: 0
---- !u!114 &206922479
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 206922466}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 728de430de5673e4c8caf1a8723de09e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  centerResetDelay: 1
-  startHoldDelay: 1
-  stickMagnitudeThresh: 0.9
-  inRangeForCombat: 0
-  attacked: 0
-  success: 0
 --- !u!1 &307926056
 GameObject:
   m_ObjectHideFlags: 0
@@ -4889,7 +4874,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1312641834398140923, guid: 4851d3fb74e56874a80e91498b0d827c, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4970832376575310420, guid: 4851d3fb74e56874a80e91498b0d827c, type: 3}
       propertyPath: m_LocalPosition.x
@@ -4933,7 +4918,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8921045934557653733, guid: 4851d3fb74e56874a80e91498b0d827c, type: 3}
       propertyPath: m_Enabled
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
