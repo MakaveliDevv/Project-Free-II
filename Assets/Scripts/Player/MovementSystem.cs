@@ -380,13 +380,9 @@ namespace Assets.Scripts.Player
         public void OnCollisionEnter(Collision collision)
         {
             HandleSurfaceState(collision, out _);
-            StopMovementUponCollision();
+            // StopMovementUponCollision();
 
-            // if (player.mode != Player.Mode.AdvancedMovement) { StopMovementUponCollision(); }
-            // else
-            // {
-
-            // }
+            if (player.mode != Mode.AdvancedMovement) { StopMovementUponCollision(); }
 
             player.Invoke(nameof(ResetActionState), .1f);
 
