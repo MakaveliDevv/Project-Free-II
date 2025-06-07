@@ -47,8 +47,8 @@ namespace Assets.Scripts.Player
         // ─────────────────────────────────────────────────────────────────────────
 
         // ─ Class References
-        protected readonly MovementSettings settings;
-        protected readonly Player player;
+        public readonly MovementSettings settings;
+        private readonly Player player;
 
         // ─ Movement Flags
         private bool isJumping = false;
@@ -62,14 +62,14 @@ namespace Assets.Scripts.Player
         private bool hasBurstDropped = false;
         private bool prevStickDownDrop = false;
         // private bool stateChanged = false;
-        private bool actionInProgress = false;
+        [HideInInspector] public bool actionInProgress = false;
         private bool hasTriggeredHover = false;
-        private bool hasAppliedForce = false;
+        [HideInInspector] public bool hasAppliedForce = false;
         private bool hasReachedTarget = false;
         private bool isMoving = false;
         private bool isStuckFrozen = false;
         private bool isLandingBuffered = false;
-        private bool hasBounced = false;
+        public bool hasBounced = false;
         private bool buttonPressedLongEnough = false;
 
         // ─ Timers & Counters
@@ -89,6 +89,8 @@ namespace Assets.Scripts.Player
         // ─ Physics & Gravity State
         private float initialGravityStrength = 0;
         private float wallDescendingGravityStrength = 0f;
+        private float initialBounciness = 0;
+
         private Vector3 ConvertToVector(GravityDirection dir)
         {
             return dir switch
@@ -106,7 +108,7 @@ namespace Assets.Scripts.Player
         private float forceMagnitude = 0f;
         private readonly float TravelEpsilon = .1f;
 
-        private readonly Dictionary<SurfaceState, string[]> allowedMoveLabels = new()
+        public readonly Dictionary<SurfaceState, string[]> allowedMoveLabels = new()
         {
             { SurfaceState.Ground, new[] { "W", "WNW", "NW", "NNW", "N", "NNE", "NE", "ENE", "E" } },
             { SurfaceState.Ceiling, new[] { "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W" } },
@@ -135,7 +137,7 @@ namespace Assets.Scripts.Player
         private const float surfaceMemoryDuration = 0.2f;
 
         // ─ Label Mapping
-        private Dictionary<string, float> labelToAngle;
+        public Dictionary<string, float> labelToAngle;
 
         // ─ Computed Properties
         private float HoldRatio => Mathf.Clamp01(buttonHoldTimer / settings.maxHoldTime);
@@ -163,22 +165,19 @@ namespace Assets.Scripts.Player
         #region UNITY LIFECYCLE
         public void Awake()
         {
-            InputSystem.settings.maxEventBytesPerUpdate = 0;
-
             rb = player.GetComponent<Rigidbody>();
             col = player.GetComponent<Collider>();
 
             rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
             rb.interpolation = RigidbodyInterpolation.Interpolate;
 
-            Debug.Log($"[MovementSystem.Awake] asset = {inputActionAsset.name}");
-            // InputManager.Initialize(inputActionAsset, settings.useRawInput, settings.minStickMagnitude);
             BuildLabelToAngleMap();
         }
 
         public void Start()
         {
             initialGravityStrength = settings.gravityStrength;
+            initialBounciness = col.material.bounciness;
         }
 
         public void OnValidate()
@@ -205,13 +204,13 @@ namespace Assets.Scripts.Player
             // InputManager.UpdateInput();
             Vector2 stick = InputManager.LeftStickInput;
 
-            Debug.Log($"Jump Pressed: {InputManager.SouthButtonPressed} | Released: {InputManager.SouthButtonReleased}");
+            // Debug.Log($"Jump Pressed: {InputManager.SouthButtonPressed} | Released: {InputManager.SouthButtonReleased}");
 
-            if (InputManager.SouthButtonPressed)
-                Debug.Log($"  [HoldTimer] = {buttonHoldTimer:F2} / {settings.minButtonPressTime}");
+            // if (InputManager.SouthButtonPressed)
+            //     Debug.Log($"  [HoldTimer] = {buttonHoldTimer:F2} / {settings.minButtonPressTime}");
 
             FetchActionType();
-            Debug.Log($"  [Fetch] curSurface = {settings.currentSurfaceState} | isInAir = {isInAir} | dirLabel = {GetClosestDirectionLabel(snappedDir)} | isJumpAllowed = {isJumpAllowed}");
+            // Debug.Log($"  [Fetch] curSurface = {settings.currentSurfaceState} | isInAir = {isInAir} | dirLabel = {GetClosestDirectionLabel(snappedDir)} | isJumpAllowed = {isJumpAllowed}");
 
 
             bool stickMoving = InputManager.HasStickMovement();
@@ -249,7 +248,7 @@ namespace Assets.Scripts.Player
             if (jumpHeld && buttonHoldTimer >= settings.minButtonPressTime && !buttonPressedLongEnough)
             {
                 buttonPressedLongEnough = true;
-                Debug.Log("✓ Button held long enough → charge initiated");
+                // Debug.Log("✓ Button held long enough → charge initiated");
 
                 if (settings.movementState != MovementState.Charging && stickMoving && allowedToMove)
                 {
@@ -316,27 +315,32 @@ namespace Assets.Scripts.Player
                 actionReady = true;
             }
 
+            if (settings.movementState == MovementState.Idle || settings.movementState == MovementState.Dashing || settings.movementState == MovementState.WallDescending) 
+                col.material.bounciness = initialBounciness;
+            else
+                col.material.bounciness = 0;
+
             switch (settings.movementState)
-            {
-                case MovementState.Idle:
-                    settings.currentSurfaceState = SurfaceState.Ground;
-                    hasTriggeredHover = false;
-                    break;
-                case MovementState.Descending:
-                    hasReachedTarget = false;
-                    actionInProgress = false;
-                    break;
-                case MovementState.WallDescending:
-                    actionInProgress = false;
-                    settings.gravityStrength = wallDescendingGravityStrength;
-                    break;
-                case MovementState.Hovering:
-                    isJumping = false;
-                    break;
-                case MovementState.Stucked:
-                    actionInProgress = false;
-                    break;
-            }
+                {
+                    case MovementState.Idle:
+                        settings.currentSurfaceState = SurfaceState.Ground;
+                        hasTriggeredHover = false;
+                        break;
+                    case MovementState.Descending:
+                        hasReachedTarget = false;
+                        actionInProgress = false;
+                        break;
+                    case MovementState.WallDescending:
+                        actionInProgress = false;
+                        settings.gravityStrength = wallDescendingGravityStrength;
+                        break;
+                    case MovementState.Hovering:
+                        isJumping = false;
+                        break;
+                    case MovementState.Stucked:
+                        actionInProgress = false;
+                        break;
+                }
 
             // InputManager.ResetFrameInputs();
         }
@@ -367,6 +371,7 @@ namespace Assets.Scripts.Player
             SmoothMovement();
 
             isMoving = rb.linearVelocity.sqrMagnitude > settings.isMovingThreshold;
+            Debug.Log($"IsMoving = {isMoving}");
 
             if ((settings.movementState == MovementState.Jumping ||
                 settings.movementState == MovementState.WallJump ||
@@ -810,7 +815,7 @@ namespace Assets.Scripts.Player
         {
             if (!isInAir || settings.movementState == MovementState.Hovering ||
                 hasTriggeredHover || isDropping || fastFalling) { return false; }
-
+                
             Vector3 toTarget = predictedTargetPoint - rb.position;
             float forwardDot = Vector3.Dot(rb.linearVelocity.normalized, toTarget.normalized);
             float distanceToTarget = toTarget.magnitude;
@@ -1218,7 +1223,7 @@ namespace Assets.Scripts.Player
             rb.linearVelocity = new Vector3(bounceDir.x * settings.bounceSpeed, 0f, 0f);
             hasBurstDropped = false;
             hasBounced = false;
-            // Debug.Log("Bounced from wall after descending");
+            Debug.Log("Bounced from wall after descending");
         }
 
 
@@ -1249,7 +1254,7 @@ namespace Assets.Scripts.Player
         /// Clears input-related flags and timers (southButtonPressed, buttonHoldTimer, stickHoldTimer, snappedDir).
         /// Used by OnSouthButtonCanceled to abort actions cleanly.
         /// </summary>
-        private void ResetActionState()
+        public void ResetActionState()
         {
             // southButtonPressed = false;
             buttonHoldTimer = 0;
@@ -1280,6 +1285,7 @@ namespace Assets.Scripts.Player
 
         private void ExitStuckState()
         {
+            Debug.Log("ExitStuckState stated...");
             stuckTimer = 0f;
             isStuckFrozen = false;
             rb.isKinematic = false;
@@ -1297,7 +1303,7 @@ namespace Assets.Scripts.Player
         /// optionally snapping to discrete increments based on directionCount.
         /// Used by LeftAnalogStickInput.
         /// </summary>
-        private Vector3 GetSnappedDirection(Vector2 input)
+        protected Vector3 GetSnappedDirection(Vector2 input)
         {
             if (input.sqrMagnitude < settings.minStickMagnitude) { return Vector3.zero; }
 

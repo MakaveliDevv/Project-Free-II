@@ -17,8 +17,7 @@ namespace Assets.Scripts.Player
         // ─ Class References
         public MovementSettings movementSettings;
         public CombatSettings combatSettings;
-        private MovementSystem movementSystem;
-        private AdvancedMovement advancedMovement;
+        private MovementSystemController movementController;
         [HideInInspector] public CombatController combatController;
 
         public Mode mode;
@@ -39,13 +38,13 @@ namespace Assets.Scripts.Player
 
         void Awake()
         {
+            InputSystem.settings.maxEventBytesPerUpdate = 0;
             InputManager.Initialize(inputActionAsset, movementSettings.useRawInput, movementSettings.minStickMagnitude);
 
-            movementSystem = new(this, movementSettings, inputActionAsset);
-            advancedMovement = new(this, movementSettings, inputActionAsset);
+            movementController = new(this, movementSettings, inputActionAsset);
             combatController = new(this, combatSettings);
 
-            movementSystem.Awake();
+            movementController?.Awake();
             movementSettings.currentSurfaceState = SurfaceState.Ground;
 
             mode = Mode.Normal;
@@ -55,7 +54,7 @@ namespace Assets.Scripts.Player
 
         void Start()
         {
-            movementSystem.Start();
+            movementController?.Start();
         }
 
         private void SetupInputActions()
@@ -114,19 +113,16 @@ namespace Assets.Scripts.Player
             if (!Application.isPlaying)
                 return;
 
-            // Only call OnValidate on movementSystem if it has already been constructed
-
-            movementSystem?.OnValidate();
+            movementController?.OnValidate();
         }
 
 
         void Update()
         {
             InputManager.UpdateInput();
-            
-            movementSystem.Update();
-            advancedMovement.Update();
-            combatController.Update();
+
+            movementController?.Update();
+            combatController?.Update();
 
             if (inRangeForInteractable && interactable.Count == 1)
             {
@@ -138,19 +134,19 @@ namespace Assets.Scripts.Player
             switch (mode)
             {
                 case Mode.Normal:
-                    advancedMovement.isAdvancedMovementActive = false;
+                    movementController.advancedMovement.isAdvancedMovementActive = false;
                     combatController.isCombatModeActive = false;
                     movementSettings.allowAirDash = false;
 
                     break;
                 case Mode.AdvancedMovement:
                     combatController.isCombatModeActive = false;
-                    advancedMovement.isAdvancedMovementActive = true;
+                    movementController.advancedMovement.isAdvancedMovementActive = true;
                     movementSettings.allowAirDash = true;
 
                     break;
                 case Mode.Combat:
-                    advancedMovement.isAdvancedMovementActive = false;
+                    movementController.advancedMovement.isAdvancedMovementActive = false;
                     movementSettings.allowAirDash = false;
                     combatController.isCombatModeActive = true;
 
@@ -165,38 +161,38 @@ namespace Assets.Scripts.Player
 
         void LateUpdate()
         {
-            movementSystem.LateUpdate();
+            movementController?.LateUpdate();
         }
 
         void FixedUpdate()
         {
-            movementSystem.FixedUpdate();
+            movementController?.FixedUpdate();
         }
 
         void OnCollisionEnter(Collision collision)
         {
-            movementSystem.OnCollisionEnter(collision);
+            movementController?.OnCollisionEnter(collision);
         }
 
         void OnCollisionExit(Collision collision)
         {
-            movementSystem.OnCollisionExit(collision);
+            movementController?.OnCollisionExit(collision);
         }
 
         void OnTriggerEnter(Collider collider)
         {
-            combatController.OnTriggerEnter(collider);
+            combatController?.OnTriggerEnter(collider);
         }
 
         void OnTriggerExit(Collider collider)
         {
-            combatController.OnTriggerExit(collider);
+            combatController?.OnTriggerExit(collider);
         }
 
         void OnDrawGizmos()
         {
             if (Application.isPlaying)
-                movementSystem.OnDrawGizmos();
+                movementController?.OnDrawGizmos();
         }
 
 

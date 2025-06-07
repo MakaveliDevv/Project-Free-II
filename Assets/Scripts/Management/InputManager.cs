@@ -98,8 +98,6 @@ public static class InputManager
             RightShoulderPressed = false;
             RightShoulderReleased = true;
         };
-
-        Debug.Log("Input initialization complete");
     }
 
     private static void Enable()
