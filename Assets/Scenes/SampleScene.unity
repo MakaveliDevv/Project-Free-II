@@ -930,7 +930,7 @@ MonoBehaviour:
     airDashForceMode: 1
     gravityStrength: 9.81
     useDynamicGravityStrenght: 1
-    wallGravityPercent: 10
+    wallGravityPercent: 100
     gravityDir: {x: 0, y: -1, z: 0}
     gravityDirectionGround: 0
     gravityDirectionCeiling: 0
@@ -984,6 +984,13 @@ MonoBehaviour:
     landingBuffer: 0.1
     fallTimer: 0.25
     useAutoHover: 1
+    dotThreshold: 0.5
+    WallAheadCheckDistance: 0.5
+    TargetWallProximityRadius: 1
+  advancedMovementSettings:
+    bounceDelay: 0.15
+    bounceForce: 10
+    postBounceCooldown: 0.25
   combatSettings:
     centerResetDelay: 1
     startHoldDelay: 1

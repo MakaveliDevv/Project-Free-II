@@ -4,7 +4,23 @@ using UnityEngine.InputSystem;
 
 namespace Assets.Scripts.Player
 {
-    public enum MovementState { Idle, Charging, Jumping, WallJump, Hovering, Descending, Dashing, AirDashing, WallDashing, Stucked, WallDescending, NOTHING }
+    public enum MovementState
+    {
+        Idle,
+        Charging,
+        Jumping,
+        WallJump,
+        Hovering,
+        Descending,
+        Dashing,
+        AirDashing,
+        WallDashing,
+        Stucked,
+        WallDescending,
+        Bouncing,
+        NOTHING
+    }
+
     public enum SurfaceState { Ground, LeftWall, RightWall, Ceiling, Air }
     public enum GravityDirection { Down, Up, Left, Right }
     public enum Mode { Normal, AdvancedMovement, Combat }
@@ -16,8 +32,9 @@ namespace Assets.Scripts.Player
 
         // ─ Class References
         public MovementSettings movementSettings;
+        public AdvancedMovementSettings advancedMovementSettings;
         public CombatSettings combatSettings;
-        private MovementSystemController movementController;
+        public MovementSystemController movementController;
         [HideInInspector] public CombatController combatController;
 
         public Mode mode;

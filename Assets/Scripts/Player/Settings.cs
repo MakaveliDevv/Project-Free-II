@@ -270,6 +270,14 @@ namespace Assets.Scripts.Player
     }
 
     [System.Serializable]
+    public class AdvancedMovementSettings
+    {
+        public float bounceDelay = 0.15f;
+        public float bounceForce = 10f;
+        public float postBounceCooldown = 0.25f; 
+    }
+
+    [System.Serializable]
     public class CombatSettings
     {
         [Tooltip("How long after a swipe to wait before allowing the next one")]

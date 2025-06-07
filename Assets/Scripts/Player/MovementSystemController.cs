@@ -4,7 +4,7 @@ namespace Assets.Scripts.Player
 {
     public class MovementSystemController
     {
-        private readonly MovementSystem movementSystem;
+        public readonly MovementSystem movementSystem;
         public AdvancedMovement advancedMovement;
 
         public MovementSystemController(Player player, MovementSettings settings, UnityEngine.InputSystem.InputActionAsset inputActionAsset)
@@ -53,6 +53,7 @@ namespace Assets.Scripts.Player
         public void OnCollisionExit(Collision collision)
         {
             movementSystem?.OnCollisionExit(collision);
+            // advancedMovement?.OnCollisionExit(collision);
         }
 
         public void OnDrawGizmos()
