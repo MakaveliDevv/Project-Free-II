@@ -260,6 +260,13 @@ namespace Assets.Scripts.Player
         [Header("Test")]
         public float fallTimer = .25f;
         public bool useAutoHover = false;
+        [Range(0f, 1f)]
+        public float dotThreshold = .5f;
+
+        // how far ahead to raycast for an immediate wall
+        public float WallAheadCheckDistance = 0.5f;
+        // how close the landing point can be to a wall before we skip hover
+        public float TargetWallProximityRadius = 1f;
     }
 
     [System.Serializable]
