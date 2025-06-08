@@ -18,6 +18,7 @@ namespace Assets.Scripts.Player
         WallDescending,
         Bouncing,
         Interacting,
+        Launching,
         Nothing
     }
 

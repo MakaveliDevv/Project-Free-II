@@ -367,7 +367,9 @@ namespace Assets.Scripts.Player
 
         public void LateUpdate()
         {
-            if (settings.enableZLock)
+            if (settings.enableZLock && 
+            settings.movementState != MovementState.Interacting &&
+            settings.movementState != MovementState.Launching)
             {
                 Vector3 pos = rb.position;
                 pos.z = 0;
