@@ -13,9 +13,14 @@ public class AnimationController : MonoBehaviour
     [SerializeField] private ParticleSystem jumpWParticlePrefab;
     [SerializeField] private ParticleSystem dashRParticlePrefab;
     [SerializeField] private ParticleSystem dashLParticlePrefab;
+    [SerializeField] private ParticleSystem stuckLParticlePrefab;
+    [SerializeField] private ParticleSystem stuckRParticlePrefab;
+    
 
     private bool hasPlayedJumpParticles = false;
     private bool hasPlayedDashParticles = false;
+    private bool hasPlayedStuckParticles = false;
+
 
     void Awake()
     {
@@ -197,7 +202,8 @@ public class AnimationController : MonoBehaviour
     private void HoverAnim()
     {
 
-        hasPlayedJumpParticles = true; // Mark as played
+        hasPlayedJumpParticles = false; // Mark as played
+        hasPlayedStuckParticles = false;
 
         Debug.Log("Invoke hover anim");
         animator.SetBool("Idle", false);
@@ -264,6 +270,22 @@ public class AnimationController : MonoBehaviour
 
     private void StuckedAnim()
     {
+        hasPlayedJumpParticles = false;
+
+         if (!hasPlayedStuckParticles)
+        {
+            Debug.Log("Invoke jump straight anim");
+
+            // Spawn and play a temporary particle system at current position
+            ParticleSystem newParticles = Instantiate(stuckRParticlePrefab, transform.position, Quaternion.identity);
+            newParticles.Play();
+
+            float totalDuration = newParticles.main.duration + newParticles.main.startLifetime.constantMax;
+            Destroy(newParticles.gameObject, totalDuration);
+
+            hasPlayedStuckParticles = true; // Mark as played
+        }
+
         Debug.Log("Invoke stucked anim");
         animator.SetBool("Idle", false);
         animator.SetBool("Charge", false);
@@ -425,6 +447,21 @@ public class AnimationController : MonoBehaviour
     // Right wall
     private void RightWallJumpAscendAnim() // RIGHT WALL JUMP ASCEND
     {
+            if (!hasPlayedJumpParticles)
+        {
+            Debug.Log("Invoke jump straight anim");
+
+            // Spawn and play a temporary particle system at current position
+            ParticleSystem newParticles = Instantiate(jumpEParticlePrefab, transform.position, Quaternion.identity);
+            newParticles.Play();
+
+            float totalDuration = newParticles.main.duration + newParticles.main.startLifetime.constantMax;
+            Destroy(newParticles.gameObject, totalDuration);
+
+            hasPlayedJumpParticles = true; // Mark as played
+        }
+
+
         Debug.Log("Invoke right wall jump ascend anim");
         animator.SetBool("Idle", false);
         animator.SetBool("Charge", false);
@@ -446,6 +483,21 @@ public class AnimationController : MonoBehaviour
 
     private void RightWallJumpDescendAnim() // RIGHT WALL JUMP DESCEND
     {
+
+        if (!hasPlayedJumpParticles)
+        {
+            Debug.Log("Invoke jump straight anim");
+
+            // Spawn and play a temporary particle system at current position
+            ParticleSystem newParticles = Instantiate(jumpEParticlePrefab, transform.position, Quaternion.identity);
+            newParticles.Play();
+
+            float totalDuration = newParticles.main.duration + newParticles.main.startLifetime.constantMax;
+            Destroy(newParticles.gameObject, totalDuration);
+
+            hasPlayedJumpParticles = true; // Mark as played
+        }
+
         Debug.Log("Invoke right wall jump descend anim");
         animator.SetBool("Idle", false);
         animator.SetBool("Charge", false);
@@ -469,6 +521,21 @@ public class AnimationController : MonoBehaviour
 
     private void RightWallJumpHorizontal() // RIGHT WALL JUMP HORIZONTAL
     {
+
+        if (!hasPlayedJumpParticles)
+        {
+            Debug.Log("Invoke jump straight anim");
+
+            // Spawn and play a temporary particle system at current position
+            ParticleSystem newParticles = Instantiate(jumpEParticlePrefab, transform.position, Quaternion.identity);
+            newParticles.Play();
+
+            float totalDuration = newParticles.main.duration + newParticles.main.startLifetime.constantMax;
+            Destroy(newParticles.gameObject, totalDuration);
+
+            hasPlayedJumpParticles = true; // Mark as played
+        }
+
         Debug.Log("Invoke wall jump horizontal <--");
             animator.SetBool("Idle", false);
             animator.SetBool("Charge", false);
@@ -489,6 +556,20 @@ public class AnimationController : MonoBehaviour
     // Left wall
     private void LeftWallJumpAscendAnim() // LEFT WALL JUMP ASCEND
     {
+            if (!hasPlayedJumpParticles)
+        {
+            Debug.Log("Invoke jump straight anim");
+
+            // Spawn and play a temporary particle system at current position
+            ParticleSystem newParticles = Instantiate(jumpWParticlePrefab, transform.position, Quaternion.identity);
+            newParticles.Play();
+
+            float totalDuration = newParticles.main.duration + newParticles.main.startLifetime.constantMax;
+            Destroy(newParticles.gameObject, totalDuration);
+
+            hasPlayedJumpParticles = true; // Mark as played
+        }
+
         Debug.Log("Invoke left wall jump ascend anim");
                         animator.SetBool("Idle", false);
             animator.SetBool("Charge", false);
@@ -515,6 +596,20 @@ public class AnimationController : MonoBehaviour
     private void LeftWallJumpDescendAnim() // LEFT WASLL JUMP DESCEND
     {
         Debug.Log("Invoke left wall jump descend anim");
+            if (!hasPlayedJumpParticles)
+        {
+            Debug.Log("Invoke jump straight anim");
+
+            // Spawn and play a temporary particle system at current position
+            ParticleSystem newParticles = Instantiate(jumpWParticlePrefab, transform.position, Quaternion.identity);
+            newParticles.Play();
+
+            float totalDuration = newParticles.main.duration + newParticles.main.startLifetime.constantMax;
+            Destroy(newParticles.gameObject, totalDuration);
+
+            hasPlayedJumpParticles = true; // Mark as played
+        }
+
             
              animator.SetBool("Idle", false);
             animator.SetBool("Charge", false);
@@ -540,6 +635,20 @@ public class AnimationController : MonoBehaviour
 
     private void LeftWallJumpHorizontal() // LEFT WALL JUMP HORIZONTAL
     {
+            if (!hasPlayedJumpParticles)
+        {
+            Debug.Log("Invoke jump straight anim");
+
+            // Spawn and play a temporary particle system at current position
+            ParticleSystem newParticles = Instantiate(jumpWParticlePrefab, transform.position, Quaternion.identity);
+            newParticles.Play();
+
+            float totalDuration = newParticles.main.duration + newParticles.main.startLifetime.constantMax;
+            Destroy(newParticles.gameObject, totalDuration);
+
+            hasPlayedJumpParticles = true; // Mark as played
+        }
+
         Debug.Log("Invoke left wall jump horizontal -->");
             animator.SetBool("Idle", false);
             animator.SetBool("Charge", false);
