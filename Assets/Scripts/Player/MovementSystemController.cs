@@ -53,7 +53,6 @@ namespace Assets.Scripts.Player
         public void OnCollisionExit(Collision collision)
         {
             movementSystem?.OnCollisionExit(collision);
-            // advancedMovement?.OnCollisionExit(collision);
         }
 
         public void OnDrawGizmos()

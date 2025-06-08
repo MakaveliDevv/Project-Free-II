@@ -200,7 +200,7 @@ namespace Assets.Scripts.Player
 
         private IEnumerator FallDelay()
         {
-            settings.movementState = MovementState.NOTHING;
+            settings.movementState = MovementState.Nothing;
 
             yield return new WaitForSeconds(settings.fallTimer);
 
@@ -872,7 +872,7 @@ namespace Assets.Scripts.Player
 
             if (!(isCloseEnough || isInForgivenessZone)) { return false; }
 
-            // hasReachedTarget = true;
+            Hover();
 
             if (Gamepad.current.buttonWest.IsPressed() && !settings.useAutoHover)
             {
@@ -1073,6 +1073,12 @@ namespace Assets.Scripts.Player
         /// </summary>
         private void HandleSurfaceState(Collision collision, out GameObject surfaceObject)
         {
+            if (!collision.gameObject.CompareTag("Surface"))
+            {
+                surfaceObject = null;
+                return;
+            }
+
             surfaceObject = null;
             int targetLayer = LayerMask.NameToLayer("Surface");
             if (collision.transform.gameObject.layer != targetLayer) return;

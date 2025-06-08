@@ -10,23 +10,20 @@ public static class InputManager
     public static Vector2 LeftStickInput { get; private set; }
     public static Vector2 RightStickInput { get; private set; }
 
+    // Test purposes
+    private static InputAction dPadUp;
+
     public static bool SouthButtonPressed { get; private set; }
     public static bool SouthButtonReleased { get; private set; }
 
     public static bool LeftShoulderPressed { get; set; }
     public static bool LeftShoulderReleased { get; private set; }
-    /// <summary>
-    /// This becomes true on the single frame where the left-shoulder button was pressed twice within the threshold.
-    /// Clear it each frame using ResetFrameInputs().
-    /// </summary>
+
     public static bool LeftShoulderDoublePressed { get; private set; }
 
     public static bool RightShoulderPressed { get; set; }
     public static bool RightShoulderReleased { get; private set; }
-    /// <summary>
-    /// This becomes true on the single frame where the right-shoulder button was pressed twice within the threshold.
-    /// Clear it each frame using ResetFrameInputs().
-    /// </summary>
+
     public static bool RightShoulderDoublePressed { get; private set; }
 
     public static int leftShoulderPressCount;
@@ -34,22 +31,14 @@ public static class InputManager
     private static bool useRawInput;
     private static float minStickMagnitude;
 
-    // --- Double-press tracking: ---
-    /// <summary>
-    /// How many seconds apart the two presses can be and still count as a “double-press.”
-    /// </summary>
+
     private static readonly float shoulderDoublePressThreshold = 0.3f;
 
-    /// <summary>
-    /// Time.time of the last left-shoulder *started* event.
-    /// </summary>
-    private static float lastLeftShoulderPressTime = -Mathf.Infinity;
 
-    /// <summary>
-    /// Time.time of the last right-shoulder *started* event.
-    /// </summary>
+    private static float lastLeftShoulderPressTime = -Mathf.Infinity;
     private static float lastRightShoulderPressTime = -Mathf.Infinity;
-    // -------------------------------
+
+    public static bool useAutoHover = false;
 
     public static void Initialize(InputActionAsset inputAsset, bool rawInput, float stickThreshold)
     {
@@ -57,11 +46,15 @@ public static class InputManager
         minStickMagnitude = stickThreshold;
 
         var map = inputAsset.FindActionMap("Player");
+        var map2 = inputAsset.FindActionMap("ToggleMechanics");
+
         leftStick = map.FindAction("DirCalculation");
         rightStick = map.FindAction("SwipeCalculation");
         southButton = map.FindAction("MovementTrigger");
         leftShoulder = map.FindAction("AdvancedMovementMode");
         rightShoulder = map.FindAction("CombatMode");
+
+        dPadUp = map2.FindAction("ToggleAutoHover");
 
         Enable();
 
@@ -73,7 +66,7 @@ public static class InputManager
             SouthButtonReleased = true;
         };
 
-        // Left shoulder: invoke generic CheckDoublePress for left-shoulder
+        // Left shoulder
         leftShoulder.started += ctx =>
         {
             LeftShoulderPressed = true;
@@ -86,7 +79,7 @@ public static class InputManager
             LeftShoulderReleased = true;
         };
 
-        // Right shoulder: invoke generic CheckDoublePress for right-shoulder
+        // Right shoulder
         rightShoulder.started += ctx =>
         {
             RightShoulderPressed = true;
@@ -98,6 +91,19 @@ public static class InputManager
             RightShoulderPressed = false;
             RightShoulderReleased = true;
         };
+
+        // Dpad Up
+        dPadUp.started += ctx =>
+        {
+            useAutoHover = !useAutoHover;
+            Debug.Log("Toggle autoHover");
+        }; 
+
+        dPadUp.started -= ctx =>
+        {
+            useAutoHover = !useAutoHover;
+            Debug.Log("Toggle autoHover");
+        };
     }
 
     private static void Enable()
@@ -107,6 +113,7 @@ public static class InputManager
         rightStick?.Enable();
         rightShoulder?.Enable();
         leftShoulder?.Enable();
+        dPadUp?.Enable();
     }
 
     public static void UpdateInput()
@@ -124,12 +131,6 @@ public static class InputManager
     }
 
     public static bool HasStickMovement() => LeftStickInput.magnitude > minStickMagnitude;
-
-    /// <summary>
-    /// Call this once per frame (e.g. at the end of your Update) to clear
-    /// any “released” flags and also clear any double-press flags so they only remain true
-    /// on the single frame that the double‐press was detected.
-    /// </summary>
     public static void ResetFrameInputs()
     {
         SouthButtonReleased = false;
@@ -140,14 +141,6 @@ public static class InputManager
         RightShoulderDoublePressed = false;
     }
 
-    // ================================================================
-    // Generic double-press helper:
-    // ================================================================
-    /// <summary>
-    /// If the current tap occurs within thresholdSecs of lastPressTime, this returns true
-    /// (indicating a double-press), and resets lastPressTime. Otherwise, it updates
-    /// lastPressTime to now and returns false.
-    /// </summary>
     private static bool CheckDoublePress(ref float lastPressTime, float thresholdSecs)
     {
         float now = Time.time;
@@ -164,5 +157,13 @@ public static class InputManager
             return false;
         }
     }
-    // ================================================================
+    
+    // private static void ToggleAutoHover(InputAction.CallbackContext ctx)
+    // {
+    //     if (ctx.started)
+    //     {
+    //         Debug.Log("Toggle Auto Hover");
+    //         useAutoHover = !useAutoHover;
+    //     }
+    // }
 }
