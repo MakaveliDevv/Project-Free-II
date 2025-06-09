@@ -6,7 +6,7 @@
             "id": "c2881882-af0d-48cb-8a39-f2eefe9b9ebc",
             "actions": [
                 {
-                    "name": "Jump",
+                    "name": "MovementTrigger",
                     "type": "Button",
                     "id": "a032fde9-8cbe-4006-ae84-b67cca55b8ea",
                     "expectedControlType": "",
@@ -15,7 +15,7 @@
                     "initialStateCheck": false
                 },
                 {
-                    "name": "Movement",
+                    "name": "DirCalculation",
                     "type": "Value",
                     "id": "35767c20-166a-415b-af9a-ec6262e27067",
                     "expectedControlType": "",
@@ -24,18 +24,18 @@
                     "initialStateCheck": true
                 },
                 {
-                    "name": "OnPause",
+                    "name": "AdvancedMovementMode",
                     "type": "Button",
-                    "id": "129e45d5-8ec5-4ea8-8538-fb086bcd2eeb",
+                    "id": "8ce40233-896f-4481-b1cf-c58b36c43d05",
                     "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
                 },
                 {
-                    "name": "SnapAction",
+                    "name": "CombatMode",
                     "type": "Button",
-                    "id": "5a1434da-b06c-44ec-bb3a-0a7ac309dffa",
+                    "id": "9f6e0a0b-02fd-433b-bd0d-05f41bce439d",
                     "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
@@ -50,7 +50,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Jump",
+                    "action": "MovementTrigger",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
@@ -61,7 +61,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Movement",
+                    "action": "DirCalculation",
                     "isComposite": true,
                     "isPartOfComposite": false
                 },
@@ -72,7 +72,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Movement",
+                    "action": "DirCalculation",
                     "isComposite": false,
                     "isPartOfComposite": true
                 },
@@ -83,7 +83,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Movement",
+                    "action": "DirCalculation",
                     "isComposite": false,
                     "isPartOfComposite": true
                 },
@@ -94,7 +94,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Movement",
+                    "action": "DirCalculation",
                     "isComposite": false,
                     "isPartOfComposite": true
                 },
@@ -105,29 +105,29 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Movement",
+                    "action": "DirCalculation",
                     "isComposite": false,
                     "isPartOfComposite": true
                 },
                 {
                     "name": "",
-                    "id": "04c4dceb-0301-44ad-acb6-9f16635ea240",
-                    "path": "<Gamepad>/select",
+                    "id": "aad87169-67b8-4d9f-b746-10096b519430",
+                    "path": "<Gamepad>/leftShoulder",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "OnPause",
+                    "action": "AdvancedMovementMode",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
                 {
                     "name": "",
-                    "id": "05e64f0a-0850-4824-a046-0f287433e512",
-                    "path": "<Gamepad>/buttonNorth",
+                    "id": "3b557441-f1c9-405b-9a91-c03aea03bdc1",
+                    "path": "<Gamepad>/rightShoulder",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "SnapAction",
+                    "action": "CombatMode",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

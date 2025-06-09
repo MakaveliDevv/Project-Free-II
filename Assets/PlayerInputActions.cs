@@ -92,7 +92,7 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
             ""id"": ""c2881882-af0d-48cb-8a39-f2eefe9b9ebc"",
             ""actions"": [
                 {
-                    ""name"": ""Jump"",
+                    ""name"": ""MovementTrigger"",
                     ""type"": ""Button"",
                     ""id"": ""a032fde9-8cbe-4006-ae84-b67cca55b8ea"",
                     ""expectedControlType"": """",
@@ -101,7 +101,7 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
                     ""initialStateCheck"": false
                 },
                 {
-                    ""name"": ""Movement"",
+                    ""name"": ""DirCalculation"",
                     ""type"": ""Value"",
                     ""id"": ""35767c20-166a-415b-af9a-ec6262e27067"",
                     ""expectedControlType"": """",
@@ -110,18 +110,18 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
                     ""initialStateCheck"": true
                 },
                 {
-                    ""name"": ""OnPause"",
+                    ""name"": ""AdvancedMovementMode"",
                     ""type"": ""Button"",
-                    ""id"": ""129e45d5-8ec5-4ea8-8538-fb086bcd2eeb"",
+                    ""id"": ""8ce40233-896f-4481-b1cf-c58b36c43d05"",
                     ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
                 },
                 {
-                    ""name"": ""SnapAction"",
+                    ""name"": ""CombatMode"",
                     ""type"": ""Button"",
-                    ""id"": ""5a1434da-b06c-44ec-bb3a-0a7ac309dffa"",
+                    ""id"": ""9f6e0a0b-02fd-433b-bd0d-05f41bce439d"",
                     ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
@@ -136,7 +136,7 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
-                    ""action"": ""Jump"",
+                    ""action"": ""MovementTrigger"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
@@ -147,7 +147,7 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
-                    ""action"": ""Movement"",
+                    ""action"": ""DirCalculation"",
                     ""isComposite"": true,
                     ""isPartOfComposite"": false
                 },
@@ -158,7 +158,7 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
-                    ""action"": ""Movement"",
+                    ""action"": ""DirCalculation"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
                 },
@@ -169,7 +169,7 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
-                    ""action"": ""Movement"",
+                    ""action"": ""DirCalculation"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
                 },
@@ -180,7 +180,7 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
-                    ""action"": ""Movement"",
+                    ""action"": ""DirCalculation"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
                 },
@@ -191,29 +191,29 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
-                    ""action"": ""Movement"",
+                    ""action"": ""DirCalculation"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
                 },
                 {
                     ""name"": """",
-                    ""id"": ""04c4dceb-0301-44ad-acb6-9f16635ea240"",
-                    ""path"": ""<Gamepad>/select"",
+                    ""id"": ""aad87169-67b8-4d9f-b746-10096b519430"",
+                    ""path"": ""<Gamepad>/leftShoulder"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
-                    ""action"": ""OnPause"",
+                    ""action"": ""AdvancedMovementMode"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
                 {
                     ""name"": """",
-                    ""id"": ""05e64f0a-0850-4824-a046-0f287433e512"",
-                    ""path"": ""<Gamepad>/buttonNorth"",
+                    ""id"": ""3b557441-f1c9-405b-9a91-c03aea03bdc1"",
+                    ""path"": ""<Gamepad>/rightShoulder"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
-                    ""action"": ""SnapAction"",
+                    ""action"": ""CombatMode"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -272,10 +272,10 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
 }");
         // Player
         m_Player = asset.FindActionMap("Player", throwIfNotFound: true);
-        m_Player_Jump = m_Player.FindAction("Jump", throwIfNotFound: true);
-        m_Player_Movement = m_Player.FindAction("Movement", throwIfNotFound: true);
-        m_Player_OnPause = m_Player.FindAction("OnPause", throwIfNotFound: true);
-        m_Player_SnapAction = m_Player.FindAction("SnapAction", throwIfNotFound: true);
+        m_Player_MovementTrigger = m_Player.FindAction("MovementTrigger", throwIfNotFound: true);
+        m_Player_DirCalculation = m_Player.FindAction("DirCalculation", throwIfNotFound: true);
+        m_Player_AdvancedMovementMode = m_Player.FindAction("AdvancedMovementMode", throwIfNotFound: true);
+        m_Player_CombatMode = m_Player.FindAction("CombatMode", throwIfNotFound: true);
         // ToggleMechanics
         m_ToggleMechanics = asset.FindActionMap("ToggleMechanics", throwIfNotFound: true);
         m_ToggleMechanics_ToggleAutoHover = m_ToggleMechanics.FindAction("ToggleAutoHover", throwIfNotFound: true);
@@ -361,10 +361,10 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
     // Player
     private readonly InputActionMap m_Player;
     private List<IPlayerActions> m_PlayerActionsCallbackInterfaces = new List<IPlayerActions>();
-    private readonly InputAction m_Player_Jump;
-    private readonly InputAction m_Player_Movement;
-    private readonly InputAction m_Player_OnPause;
-    private readonly InputAction m_Player_SnapAction;
+    private readonly InputAction m_Player_MovementTrigger;
+    private readonly InputAction m_Player_DirCalculation;
+    private readonly InputAction m_Player_AdvancedMovementMode;
+    private readonly InputAction m_Player_CombatMode;
     /// <summary>
     /// Provides access to input actions defined in input action map "Player".
     /// </summary>
@@ -377,21 +377,21 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
         /// </summary>
         public PlayerActions(@PlayerInputActions wrapper) { m_Wrapper = wrapper; }
         /// <summary>
-        /// Provides access to the underlying input action "Player/Jump".
+        /// Provides access to the underlying input action "Player/MovementTrigger".
         /// </summary>
-        public InputAction @Jump => m_Wrapper.m_Player_Jump;
+        public InputAction @MovementTrigger => m_Wrapper.m_Player_MovementTrigger;
         /// <summary>
-        /// Provides access to the underlying input action "Player/Movement".
+        /// Provides access to the underlying input action "Player/DirCalculation".
         /// </summary>
-        public InputAction @Movement => m_Wrapper.m_Player_Movement;
+        public InputAction @DirCalculation => m_Wrapper.m_Player_DirCalculation;
         /// <summary>
-        /// Provides access to the underlying input action "Player/OnPause".
+        /// Provides access to the underlying input action "Player/AdvancedMovementMode".
         /// </summary>
-        public InputAction @OnPause => m_Wrapper.m_Player_OnPause;
+        public InputAction @AdvancedMovementMode => m_Wrapper.m_Player_AdvancedMovementMode;
         /// <summary>
-        /// Provides access to the underlying input action "Player/SnapAction".
+        /// Provides access to the underlying input action "Player/CombatMode".
         /// </summary>
-        public InputAction @SnapAction => m_Wrapper.m_Player_SnapAction;
+        public InputAction @CombatMode => m_Wrapper.m_Player_CombatMode;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
@@ -418,18 +418,18 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
         {
             if (instance == null || m_Wrapper.m_PlayerActionsCallbackInterfaces.Contains(instance)) return;
             m_Wrapper.m_PlayerActionsCallbackInterfaces.Add(instance);
-            @Jump.started += instance.OnJump;
-            @Jump.performed += instance.OnJump;
-            @Jump.canceled += instance.OnJump;
-            @Movement.started += instance.OnMovement;
-            @Movement.performed += instance.OnMovement;
-            @Movement.canceled += instance.OnMovement;
-            @OnPause.started += instance.OnOnPause;
-            @OnPause.performed += instance.OnOnPause;
-            @OnPause.canceled += instance.OnOnPause;
-            @SnapAction.started += instance.OnSnapAction;
-            @SnapAction.performed += instance.OnSnapAction;
-            @SnapAction.canceled += instance.OnSnapAction;
+            @MovementTrigger.started += instance.OnMovementTrigger;
+            @MovementTrigger.performed += instance.OnMovementTrigger;
+            @MovementTrigger.canceled += instance.OnMovementTrigger;
+            @DirCalculation.started += instance.OnDirCalculation;
+            @DirCalculation.performed += instance.OnDirCalculation;
+            @DirCalculation.canceled += instance.OnDirCalculation;
+            @AdvancedMovementMode.started += instance.OnAdvancedMovementMode;
+            @AdvancedMovementMode.performed += instance.OnAdvancedMovementMode;
+            @AdvancedMovementMode.canceled += instance.OnAdvancedMovementMode;
+            @CombatMode.started += instance.OnCombatMode;
+            @CombatMode.performed += instance.OnCombatMode;
+            @CombatMode.canceled += instance.OnCombatMode;
         }
 
         /// <summary>
@@ -441,18 +441,18 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
         /// <seealso cref="PlayerActions" />
         private void UnregisterCallbacks(IPlayerActions instance)
         {
-            @Jump.started -= instance.OnJump;
-            @Jump.performed -= instance.OnJump;
-            @Jump.canceled -= instance.OnJump;
-            @Movement.started -= instance.OnMovement;
-            @Movement.performed -= instance.OnMovement;
-            @Movement.canceled -= instance.OnMovement;
-            @OnPause.started -= instance.OnOnPause;
-            @OnPause.performed -= instance.OnOnPause;
-            @OnPause.canceled -= instance.OnOnPause;
-            @SnapAction.started -= instance.OnSnapAction;
-            @SnapAction.performed -= instance.OnSnapAction;
-            @SnapAction.canceled -= instance.OnSnapAction;
+            @MovementTrigger.started -= instance.OnMovementTrigger;
+            @MovementTrigger.performed -= instance.OnMovementTrigger;
+            @MovementTrigger.canceled -= instance.OnMovementTrigger;
+            @DirCalculation.started -= instance.OnDirCalculation;
+            @DirCalculation.performed -= instance.OnDirCalculation;
+            @DirCalculation.canceled -= instance.OnDirCalculation;
+            @AdvancedMovementMode.started -= instance.OnAdvancedMovementMode;
+            @AdvancedMovementMode.performed -= instance.OnAdvancedMovementMode;
+            @AdvancedMovementMode.canceled -= instance.OnAdvancedMovementMode;
+            @CombatMode.started -= instance.OnCombatMode;
+            @CombatMode.performed -= instance.OnCombatMode;
+            @CombatMode.canceled -= instance.OnCombatMode;
         }
 
         /// <summary>
@@ -601,33 +601,33 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
     public interface IPlayerActions
     {
         /// <summary>
-        /// Method invoked when associated input action "Jump" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// Method invoked when associated input action "MovementTrigger" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
         /// </summary>
         /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
-        void OnJump(InputAction.CallbackContext context);
+        void OnMovementTrigger(InputAction.CallbackContext context);
         /// <summary>
-        /// Method invoked when associated input action "Movement" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// Method invoked when associated input action "DirCalculation" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
         /// </summary>
         /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
-        void OnMovement(InputAction.CallbackContext context);
+        void OnDirCalculation(InputAction.CallbackContext context);
         /// <summary>
-        /// Method invoked when associated input action "OnPause" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// Method invoked when associated input action "AdvancedMovementMode" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
         /// </summary>
         /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
-        void OnOnPause(InputAction.CallbackContext context);
+        void OnAdvancedMovementMode(InputAction.CallbackContext context);
         /// <summary>
-        /// Method invoked when associated input action "SnapAction" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// Method invoked when associated input action "CombatMode" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
         /// </summary>
         /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
-        void OnSnapAction(InputAction.CallbackContext context);
+        void OnCombatMode(InputAction.CallbackContext context);
     }
     /// <summary>
     /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "ToggleMechanics" which allows adding and removing callbacks.

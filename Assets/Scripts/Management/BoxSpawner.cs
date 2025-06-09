@@ -40,21 +40,3 @@ public class BoxSpawner : MonoBehaviour
     }
 }
 
-
-/// <summary>
-/// Moves its GameObject toward negative Z, destroys once past the player.
-/// </summary>
-public class BoxMover : MonoBehaviour
-{
-    [HideInInspector] public float speed = 5f;
-
-    void Update()
-    {
-        transform.Translate(speed * Time.deltaTime * Vector3.back, Space.World);
-
-        // destroy once behind camera/player
-        if (transform.position.z < -20f)
-            Destroy(gameObject);
-    }
-}
-

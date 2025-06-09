@@ -1,24 +1,34 @@
 using System.Collections.Generic;
+using Assets.Scripts.Player;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 public class Attackable : MonoBehaviour
 {
+    private RewardSystem rewardSystem;
+
+    // === Public Enums ===
     public enum AttackDirection
     {
-        TopToBottom,           // ↓
-        BottomToTop,           // ↑
-        LeftToRight,           // →
-        RightToLeft,           // ←
-        BottomLeftToTopRight,  // ↗
-        TopRightToBottomLeft,  // ↙
-        BottomRightToTopLeft,  // ↖
-        TopLeftToBottomRight   // ↘
+        TopToBottom, BottomToTop, LeftToRight, RightToLeft,
+        BottomLeftToTopRight, TopRightToBottomLeft, BottomRightToTopLeft, TopLeftToBottomRight
     }
-    public AttackDirection attackDirection;
 
-    // map "startLabel-endLabel" → enum
-    private readonly Dictionary<string, AttackDirection> directions = new()
+    public enum HitResult
+    {
+        None, Early, Good, Perfect, Late
+    }
+
+    // === Public Variables ===
+    public AttackDirection attackDirection;
+    public Vector3 colSize = new(1, 1, 1);
+    public Vector3 colOffset = Vector3.zero;
+    public HitResult LatestHitResult { get; private set; } = HitResult.None;
+
+    // === Serialized Private Variables ===
+    [SerializeField] private List<BoxCollider> colliders = new();
+
+    // === Private Variables ===
+    public readonly Dictionary<string, AttackDirection> directions = new()
     {
         { "N-S", AttackDirection.TopToBottom },
         { "S-N", AttackDirection.BottomToTop },
@@ -30,78 +40,99 @@ public class Attackable : MonoBehaviour
         { "NW-SE", AttackDirection.TopLeftToBottomRight },
     };
 
-    [Tooltip("Drag in your player’s MovementSystem here so we can reuse its snapping logic")]
-    [SerializeField] private MovementSystem movementSystem;
+    private GameObject player;
+    private Player Player;
+    // private CombatController combatController;
 
-    // attack‐tracking state
-    private bool  isTrackingAttack = false;
-    private string startLabel;
-    private string endLabel;
+    private int currentIndex = 0;
+    private bool successTriggered = false;
+    private bool isPlayerInside = false;
+
+    void Awake()
+    {
+        if (Application.isPlaying)
+        {
+            player = GameObject.FindGameObjectWithTag("Player");
+            // combatController = player.GetComponent<CombatController>();
+            Player = player.GetComponent<Player>();
+            rewardSystem = FindFirstObjectByType <RewardSystem>(); 
+        }
+    }
 
     void Update()
     {
-        // 1) read raw stick
-        Vector2 stick = Gamepad.current?.rightStick.ReadUnprocessedValue() ?? Vector2.zero;
-        bool  tilted = stick.magnitude > movementSystem.minStickMagnitude;
+        if (!Application.isPlaying || successTriggered || currentIndex >= colliders.Count || player == null)
+            return;
 
-        // 2) if not yet tracking, wait for first tilt → that’s your start
-        if (!isTrackingAttack)
+        var activeCollider = colliders[currentIndex];
+
+        if (!activeCollider.enabled) return;
+
+        if (IsPlayerInside(activeCollider))
         {
-            // Debug.Log("Attack is not tracking");
-            if (tilted)
+            isPlayerInside = true;
+
+            if (Player.combatController.attacked && Player.combatController.success)
             {
-                // Debug.Log("Stick is titled, getting closest direction label");
-                isTrackingAttack = true;
-                startLabel = movementSystem.GetClosestDirectionLabel(stick);
-                // Debug.Log($"Start label = {startLabel}");
-                endLabel = startLabel; // initialize
+                LatestHitResult = DetermineHitResult(currentIndex);
+                Debug.Log($"✅ {LatestHitResult} hit in collider {currentIndex + 1}");
+
+                // int score = rewardSystem.CalculatePoints(LatestHitResult);
+                // rewardSystem.ApplyScore(score);
+                rewardSystem.ApplyScore(LatestHitResult);
+
+                DisableAllOtherColliders();
+                successTriggered = true;
+                Player.combatController.attacked = false;
+                Player.combatController.success = false;
             }
         }
-        else
+        else if (isPlayerInside)
         {
-            // Debug.Log("Attack is tracking");
-            // 3) while still tilted, keep updating the “end” label
-            if (tilted)
-            {
-                // Debug.Log("Stick is titled, getting closest direction label");
-                endLabel = movementSystem.GetClosestDirectionLabel(stick);
-                // Debug.Log($"End Label = {endLabel}");
-            }
-            else
-            {
-                // Debug.Log("Stick is not titled yet");
-                // 4) user let go → evaluate
-                string key = $"{startLabel}-{endLabel}";
-                // Debug.Log($"Key = {key}");
-                if (directions.TryGetValue(key, out var performed))
-                {
-                    // Debug.Log($"performed = {performed}, attackDirection = {attackDirection}");
-                    if (performed == attackDirection)
-                        OnAttackSuccess();
-                    else
-                        OnAttackFailure();
-                }
-                else
-                {
-                    Debug.LogWarning($"Unmapped swipe: {key}");
-                }
+            Debug.Log($"❌ Failed in collider {currentIndex + 1}");
 
-                // reset for next swipe
-                isTrackingAttack = false;
-                startLabel = endLabel = null;
+            activeCollider.enabled = false;
+            currentIndex++;
+            isPlayerInside = false;
+        }
+    }
+
+    private HitResult DetermineHitResult(int index)
+    {
+        return index switch
+        {
+            0 => HitResult.Early,
+            1 => HitResult.Good,
+            2 => HitResult.Perfect,
+            3 => HitResult.Late,
+            _ => HitResult.None
+        };
+    }
+
+    private bool IsPlayerInside(BoxCollider col)
+    {
+        return col.bounds.Contains(player.transform.position);
+    }
+
+    private void DisableAllOtherColliders()
+    {
+        for (int i = 0; i < colliders.Count; i++)
+        {
+            if (i != currentIndex)
+            {
+                colliders[i].enabled = false;
             }
         }
     }
 
-    private void OnAttackSuccess()
+    void OnDrawGizmos()
     {
-        Debug.Log("Attack hit!");
-        // ... your success logic here …
-    }
-
-    private void OnAttackFailure()
-    {
-        Debug.Log("Attack missed.");
-        // ... your failure logic here …
+        Gizmos.color = Color.cyan;
+        foreach (var col in colliders)
+        {
+            if (col != null)
+                Gizmos.DrawWireCube(col.transform.position + col.center, col.size);
+        }
     }
 }
+
