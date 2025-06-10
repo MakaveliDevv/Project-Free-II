@@ -5,70 +5,53 @@ using UnityEngine.InputSystem;
 
 public class Interactable : MonoBehaviour
 {
-    [Header("Interaction Settings")]
-    public float interactionRadius = 2f;
-    public float pullDuration = 0.2f;
-    public Collider groundBoundsCollider;
+    Player player;
+    Rigidbody playerRb;
+    BoxMover boxMover;
+    Collider col, pCol;
+    // MovementInteraction moverInt;
 
-    [Header("Selection Settings")]
-    public float selectionRadius = 5f;
-    public float minAimMagnitude = 0.2f;
+    bool interacting = false;
+    bool isLaunching = false;
+    bool triggerLock = false;
+    Coroutine pullCoroutine;
 
-    [Header("Launch Settings")]
-    public float launchDuration = 0.3f;
-
-    // refs
-    private Player player;
-    private Rigidbody playerRb;
-    private Transform playerT;
-    private BoxMover boxMover;
-    private Collider col, pCol;
-
-    // state
-    private bool interacting = false;
-    private bool isLaunching = false;
-    private bool triggerLock = false;
-    private float origZ, groundMinZ, groundMaxZ;
-    private Coroutine pullCoroutine;
-
-    // selection
-    private BoxMover selectedBox;
-    private Color selectedOriginalColor;
+    BoxMover selectedBox;
+    Color selectedOriginalColor;
 
     void Awake()
     {
         var go = GameObject.FindWithTag("Player");
         player = go.GetComponent<Player>();
         playerRb = go.GetComponent<Rigidbody>();
-        playerT = go.transform;
         boxMover = GetComponent<BoxMover>();
-        col = GetComponent<Collider>();
+        col = transform.GetChild(0).GetComponent<Collider>();
+        Debug.Log($"Col => {col.gameObject.name}");
         pCol = go.GetComponent<Collider>();
-
-        if (groundBoundsCollider != null)
-        {
-            groundMinZ = groundBoundsCollider.bounds.min.z;
-            groundMaxZ = groundBoundsCollider.bounds.max.z;
-        }
     }
 
     void Update()
     {
-        // block new input mid-flight
         if (isLaunching) return;
 
-        // ── on this box: clamp Z, aim/select, leftTrigger to launch ──
         if (interacting)
         {
-            // clamp to ground bounds on Z
-            if (groundBoundsCollider != null)
+            // clamp Z to ground plane
+            if (player.interactionSettings.groundBoundsCollider != null)
             {
-                var pos = playerRb.position;
-                pos.z = Mathf.Clamp(pos.z, groundMinZ, groundMaxZ);
-                playerRb.MovePosition(pos);
+                var v = playerRb.position;
+                v.z = Mathf.Clamp(v.z,
+                    player.interactionSettings.groundBoundsCollider.bounds.min.z,
+                    player.interactionSettings.groundBoundsCollider.bounds.max.z);
+                playerRb.MovePosition(v);
             }
 
-            UpdateBoxSelection();
+            // ray-based selection
+            var best = player.moveInt.SelectTargetRay(
+                playerRb.position,
+                player.interactionSettings.selectionRange);
+
+            UpdateHighlight(best);
 
             var gp = Gamepad.current;
             if (gp != null)
@@ -76,181 +59,111 @@ public class Interactable : MonoBehaviour
                 if (gp.leftTrigger.isPressed && !triggerLock && selectedBox != null)
                 {
                     triggerLock = true;
-
-                    // stop any ongoing pull
                     if (pullCoroutine != null)
                     {
                         StopCoroutine(pullCoroutine);
                         pullCoroutine = null;
                     }
-
-                    var target = selectedBox;
-                    StartCoroutine(LaunchToBoxRoutine(target));
-                    ClearSelection();
+                    StartCoroutine(LaunchToBoxRoutine(selectedBox));
+                    ClearHighlight();
                 }
                 else if (!gp.leftTrigger.isPressed)
                 {
                     triggerLock = false;
                 }
             }
-
             return;
         }
 
-        // ── otherwise: north press + in‐range to pull onto this box ──
+        // pull onto this box
         var pad = Gamepad.current;
         if (pad != null
             && pad.buttonNorth.isPressed
-            && Vector3.Distance(playerT.position, transform.position) <= interactionRadius)
+            && Vector3.Distance(playerRb.position, transform.position) <= player.interactionSettings.interactionRadius)
         {
             pullCoroutine = StartCoroutine(PullOntoBoxRoutine());
         }
     }
 
-    private IEnumerator PullOntoBoxRoutine()
+    IEnumerator PullOntoBoxRoutine()
     {
         interacting = true;
-        origZ = playerRb.position.z;
-
         player.movementSettings.movementState = MovementState.Interacting;
         player.movementSettings.currentSurfaceState = SurfaceState.Nothing;
 
         Vector3 start = playerRb.position;
-        float timer = 0f;
-
-        while (timer < pullDuration)
+        float t = 0f;
+        while (t < player.interactionSettings.pullDuration)
         {
-            timer += Time.deltaTime;
-            float t = Mathf.SmoothStep(0f, 1f, timer / pullDuration);
-
+            t += Time.deltaTime;
+            float pct = Mathf.SmoothStep(0f, 1f, t / player.interactionSettings.pullDuration);
             var b = col.bounds;
             float h = pCol.bounds.extents.y;
             Vector3 top = new Vector3(b.center.x, b.max.y + h, b.center.z);
-
-            playerRb.MovePosition(Vector3.Lerp(start, top, t));
+            playerRb.MovePosition(Vector3.Lerp(start, top, pct));
             yield return null;
         }
-
         if (boxMover != null) boxMover.enabled = false;
         pullCoroutine = null;
     }
 
-    private void UpdateBoxSelection()
+    IEnumerator LaunchToBoxRoutine(BoxMover target)
     {
-        var gp = Gamepad.current;
-        if (gp == null) return;
-
-        Vector2 aim = gp.rightStick.ReadUnprocessedValue();
-        if (aim.sqrMagnitude < minAimMagnitude * minAimMagnitude)
-        {
-            ClearSelection();
-            return;
-        }
-
-        Vector2 aimDir = aim.normalized;
-        float bestDot = -1f;
-        BoxMover best = null;
-        Vector3 myPos = transform.position;
-
-        foreach (var other in Object.FindObjectsByType<BoxMover>(FindObjectsSortMode.None))
-        {
-            if (other == boxMover) continue;
-            Vector3 oPos = other.transform.position;
-
-            if (oPos.z <= myPos.z) continue;
-            if (groundBoundsCollider != null &&
-               (oPos.z < groundMinZ || oPos.z > groundMaxZ)) continue;
-            if ((oPos - myPos).sqrMagnitude > selectionRadius * selectionRadius) continue;
-
-            Vector2 rel = new Vector2(oPos.x - myPos.x, oPos.z - myPos.z).normalized;
-            float dot = Vector2.Dot(aimDir, rel);
-            if (dot > bestDot)
-            {
-                bestDot = dot;
-                best = other;
-            }
-        }
-
-        SetSelection(best);
-    }
-
-    private void SetSelection(BoxMover bm)
-    {
-        if (selectedBox == bm) return;
-        ClearSelection();
-        if (bm == null) return;
-        selectedBox = bm;
-        var rend = bm.GetComponent<Renderer>();
-        if (rend != null)
-        {
-            selectedOriginalColor = rend.material.color;
-            rend.material.color = Color.blue;
-        }
-    }
-
-    private void ClearSelection()
-    {
-        if (selectedBox == null) return;
-        var rend = selectedBox.GetComponent<Renderer>();
-        if (rend != null)
-            rend.material.color = selectedOriginalColor;
-        selectedBox = null;
-    }
-
-    private IEnumerator LaunchToBoxRoutine(BoxMover target)
-    {
-        if (target == null)
-        {
-            isLaunching = false;
-            yield break;
-        }
-
         isLaunching = true;
         interacting = false;
-        triggerLock = false;  // reset so you can trigger next time
+        triggerLock = false;
         player.movementSettings.movementState = MovementState.Launching;
 
         Vector3 start = playerRb.position;
-        float timer = 0f;
-
-        while (timer < launchDuration)
+        float t = 0f;
+        while (t < player.interactionSettings.launchDuration)
         {
-            timer += Time.deltaTime;
-            float t = Mathf.SmoothStep(0f, 1f, timer / launchDuration);
-
-            var b = target.GetComponent<Collider>().bounds;
+            t += Time.deltaTime;
+            float pct = Mathf.SmoothStep(0f, 1f, t / player.interactionSettings.launchDuration);
+            var b = target.transform.GetChild(0).GetComponent<Collider>().bounds;
             float h = pCol.bounds.extents.y;
-            Vector3 dynamicTop = new Vector3(b.center.x, b.max.y + h, b.center.z);
-
-            playerRb.MovePosition(Vector3.Lerp(start, dynamicTop, t));
+            Vector3 top = new Vector3(b.center.x, b.max.y + h, b.center.z);
+            playerRb.MovePosition(Vector3.Lerp(start, top, pct));
             yield return null;
         }
 
-        // final snap to the moving top
-        var bf = target.GetComponent<Collider>().bounds;
+        var bf = target.transform.GetChild(0).GetComponent<Collider>().bounds;
         float hf = pCol.bounds.extents.y;
-        Vector3 end = new Vector3(bf.center.x, bf.max.y + hf, bf.center.z);
-        playerRb.MovePosition(end);
+        playerRb.MovePosition(
+            new Vector3(bf.center.x, bf.max.y + hf, bf.center.z));
 
-        // stop the new box
-        var mover = target.GetComponent<BoxMover>();
-        if (mover != null) mover.enabled = false;
+        var mv = target.GetComponent<BoxMover>();
+        if (mv != null) mv.enabled = false;
 
-        // now landed: re-enter “on box” state so selection works again
         interacting = true;
         player.movementSettings.movementState = MovementState.Interacting;
         player.movementSettings.currentSurfaceState = SurfaceState.Nothing;
         isLaunching = false;
     }
 
+    void UpdateHighlight(BoxMover bm)
+    {
+        if (selectedBox == bm) return;
+        ClearHighlight();
+        if (bm == null) return;
+        selectedBox = bm;
+        if (bm.transform.GetChild(0).TryGetComponent<Renderer>(out var r))
+        {
+            selectedOriginalColor = r.material.color;
+            r.material.color = Color.blue;
+        }
+    }
+
+    void ClearHighlight()
+    {
+        if (selectedBox == null) return;
+        if (selectedBox.transform.GetChild(0).TryGetComponent<Renderer>(out var r)) r.material.color = selectedOriginalColor;
+        selectedBox = null;
+    }
+
     void OnDrawGizmos()
     {
         Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(transform.position, interactionRadius);
-        if (selectedBox != null)
-        {
-            Gizmos.color = Color.blue;
-            Gizmos.DrawWireSphere(selectedBox.transform.position, 0.5f);
-        }
+        Gizmos.DrawWireSphere(transform.position, player.interactionSettings.interactionRadius);
     }
 }

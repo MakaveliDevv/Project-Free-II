@@ -23,6 +23,7 @@ namespace Assets.Scripts.Player
 
         [Tooltip("Number of directions to snap to when snapDirectionsEnabled is true; used in angle quantization")]
         public int directionCount = 16;
+        public int directionCountZ = 8;
 
         // ─ Stuck Mechanics
         [Header("Stuck Mechanics")]
@@ -267,6 +268,10 @@ namespace Assets.Scripts.Player
         public float WallAheadCheckDistance = 0.5f;
         // how close the landing point can be to a wall before we skip hover
         public float TargetWallProximityRadius = 1f;
+
+        [Tooltip("Number of discrete snap directions within that arc.")]
+        [Min(1)]
+        public int directionCount2 = 8;
     }
 
     [System.Serializable]
@@ -274,7 +279,7 @@ namespace Assets.Scripts.Player
     {
         public float bounceDelay = 0.15f;
         public float bounceForce = 10f;
-        public float postBounceCooldown = 0.25f; 
+        public float postBounceCooldown = 0.25f;
     }
 
     [System.Serializable]
@@ -286,6 +291,34 @@ namespace Assets.Scripts.Player
         public float startHoldDelay = 1f;
         [Tooltip("Stick magnitude threshold")]
         public float stickMagnitudeThresh = .9f;
+    }
+
+    [System.Serializable]
+    public class InteractionSettings
+    {
+        [Header("Selection Settings")]
+        public float selectionRange = 5f;
+        // public float selectionSphereRadius = 0.5f;
+
+        [Header("Launch Settings")]
+        public float launchDuration = 0.3f;
+
+        [Header("Interaction Settings")]
+        public float interactionRadius = 2f;
+        public float pullDuration = 0.2f;
+        public Collider groundBoundsCollider;
+
+        // [Header("Selection Arc")]
+        // [Tooltip("Sweep angle (in degrees) for snap‐selection. e.g. 180 for a half-circle in front)")]
+        // [Range(1f, 360f)]
+        // public float selectionArcDegrees = 180f;
+
+        // [Header("Auto-Select Box Volume (W×H×D)")]
+        // public Vector3 selectionBoxSize = new Vector3(6f, 3f, 10f);
+
+        // [Header("Selection Pitch")]
+        // [Tooltip("Max vertical angle (degrees) above/below horizontal).")]
+        // public float selectionPitchDegrees = 45f;
     }
 }
 

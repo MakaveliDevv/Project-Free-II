@@ -47,7 +47,7 @@ namespace Assets.Scripts.Player
         // ─────────────────────────────────────────────────────────────────────────
 
         // ─ Class References
-        public readonly MovementSettings settings;
+        public MovementSettings settings;
         private readonly Player player;
 
         // ─ Movement Flags
@@ -226,7 +226,7 @@ namespace Assets.Scripts.Player
             // Debug.Log($"  [Fetch] curSurface = {settings.currentSurfaceState} | isInAir = {isInAir} | dirLabel = {GetClosestDirectionLabel(snappedDir)} | isJumpAllowed = {isJumpAllowed}");
 
 
-            bool stickMoving = InputManager.HasStickMovement();
+            bool stickMoving = InputManager.HasLeftStickMovement();
             bool jumpHeld = InputManager.SouthButtonPressed;
 
             if (stickMoving)
@@ -454,7 +454,7 @@ namespace Assets.Scripts.Player
         /// </summary>
         private bool ActionInputDetected()
         {
-            if (InputManager.HasStickMovement() && InputManager.SouthButtonPressed && buttonHoldTimer >= settings.minButtonPressTime) { return true; }
+            if (InputManager.HasLeftStickMovement() && InputManager.SouthButtonPressed && buttonHoldTimer >= settings.minButtonPressTime) { return true; }
 
             buttonHoldTimer = 0;
             // InputManager.SouthButtonPressed = false;
@@ -463,7 +463,7 @@ namespace Assets.Scripts.Player
 
         private void FetchActionType()
         {
-            if (player.mode == Mode.AdvancedMovement && player.movementController.advancedMovement.IsBlockingInput())
+            if (player.mode == Mode.AdvancedMovement && player.moveContrl.advancedMovement.IsBlockingInput())
             {
                 fetchedAction = "";
                 allowedToMove = false;
@@ -1227,7 +1227,7 @@ namespace Assets.Scripts.Player
             if (player.mode == Mode.AdvancedMovement &&
                 (settings.currentSurfaceState == SurfaceState.LeftWall || settings.currentSurfaceState == SurfaceState.RightWall))
             {
-                if (InputManager.HasStickMovement())
+                if (InputManager.HasLeftStickMovement())
                 {
                     Vector2 stickDir = InputManager.LeftStickInput.normalized;
                     Vector3 bounceDir = (Vector3)stickDir.normalized;
@@ -1378,7 +1378,7 @@ namespace Assets.Scripts.Player
         /// optionally snapping to discrete increments based on directionCount.
         /// Used by LeftAnalogStickInput.
         /// </summary>
-        protected Vector3 GetSnappedDirection(Vector2 input)
+        private Vector3 GetSnappedDirection(Vector2 input)
         {
             if (input.sqrMagnitude < settings.minStickMagnitude) { return Vector3.zero; }
 
@@ -1465,7 +1465,7 @@ namespace Assets.Scripts.Player
         /// Generates a direction label string for a given index, supporting cardinal or full 16-way labels.
         /// Used by BuildLabelToAngleMap.
         /// </summary>
-        private string GetDirectionLabel(int index)
+        public string GetDirectionLabel(int index)
         {
             if (!settings.useCardinalLabels) return (index + 1).ToString();
             string[] labels = new[]
@@ -1480,7 +1480,7 @@ namespace Assets.Scripts.Player
         /// Populates the labelToAngle dictionary by iterating through directionCount and calling GetDirectionLabel.
         /// Executed in Awake to initialize direction-label mappings.
         /// </summary>
-        private void BuildLabelToAngleMap()
+        public void BuildLabelToAngleMap()
         {
             labelToAngle = new Dictionary<string, float>();
             float angleStep = 360f / settings.directionCount;
@@ -1591,7 +1591,7 @@ namespace Assets.Scripts.Player
             }
 
 
-            if (Application.isPlaying && InputManager.HasStickMovement())
+            if (Application.isPlaying && InputManager.HasLeftStickMovement())
             {
                 Gizmos.color = settings.snappedInputColor;
                 Vector3 start = rb.position;

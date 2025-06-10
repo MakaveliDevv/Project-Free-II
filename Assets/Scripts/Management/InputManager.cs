@@ -130,7 +130,8 @@ public static class InputManager
         }
     }
 
-    public static bool HasStickMovement() => LeftStickInput.magnitude > minStickMagnitude;
+    public static bool HasLeftStickMovement() => LeftStickInput.magnitude > minStickMagnitude;
+    public static bool HasRightStickMovement() => RightStickInput.magnitude > minStickMagnitude;
     public static void ResetFrameInputs()
     {
         SouthButtonReleased = false;

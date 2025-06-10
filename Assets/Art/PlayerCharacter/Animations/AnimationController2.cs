@@ -46,10 +46,10 @@ namespace Assets.Scripts.Player
                     break;
 
                 case MovementState.Jumping:
-                    if (player.movementController.movementSystem.isStraightJump) { JumpStraightAnim(); }
+                    if (player.moveContrl.movementSystem.isStraightJump) { JumpStraightAnim(); }
                     else
                     {
-                        if (player.movementController.movementSystem.isDiagonalJumpRight) { JumpDiagonalRightAnim(); }
+                        if (player.moveContrl.movementSystem.isDiagonalJumpRight) { JumpDiagonalRightAnim(); }
                         else { JumpDiagonalLeftAnim(); }
                     }
                     break;
@@ -81,7 +81,7 @@ namespace Assets.Scripts.Player
                         player.movementSettings.currentSurfaceState != SurfaceState.Ceiling)
                     {
                         Debug.Log("Invoke wall jump anim");
-                        if (player.movementController.movementSystem.isWallJumpRight)
+                        if (player.moveContrl.movementSystem.isWallJumpRight)
                         {
                             InvokeRightWallJumpAnim();
                         }
@@ -104,26 +104,26 @@ namespace Assets.Scripts.Player
                     break;
 
                 case MovementState.AirDashing:
-                    if (player.movementController.movementSystem.isVerticalAirDash)
+                    if (player.moveContrl.movementSystem.isVerticalAirDash)
                     {
-                        if (player.movementController.movementSystem.isAirDashAscend) { AirDashVerticalAscend(); }
+                        if (player.moveContrl.movementSystem.isAirDashAscend) { AirDashVerticalAscend(); }
                         else { AirDashVerticalDescend(); }
                     }
-                    else if (player.movementController.movementSystem.isHorizontalAirDash)
+                    else if (player.moveContrl.movementSystem.isHorizontalAirDash)
                     {
-                        if (player.movementController.movementSystem.isRightAirDash) { AirDashHorizontalRight(); }
+                        if (player.moveContrl.movementSystem.isRightAirDash) { AirDashHorizontalRight(); }
                         else { AirDashHorizontalLeft(); }
                     }
                     else
                     {
-                        if (player.movementController.movementSystem.isRightDiagonalAirDash)
+                        if (player.moveContrl.movementSystem.isRightDiagonalAirDash)
                         {
-                            if (player.movementController.movementSystem.isAirDashAscend) { AirDashDiagonalRightUp(); }
+                            if (player.moveContrl.movementSystem.isAirDashAscend) { AirDashDiagonalRightUp(); }
                             else { AirDashDiagonalRightDown(); }
                         }
                         else
                         {
-                            if (player.movementController.movementSystem.isAirDashAscend) { AirDashDiagonalLeftUp(); }
+                            if (player.moveContrl.movementSystem.isAirDashAscend) { AirDashDiagonalLeftUp(); }
                             else { AirDashDiagonalLeftDown(); }
                         }
                     }
@@ -433,15 +433,15 @@ namespace Assets.Scripts.Player
 
         private void InvokeRightWallJumpAnim() // DONT TOUCH THIS METHOD
         {
-            if (player.movementController.movementSystem.isWallJumpHorizontal) { RightWallJumpHorizontal(); }
-            else if (player.movementController.movementSystem.isWallJumpAscend) { RightWallJumpAscendAnim(); }
+            if (player.moveContrl.movementSystem.isWallJumpHorizontal) { RightWallJumpHorizontal(); }
+            else if (player.moveContrl.movementSystem.isWallJumpAscend) { RightWallJumpAscendAnim(); }
             else { RightWallJumpDescendAnim(); }
         }
 
         private void InvokeLeftWallJumpAnim() // DONT TOUCH THIS METHOD
         {
-            if (player.movementController.movementSystem.isWallJumpHorizontal) { LeftWallJumpHorizontal(); }
-            else if (player.movementController.movementSystem.isWallJumpAscend) { LeftWallJumpAscendAnim(); }
+            if (player.moveContrl.movementSystem.isWallJumpHorizontal) { LeftWallJumpHorizontal(); }
+            else if (player.moveContrl.movementSystem.isWallJumpAscend) { LeftWallJumpAscendAnim(); }
             else { LeftWallJumpDescendAnim(); }
         }
 
@@ -680,7 +680,7 @@ namespace Assets.Scripts.Player
         // -- GROUND DASH
         private void GroundDashAnim() // DONT TOUCH THIS METHOD
         {
-            if (player.movementController.movementSystem.isRightGroundDash) { RightGroundDashAnim(); }
+            if (player.moveContrl.movementSystem.isRightGroundDash) { RightGroundDashAnim(); }
             else { LeftGroundDashAnim(); }
             Debug.Log("Invoke ground dash anim");
         }
@@ -745,7 +745,7 @@ namespace Assets.Scripts.Player
         // -- CEILING DASH
         private void CeilingDashAnim() // DONT TOUCH THIS METHOD
         {
-            if (player.movementController.movementSystem.isRightGroundDash) { RightCeilingDashAnim(); }
+            if (player.moveContrl.movementSystem.isRightGroundDash) { RightCeilingDashAnim(); }
             else { LeftCeilingDashAnim(); }
 
         }
@@ -764,7 +764,7 @@ namespace Assets.Scripts.Player
         // RIGHT WALL
         private void RightWallDashAnim() // DONT TOUCH THIS METHOD
         {
-            if (player.movementController.movementSystem.isUpWallDash) { UpRightWallDashAnim(); }
+            if (player.moveContrl.movementSystem.isUpWallDash) { UpRightWallDashAnim(); }
             else { DownRightWallDashAnim(); }
             Debug.Log("Invoke wall dash anim (right)");
         }
@@ -782,7 +782,7 @@ namespace Assets.Scripts.Player
         // LEFT WALL
         private void LeftWallDashAnim() // DONT TOUCH THIS METHOD
         {
-            if (player.movementController.movementSystem.isUpWallDash) { UpLeftWallDashAnim(); }
+            if (player.moveContrl.movementSystem.isUpWallDash) { UpLeftWallDashAnim(); }
             else { DownLeftWallDashAnim(); }
             Debug.Log("Invoke wall dash anim (left)");
         }
