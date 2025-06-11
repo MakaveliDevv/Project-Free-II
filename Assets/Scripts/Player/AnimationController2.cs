@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace Assets.Scripts.Player
 {
-    public class AnimationController2 
+    public class AnimationController2
     {
         private readonly Player player;
         private readonly AnimationSettings animSettings;
@@ -22,27 +22,27 @@ namespace Assets.Scripts.Player
             Debug.Log(anim);
 
             Transform particlesParent = player.transform.Find("Particles");
-            
+
             // Jump 
             if (animSettings.jumpParticlePrefab == null)
                 animSettings.jumpParticlePrefab = particlesParent.Find(animSettings.jumpParticlePrefabName).GetComponent<ParticleSystem>();
             // Jump E
-            if(animSettings.jumpEParticlePrefab == null)
+            if (animSettings.jumpEParticlePrefab == null)
                 animSettings.jumpEParticlePrefab = particlesParent.Find(animSettings.jumpEParticlePrefabName).GetComponent<ParticleSystem>();
             // Jump W
-            if(animSettings.jumpWParticlePrefab == null)
+            if (animSettings.jumpWParticlePrefab == null)
                 animSettings.jumpWParticlePrefab = particlesParent.Find(animSettings.jumpWParticlePrefabName).GetComponent<ParticleSystem>();
             // Dash R
-            if(animSettings.dashRParticlePrefab == null)
+            if (animSettings.dashRParticlePrefab == null)
                 animSettings.dashRParticlePrefab = particlesParent.Find(animSettings.dashRParticlePrefabName).GetComponent<ParticleSystem>();
             // Dash L
-            if(animSettings.dashLParticlePrefab == null)
+            if (animSettings.dashLParticlePrefab == null)
                 animSettings.dashLParticlePrefab = particlesParent.Find(animSettings.dashLParticlePrefabName).GetComponent<ParticleSystem>();
             // Stuck L
-            if(animSettings.stuckLParticlePrefab == null)
+            if (animSettings.stuckLParticlePrefab == null)
                 animSettings.stuckLParticlePrefab = particlesParent.Find(animSettings.stuckLParticlePrefabName).GetComponent<ParticleSystem>();
             // Stuck R
-            if(animSettings.stuckRParticlePrefab == null)
+            if (animSettings.stuckRParticlePrefab == null)
                 animSettings.stuckRParticlePrefab = particlesParent.Find(animSettings.stuckRParticlePrefabName).GetComponent<ParticleSystem>();
         }
 
@@ -164,6 +164,12 @@ namespace Assets.Scripts.Player
                     }
 
                     break;
+            }
+
+            if (player.moveContrl.movementSystem.IsNearGround)
+            {
+                OnLandingAnim();
+                Debug.Log("Landed...");
             }
         }
 
@@ -288,7 +294,7 @@ namespace Assets.Scripts.Player
         }
 
         private ParticleSystem InstantiateParticle(ParticleSystem particlePrefab)
-        { 
+        {
             return Object.Instantiate(particlePrefab, player.transform.position, Quaternion.identity) as ParticleSystem;
         }
 
@@ -877,5 +883,9 @@ namespace Assets.Scripts.Player
 
         #endregion Air Dash Animations
 
+        private void OnLandingAnim()
+        { 
+            
+        }
     } 
 }

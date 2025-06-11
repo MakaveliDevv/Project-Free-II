@@ -248,9 +248,8 @@ namespace Assets.Scripts.Player
 
             
             IsNearGround = playerSettings.movementState == MovementState.Descending
-            || playerSettings.movementState == MovementState.WallDashing && IsLanding();
+            || playerSettings.movementState == MovementState.WallDescending && IsLanding();
 
-            if (IsNearGround) { Debug.Log("Landed..."); }
 
             isDropping = Gamepad.current != null &&
                         Gamepad.current.buttonEast.isPressed &&
