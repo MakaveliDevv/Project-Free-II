@@ -139,6 +139,16 @@ namespace Assets.Scripts.Player
                     Debug.Log("Played stucked pose");
                     break;
             }
+
+            if (player.playerSettings.movementState == MovementState.Interacting)
+            {
+                OnInteractionAnim();
+            }
+
+            if (player.playerSettings.movementState == MovementState.Launching)
+            { 
+                
+            }
         }
 
         private void HandleAirDash(MovementSystem msys)
@@ -181,6 +191,15 @@ namespace Assets.Scripts.Player
                 animator.SetBool("Landing", true);
                 Debug.Log("No input detected, transition to Idle anim");
             } 
+        }
+
+        private void OnInteractionAnim()
+        { 
+
+        }
+
+        private void OnLaunchAnim()
+        { 
 
         }
 
