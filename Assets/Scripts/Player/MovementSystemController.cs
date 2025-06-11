@@ -7,10 +7,10 @@ namespace Assets.Scripts.Player
         public readonly MovementSystem movementSystem;
         public AdvancedMovement advancedMovement;
 
-        public MovementSystemController(Player player, MovementSettings settings, UnityEngine.InputSystem.InputActionAsset inputActionAsset)
+        public MovementSystemController(Player player, MovementSettings settings)
         {
-            movementSystem = new(player, settings, inputActionAsset);
-            advancedMovement = new(player, movementSystem);
+            movementSystem = new(player, player.playerSettings, settings);
+            advancedMovement = new(player, movementSystem, player.advancedMovementSettings);
         }
 
         public void Awake()

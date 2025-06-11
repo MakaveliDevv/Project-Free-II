@@ -5,41 +5,28 @@ namespace Assets.Scripts.Player
 {
     public class MovementInteraction
     {
-        readonly MovementSettings settings;
-        readonly float sliceDeg;
+        readonly PlayerSettings playerSettings;
 
-        Vector3 snappedDir3D = Vector3.zero;
-        public Vector3 SnappedDir3D => snappedDir3D;
+        Vector3 snappedDir = Vector3.zero;
+        public Vector3 SnappedDir3D => snappedDir;
 
-        public MovementInteraction(MovementSettings settings)
+        public MovementInteraction(PlayerSettings playerSettings)
         {
-            this.settings = settings;
-
-            sliceDeg = 360f / settings.directionCount2;
-        }
-
-        Vector3 GetSnappedDirection(Vector2 input)
-        {
-            float mag2 = settings.minStickMagnitude * settings.minStickMagnitude;
-            if (input.sqrMagnitude < mag2) return Vector3.zero;
-
-            float angle = Mathf.Atan2(input.y, input.x) * Mathf.Rad2Deg;
-            float snapped = Mathf.Round(angle / sliceDeg) * sliceDeg;
-            return (Quaternion.Euler(0f, 0f, snapped) * Vector3.right).normalized;
+            this.playerSettings = playerSettings;
         }
 
         public void Update()
         {
-            snappedDir3D = GetSnappedDirection(InputManager.RightStickInput);
+            snappedDir = InputManager.GetSnappedDirection(InputManager.RightStickInput, playerSettings.snapDirectionsEnabled, playerSettings.directionCountSelection);
         }
 
         public BoxMover SelectTargetRay(Vector3 origin, float range)
         {
-            if (snappedDir3D == Vector3.zero) return null;
+            if (snappedDir == Vector3.zero) return null;
             int mask = LayerMask.GetMask("Interactable");
 
             // gather all hits along the ray
-            RaycastHit[] hits = Physics.RaycastAll(origin, snappedDir3D, range, mask);
+            RaycastHit[] hits = Physics.RaycastAll(origin, snappedDir, range, mask);
             if (hits == null || hits.Length == 0) return null;
 
             // find the closest
@@ -64,10 +51,10 @@ namespace Assets.Scripts.Player
         public void OnDrawGizmosRay(Vector3 origin, float range)
         {
 #if UNITY_EDITOR
-            if (snappedDir3D == Vector3.zero) return;
+            if (snappedDir == Vector3.zero) return;
 
             // compute the tip of the ray
-            Vector3 tip = origin + snappedDir3D * range;
+            Vector3 tip = origin + snappedDir * range;
 
             // draw the ray
             Gizmos.color = Color.cyan;
@@ -79,7 +66,7 @@ namespace Assets.Scripts.Player
 
             // draw a disc at the tip of the ray
             Handles.color = Color.yellow;
-            Handles.DrawSolidDisc(tip, snappedDir3D, 0.1f);
+            Handles.DrawSolidDisc(tip, snappedDir, 0.1f);
 #endif
         }
     }

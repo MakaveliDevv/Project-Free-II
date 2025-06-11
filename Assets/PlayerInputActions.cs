@@ -126,6 +126,24 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Launch"",
+                    ""type"": ""Button"",
+                    ""id"": ""31afbe48-8c26-4c0e-b43a-79adbbcfe044"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""PullTrigger"",
+                    ""type"": ""Button"",
+                    ""id"": ""74363b48-7c69-4a13-9f92-d4d247ad1724"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -216,6 +234,28 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
                     ""action"": ""CombatMode"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""ed9f02b5-99f2-4e2f-94cd-aea36efff476"",
+                    ""path"": ""<Gamepad>/leftTrigger"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Launch"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""986bb69e-35c1-484f-a84e-32f4d6be98b0"",
+                    ""path"": ""<Gamepad>/buttonNorth"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""PullTrigger"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         },
@@ -276,6 +316,8 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
         m_Player_DirCalculation = m_Player.FindAction("DirCalculation", throwIfNotFound: true);
         m_Player_AdvancedMovementMode = m_Player.FindAction("AdvancedMovementMode", throwIfNotFound: true);
         m_Player_CombatMode = m_Player.FindAction("CombatMode", throwIfNotFound: true);
+        m_Player_Launch = m_Player.FindAction("Launch", throwIfNotFound: true);
+        m_Player_PullTrigger = m_Player.FindAction("PullTrigger", throwIfNotFound: true);
         // ToggleMechanics
         m_ToggleMechanics = asset.FindActionMap("ToggleMechanics", throwIfNotFound: true);
         m_ToggleMechanics_ToggleAutoHover = m_ToggleMechanics.FindAction("ToggleAutoHover", throwIfNotFound: true);
@@ -365,6 +407,8 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
     private readonly InputAction m_Player_DirCalculation;
     private readonly InputAction m_Player_AdvancedMovementMode;
     private readonly InputAction m_Player_CombatMode;
+    private readonly InputAction m_Player_Launch;
+    private readonly InputAction m_Player_PullTrigger;
     /// <summary>
     /// Provides access to input actions defined in input action map "Player".
     /// </summary>
@@ -392,6 +436,14 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
         /// Provides access to the underlying input action "Player/CombatMode".
         /// </summary>
         public InputAction @CombatMode => m_Wrapper.m_Player_CombatMode;
+        /// <summary>
+        /// Provides access to the underlying input action "Player/Launch".
+        /// </summary>
+        public InputAction @Launch => m_Wrapper.m_Player_Launch;
+        /// <summary>
+        /// Provides access to the underlying input action "Player/PullTrigger".
+        /// </summary>
+        public InputAction @PullTrigger => m_Wrapper.m_Player_PullTrigger;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
@@ -430,6 +482,12 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
             @CombatMode.started += instance.OnCombatMode;
             @CombatMode.performed += instance.OnCombatMode;
             @CombatMode.canceled += instance.OnCombatMode;
+            @Launch.started += instance.OnLaunch;
+            @Launch.performed += instance.OnLaunch;
+            @Launch.canceled += instance.OnLaunch;
+            @PullTrigger.started += instance.OnPullTrigger;
+            @PullTrigger.performed += instance.OnPullTrigger;
+            @PullTrigger.canceled += instance.OnPullTrigger;
         }
 
         /// <summary>
@@ -453,6 +511,12 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
             @CombatMode.started -= instance.OnCombatMode;
             @CombatMode.performed -= instance.OnCombatMode;
             @CombatMode.canceled -= instance.OnCombatMode;
+            @Launch.started -= instance.OnLaunch;
+            @Launch.performed -= instance.OnLaunch;
+            @Launch.canceled -= instance.OnLaunch;
+            @PullTrigger.started -= instance.OnPullTrigger;
+            @PullTrigger.performed -= instance.OnPullTrigger;
+            @PullTrigger.canceled -= instance.OnPullTrigger;
         }
 
         /// <summary>
@@ -628,6 +692,20 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnCombatMode(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Launch" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnLaunch(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "PullTrigger" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnPullTrigger(InputAction.CallbackContext context);
     }
     /// <summary>
     /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "ToggleMechanics" which allows adding and removing callbacks.

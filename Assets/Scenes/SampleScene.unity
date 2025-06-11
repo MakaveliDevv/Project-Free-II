@@ -1010,18 +1010,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   inputActionAsset: {fileID: -944628639613478452, guid: 9740b7f8f03c4a749a2e93320c4985da, type: 3}
   mode: 0
-  movementSettings:
+  playerSettings:
     movementState: 0
     currentSurfaceState: 0
     useRawInput: 1
     snapDirectionsEnabled: 1
-    directionCount: 16
-    directionCountZ: 8
+    directionCountMovement: 32
+    directionCountSelection: 64
+    showDirectionLabels: 0
+    useCardinalLabels: 0
+  movementSettings:
     stuckDurationWall: 1
     stuckDurationCeiling: 10
-    stuckCooldownDuration: 1
-    showDirectionLabels: 1
-    useCardinalLabels: 1
     jumpForce: 5
     maxJumpDistance: 5
     maxJumpSpeed: 10
@@ -1094,7 +1094,6 @@ MonoBehaviour:
     dotThreshold: 0.5
     WallAheadCheckDistance: 0.5
     TargetWallProximityRadius: 1
-    directionCount2: 32
   advancedMovementSettings:
     bounceDelay: 0.15
     bounceForce: 10
@@ -1105,7 +1104,6 @@ MonoBehaviour:
     stickMagnitudeThresh: 0.9
   interactionSettings:
     selectionRange: 5
-    selectionSphereRadius: 0.5
     launchDuration: 0.3
     interactionRadius: 2
     pullDuration: 0.2

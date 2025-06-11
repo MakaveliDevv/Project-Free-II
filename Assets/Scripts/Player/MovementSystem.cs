@@ -45,9 +45,10 @@ namespace Assets.Scripts.Player
         // ─────────────────────────────────────────────────────────────────────────
         // PRIVATE VARIABLES
         // ─────────────────────────────────────────────────────────────────────────
+        private readonly PlayerSettings playerSettings;
+        private readonly MovementSettings settings;
 
         // ─ Class References
-        public MovementSettings settings;
         private readonly Player player;
 
         // ─ Movement Flags
@@ -65,7 +66,7 @@ namespace Assets.Scripts.Player
         [HideInInspector] public bool actionInProgress = false;
         private bool hasTriggeredHover = false;
         [HideInInspector] public bool hasAppliedForce = false;
-        private bool hasReachedTarget = false;
+        public bool hasReachedTarget = false;
         private bool isMoving = false;
         private bool isStuckFrozen = false;
         private bool isLandingBuffered = false;
@@ -130,7 +131,7 @@ namespace Assets.Scripts.Player
 
         private Vector3 startPos;
         private Vector3 originalHoverPosition;
-        private Vector3 predictedTargetPoint;
+        public Vector3 predictedTargetPoint;
 
         // ─ Surface Memory
         private float lastSurfaceCheckTime;
@@ -155,9 +156,10 @@ namespace Assets.Scripts.Player
         private bool hasWallBounce = false;
         private bool actionSinceLastBounce = false;
 
-        public MovementSystem(Player player, MovementSettings settings, InputActionAsset inputActionAsset)
+        public MovementSystem(Player player, PlayerSettings playerSettings, MovementSettings settings)
         {
             this.player = player;
+            this.playerSettings = playerSettings;
             this.settings = settings;
         }
 
@@ -200,7 +202,7 @@ namespace Assets.Scripts.Player
 
         private IEnumerator FallDelay()
         {
-            settings.movementState = MovementState.Nothing;
+            playerSettings.movementState = MovementState.Nothing;
 
             yield return new WaitForSeconds(settings.fallTimer);
 
@@ -214,24 +216,14 @@ namespace Assets.Scripts.Player
 
         public void Update()
         {
-            // InputManager.UpdateInput();
-            Vector2 stick = InputManager.LeftStickInput;
-
-            // Debug.Log($"Jump Pressed: {InputManager.SouthButtonPressed} | Released: {InputManager.SouthButtonReleased}");
-
-            // if (InputManager.SouthButtonPressed)
-            //     Debug.Log($"  [HoldTimer] = {buttonHoldTimer:F2} / {settings.minButtonPressTime}");
-
             FetchActionType();
-            // Debug.Log($"  [Fetch] curSurface = {settings.currentSurfaceState} | isInAir = {isInAir} | dirLabel = {GetClosestDirectionLabel(snappedDir)} | isJumpAllowed = {isJumpAllowed}");
-
-
             bool stickMoving = InputManager.HasLeftStickMovement();
             bool jumpHeld = InputManager.SouthButtonPressed;
 
             if (stickMoving)
             {
-                snappedDir = GetSnappedDirection(stick).normalized;
+                // snappedDir = GetSnappedDirection(stick).normalized;
+                snappedDir = InputManager.GetSnappedDirection(InputManager.LeftStickInput, playerSettings.snapDirectionsEnabled, playerSettings.directionCountMovement);
             }
             else
             {
@@ -239,12 +231,12 @@ namespace Assets.Scripts.Player
             }
 
             // Determine downward stick angle
-            bool canDrop = settings.currentSurfaceState == SurfaceState.Air || settings.movementState == MovementState.Stucked;
+            bool canDrop = playerSettings.currentSurfaceState == SurfaceState.Air || playerSettings.movementState == MovementState.Stucked;
             bool rawDown = false;
 
             if (stickMoving)
             {
-                float rawAngle = Mathf.Atan2(stick.y, stick.x) * Mathf.Rad2Deg;
+                float rawAngle = Mathf.Atan2(InputManager.LeftStickInput.y, InputManager.LeftStickInput.x) * Mathf.Rad2Deg;
                 rawAngle = (rawAngle + 360f) % 360f;
                 float angleDiff = Mathf.DeltaAngle(rawAngle, 270f); // 270° is straight down
                 rawDown = Mathf.Abs(angleDiff) <= settings.dropAngleTolerance;
@@ -254,8 +246,8 @@ namespace Assets.Scripts.Player
                         Gamepad.current.buttonEast.isPressed &&
                         rawDown &&
                         canDrop &&
-                        settings.movementState != MovementState.Idle &&
-                        settings.movementState != MovementState.Charging &&
+                        playerSettings.movementState != MovementState.Idle &&
+                        playerSettings.movementState != MovementState.Charging &&
                         !ActionInputDetected();
 
             if (jumpHeld && buttonHoldTimer >= settings.minButtonPressTime && !buttonPressedLongEnough)
@@ -263,30 +255,30 @@ namespace Assets.Scripts.Player
                 buttonPressedLongEnough = true;
                 // Debug.Log("✓ Button held long enough → charge initiated");
 
-                if (settings.movementState != MovementState.Charging && stickMoving && allowedToMove)
+                if (playerSettings.movementState != MovementState.Charging && stickMoving && allowedToMove)
                 {
-                    settings.movementState = MovementState.Charging;
+                    playerSettings.movementState = MovementState.Charging;
                 }
             }
 
-            if (settings.movementState == MovementState.Jumping
-            || settings.movementState == MovementState.WallJump
-            || settings.movementState == MovementState.Dashing
-            || settings.movementState == MovementState.AirDashing)
+            if (playerSettings.movementState == MovementState.Jumping
+            || playerSettings.movementState == MovementState.WallJump
+            || playerSettings.movementState == MovementState.Dashing
+            || playerSettings.movementState == MovementState.AirDashing)
             {
                 CheckArrivalAtTarget();
             }
 
-            if (!settings.useAutoHover && (settings.movementState == MovementState.Jumping || settings.movementState == MovementState.WallJump || settings.movementState == MovementState.AirDashing))
+            if (!settings.useAutoHover && (playerSettings.movementState == MovementState.Jumping || playerSettings.movementState == MovementState.WallJump || playerSettings.movementState == MovementState.AirDashing))
             {
                 if (hasReachedTarget)
                 {
                     rb.linearDamping = 0;
                     player.StartCoroutine(FallDelay());
-                    settings.movementState = MovementState.Descending;
+                    playerSettings.movementState = MovementState.Descending;
                 }
             }
-            else if (settings.movementState == MovementState.Dashing)
+            else if (playerSettings.movementState == MovementState.Dashing)
             {
                 float traveled = Vector3.Distance(rb.position, dashStartPos);
 
@@ -294,18 +286,18 @@ namespace Assets.Scripts.Player
                 {
                     ResetActionState();
                     ResetPhysicsSettings(true, true);
-                    settings.movementState = MovementState.Idle;
+                    playerSettings.movementState = MovementState.Idle;
                 }
             }
 
-            if (isInAir) settings.currentSurfaceState = SurfaceState.Air;
+            if (isInAir) playerSettings.currentSurfaceState = SurfaceState.Air;
 
             if (jumpHeld)
             {
                 buttonHoldTimer += Time.deltaTime;
                 if (actionReady && !actionInProgress && buttonHoldTimer >= settings.maxHoldTime && buttonPressedLongEnough)
                 {
-                    if (settings.currentSurfaceState == SurfaceState.LeftWall || settings.currentSurfaceState == SurfaceState.RightWall)
+                    if (playerSettings.currentSurfaceState == SurfaceState.LeftWall || playerSettings.currentSurfaceState == SurfaceState.RightWall)
                     {
                         fetchedAction = "WallJump";
                         allowedToMove = true;
@@ -319,7 +311,7 @@ namespace Assets.Scripts.Player
             {
                 buttonPressedLongEnough = false;
 
-                if (snappedDir != Vector2.zero && settings.movementState == MovementState.Charging)
+                if (snappedDir != Vector2.zero && playerSettings.movementState == MovementState.Charging)
                 {
                     PerformMovementAction();
                 }
@@ -335,15 +327,15 @@ namespace Assets.Scripts.Player
             //     player.movementController.advancedMovement.ResetLastBouncedSurface();
 
 
-            if (settings.movementState == MovementState.Idle || settings.movementState == MovementState.Dashing || settings.movementState == MovementState.WallDescending)
+            if (playerSettings.movementState == MovementState.Idle || playerSettings.movementState == MovementState.Dashing || playerSettings.movementState == MovementState.WallDescending)
                 col.material.bounciness = initialBounciness;
             else
                 col.material.bounciness = 0;
 
-            switch (settings.movementState)
+            switch (playerSettings.movementState)
             {
                 case MovementState.Idle:
-                    settings.currentSurfaceState = SurfaceState.Ground;
+                    playerSettings.currentSurfaceState = SurfaceState.Ground;
                     hasTriggeredHover = false;
                     break;
                 case MovementState.Descending:
@@ -368,8 +360,8 @@ namespace Assets.Scripts.Player
         public void LateUpdate()
         {
             if (settings.enableZLock && 
-            settings.movementState != MovementState.Interacting &&
-            settings.movementState != MovementState.Launching)
+            playerSettings.movementState != MovementState.Interacting &&
+            playerSettings.movementState != MovementState.Launching)
             {
                 Vector3 pos = rb.position;
                 pos.z = 0;
@@ -385,7 +377,7 @@ namespace Assets.Scripts.Player
             //     return;
             // }
 
-            if (settings.movementState != MovementState.Hovering) ApplyCustomGravity();
+            if (playerSettings.movementState != MovementState.Hovering) ApplyCustomGravity();
             GetLastCollidedSurface();
 
             // isInAir = !IsCollidingWithSurface();
@@ -401,12 +393,12 @@ namespace Assets.Scripts.Player
             isMoving = rb.linearVelocity.sqrMagnitude > settings.isMovingThreshold;
             // Debug.Log($"IsMoving = {isMoving}");
 
-            if ((settings.movementState == MovementState.Jumping ||
-                settings.movementState == MovementState.WallJump ||
-                settings.movementState == MovementState.AirDashing) &&
+            if ((playerSettings.movementState == MovementState.Jumping ||
+                playerSettings.movementState == MovementState.WallJump ||
+                playerSettings.movementState == MovementState.AirDashing) &&
                 (!isDropping || !fastFalling) &&
-                settings.currentSurfaceState == SurfaceState.Air) { TryStartHoverEffect(); }
-            else if (settings.movementState == MovementState.Hovering && (!isDropping || !fastFalling)) { WobbleEffect(); }
+                playerSettings.currentSurfaceState == SurfaceState.Air) { TryStartHoverEffect(); }
+            else if (playerSettings.movementState == MovementState.Hovering && (!isDropping || !fastFalling)) { WobbleEffect(); }
 
             ForceIdleState();
         }
@@ -419,10 +411,10 @@ namespace Assets.Scripts.Player
 
             player.Invoke(nameof(ResetActionState), .1f);
 
-            if (settings.movementState == MovementState.WallDescending &&
-                settings.currentSurfaceState == SurfaceState.Ground && !hasBounced) { OnWallDescendingBounce(); }
+            if (playerSettings.movementState == MovementState.WallDescending &&
+                playerSettings.currentSurfaceState == SurfaceState.Ground && !hasBounced) { OnWallDescendingBounce(); }
 
-            if (settings.currentSurfaceState == SurfaceState.Ground)
+            if (playerSettings.currentSurfaceState == SurfaceState.Ground)
             {
                 var contact = collision.contacts[0];
                 SnapToGround(contact.point);
@@ -475,13 +467,13 @@ namespace Assets.Scripts.Player
 
             string dirLabel = GetClosestDirectionLabel(snappedDir);
 
-            isJumpAllowed = settings.currentSurfaceState != SurfaceState.LeftWall
-                && settings.currentSurfaceState != SurfaceState.RightWall
+            isJumpAllowed = playerSettings.currentSurfaceState != SurfaceState.LeftWall
+                && playerSettings.currentSurfaceState != SurfaceState.RightWall
                 && IsJumpDirectionAllowed(dirLabel);
 
-            bool isWallJumpAllowed = (settings.movementState == MovementState.Stucked || settings.movementState == MovementState.WallDescending || settings.movementState == MovementState.Charging)
-                && (settings.currentSurfaceState == SurfaceState.LeftWall
-                || settings.currentSurfaceState == SurfaceState.RightWall)
+            bool isWallJumpAllowed = (playerSettings.movementState == MovementState.Stucked || playerSettings.movementState == MovementState.WallDescending || playerSettings.movementState == MovementState.Charging)
+                && (playerSettings.currentSurfaceState == SurfaceState.LeftWall
+                || playerSettings.currentSurfaceState == SurfaceState.RightWall)
                 && IsJumpDirectionAllowed(dirLabel);
 
             bool isDashAllowed = IsDashDirectionAllowed(dirLabel);
@@ -590,7 +582,7 @@ namespace Assets.Scripts.Player
 
             if (action == "Dash")
             {
-                settings.movementState = MovementState.Dashing;
+                playerSettings.movementState = MovementState.Dashing;
 
                 isJumping = false;
                 isWallJumping = false;
@@ -601,16 +593,16 @@ namespace Assets.Scripts.Player
                 dashStartPos = rb.position;
                 settings.movementForceMode = settings.dashForceMode;
 
-                if (settings.currentSurfaceState == SurfaceState.Ground ||
-                    settings.currentSurfaceState == SurfaceState.Ceiling)
+                if (playerSettings.currentSurfaceState == SurfaceState.Ground ||
+                    playerSettings.currentSurfaceState == SurfaceState.Ceiling)
                 {
                     if (dirLabel == "E") { isRightGroundDash = true; }
                     else if (dirLabel == "W") { isRightGroundDash = false; }
 
                     // Debug.Log($"dirLabel = {dirLabel}");
                 }
-                else if (settings.currentSurfaceState == SurfaceState.LeftWall ||
-                    settings.currentSurfaceState == SurfaceState.RightWall)
+                else if (playerSettings.currentSurfaceState == SurfaceState.LeftWall ||
+                    playerSettings.currentSurfaceState == SurfaceState.RightWall)
                 {
                     if (dirLabel == "N") { isUpWallDash = true; }
                     else if (dirLabel == "S") { isUpWallDash = false; }
@@ -619,7 +611,7 @@ namespace Assets.Scripts.Player
             }
             else if (action == "Jump")
             {
-                settings.movementState = MovementState.Jumping;
+                playerSettings.movementState = MovementState.Jumping;
 
                 // Movement flags
                 isDashing = false;
@@ -640,7 +632,7 @@ namespace Assets.Scripts.Player
             }
             else if (action == "WallJump")
             {
-                settings.movementState = MovementState.WallJump;
+                playerSettings.movementState = MovementState.WallJump;
 
                 isJumping = false;
                 isDashing = false;
@@ -651,13 +643,13 @@ namespace Assets.Scripts.Player
                 jumpStartPos = rb.position;
                 settings.movementForceMode = settings.jumpForceMode;
 
-                if (settings.currentSurfaceState == SurfaceState.RightWall)
+                if (playerSettings.currentSurfaceState == SurfaceState.RightWall)
                 {
                     isWallJumpRight = true;
                     if (dirLabel == "W") { isWallJumpHorizontal = true; }
                     else { isWallJumpHorizontal = false; }
                 }
-                else if (settings.currentSurfaceState == SurfaceState.LeftWall)
+                else if (playerSettings.currentSurfaceState == SurfaceState.LeftWall)
                 {
                     isWallJumpRight = false;
                     if (dirLabel == "E") { isWallJumpHorizontal = true; }
@@ -669,7 +661,7 @@ namespace Assets.Scripts.Player
             }
             else if (action == "AirDash")
             {
-                settings.movementState = MovementState.AirDashing;
+                playerSettings.movementState = MovementState.AirDashing;
 
                 isJumping = false;
                 isDashing = false;
@@ -712,7 +704,7 @@ namespace Assets.Scripts.Player
         /// </summary>
         private void HandleActionForces()
         {
-            if (settings.movementState == MovementState.Dashing &&
+            if (playerSettings.movementState == MovementState.Dashing &&
                 !hasAppliedForce && snappedDir.sqrMagnitude > settings.minStickMagnitude)
             {
                 rb.linearVelocity = Vector3.zero;
@@ -751,9 +743,9 @@ namespace Assets.Scripts.Player
             yield return new WaitForSeconds(settings.landingBuffer);
 
             // Only reset if we’re still grounded and not performing an action
-            if (settings.currentSurfaceState == SurfaceState.Ground && !actionInProgress)
+            if (playerSettings.currentSurfaceState == SurfaceState.Ground && !actionInProgress)
             {
-                settings.movementState = MovementState.Idle;
+                playerSettings.movementState = MovementState.Idle;
                 isLandingBuffered = true;
                 hasBounced = false;
                 hasBurstDropped = false;
@@ -777,7 +769,7 @@ namespace Assets.Scripts.Player
         /// </summary>
         private void SmoothMovement()
         {
-            if (settings.movementState != MovementState.Jumping && settings.movementState != MovementState.WallJump && settings.movementState != MovementState.AirDashing) return;
+            if (playerSettings.movementState != MovementState.Jumping && playerSettings.movementState != MovementState.WallJump && playerSettings.movementState != MovementState.AirDashing) return;
 
             Vector3 toTarget = predictedTargetPoint - rb.position;
             float remaining = toTarget.magnitude;
@@ -856,7 +848,7 @@ namespace Assets.Scripts.Player
             // if(player.mode == Mode.AdvancedMovement && isInAir) return false;
             if (hasWallBounce) return false; // NEW: prevent hover right after a bounce
 
-            if (!isInAir || settings.movementState == MovementState.Hovering ||
+            if (!isInAir || playerSettings.movementState == MovementState.Hovering ||
                 hasTriggeredHover || isDropping || fastFalling) { return false; }
 
             if (IsWallAhead() || IsTargetNearWall())
@@ -893,7 +885,7 @@ namespace Assets.Scripts.Player
 
         private void Hover()
         {
-            settings.movementState = MovementState.Hovering;
+            playerSettings.movementState = MovementState.Hovering;
             settings.gravityStrength = 0;
             rb.linearDamping = settings.hoverLinearDamping;
             hoverTimer = settings.hoverDuration;
@@ -932,7 +924,7 @@ namespace Assets.Scripts.Player
         /// </summary>
         private void UpdateHoverTimer()
         {
-            if (settings.movementState != MovementState.Hovering) return;
+            if (playerSettings.movementState != MovementState.Hovering) return;
             hoverTimer -= Time.fixedDeltaTime;
             if (hoverTimer <= 0f) ExitHover();
         }
@@ -943,7 +935,7 @@ namespace Assets.Scripts.Player
         /// </summary>    
         private void ExitHover()
         {
-            settings.movementState = MovementState.Descending;
+            playerSettings.movementState = MovementState.Descending;
             hoverTimer = 0f;
             hoverWobbleTimer = 0f;
             rb.linearDamping = settings.defaultDamping;
@@ -967,8 +959,8 @@ namespace Assets.Scripts.Player
             float dropGravity = 0;
             if (fastFalling)
             {
-                if (settings.currentSurfaceState == SurfaceState.Air) dropGravity = initialGravityStrength * settings.defaultDropMultiplier;
-                else if (settings.currentSurfaceState == SurfaceState.LeftWall || settings.currentSurfaceState == SurfaceState.RightWall) dropGravity = initialGravityStrength * wallDescendingGravityStrength;
+                if (playerSettings.currentSurfaceState == SurfaceState.Air) dropGravity = initialGravityStrength * settings.defaultDropMultiplier;
+                else if (playerSettings.currentSurfaceState == SurfaceState.LeftWall || playerSettings.currentSurfaceState == SurfaceState.RightWall) dropGravity = initialGravityStrength * wallDescendingGravityStrength;
 
                 rb.AddForce(dir * dropGravity, settings.fallForceMode);
 
@@ -1005,16 +997,16 @@ namespace Assets.Scripts.Player
 
             float burstStrength;
 
-            if (settings.movementState == MovementState.Stucked && isStuckFrozen)
+            if (playerSettings.movementState == MovementState.Stucked && isStuckFrozen)
             {
                 if (freezeCoroutine != null) { player.StopCoroutine(freezeCoroutine); }
                 ExitStuckState();
             }
 
-            if (settings.movementState == MovementState.Hovering) { ExitHover(); player.StopAllCoroutines(); }
+            if (playerSettings.movementState == MovementState.Hovering) { ExitHover(); player.StopAllCoroutines(); }
 
-            if (settings.currentSurfaceState == SurfaceState.LeftWall ||
-                settings.currentSurfaceState == SurfaceState.RightWall) { burstStrength = initialGravityStrength * settings.wallDropMultiplier; }
+            if (playerSettings.currentSurfaceState == SurfaceState.LeftWall ||
+                playerSettings.currentSurfaceState == SurfaceState.RightWall) { burstStrength = initialGravityStrength * settings.wallDropMultiplier; }
             else { burstStrength = initialGravityStrength * settings.defaultDropMultiplier; }
 
             rb.linearDamping = settings.defaultDamping;
@@ -1030,9 +1022,9 @@ namespace Assets.Scripts.Player
             ResetActionState();
 
             // switch to the appropriate descending state
-            if (settings.currentSurfaceState == SurfaceState.LeftWall ||
-                settings.currentSurfaceState == SurfaceState.RightWall) { settings.movementState = MovementState.WallDescending; }
-            else { settings.movementState = MovementState.Descending; }
+            if (playerSettings.currentSurfaceState == SurfaceState.LeftWall ||
+                playerSettings.currentSurfaceState == SurfaceState.RightWall) { playerSettings.movementState = MovementState.WallDescending; }
+            else { playerSettings.movementState = MovementState.Descending; }
         }
 
         /// <summary>
@@ -1042,7 +1034,7 @@ namespace Assets.Scripts.Player
         private Vector3 DetermineGravityDirection()
         {
             Vector3 finalDir = settings.gravityDir.normalized;
-            switch (settings.currentSurfaceState)
+            switch (playerSettings.currentSurfaceState)
             {
                 case SurfaceState.Ground:
                     finalDir = ConvertToVector(settings.gravityDirectionGround);
@@ -1085,7 +1077,7 @@ namespace Assets.Scripts.Player
             int targetLayer = LayerMask.NameToLayer("Surface");
             if (collision.transform.gameObject.layer != targetLayer) return;
 
-            settings.currentSurfaceState = SurfaceState.Air;
+            playerSettings.currentSurfaceState = SurfaceState.Air;
             SurfaceState detectedState = SurfaceState.Air;
             float bestDot = -1f;
 
@@ -1129,7 +1121,7 @@ namespace Assets.Scripts.Player
                 lastSurfaceCheckTime = Time.time;
             }
 
-            if (detectedState != settings.currentSurfaceState) { settings.currentSurfaceState = detectedState; }
+            if (detectedState != playerSettings.currentSurfaceState) { playerSettings.currentSurfaceState = detectedState; }
         }
 
         /// <summary>
@@ -1218,14 +1210,14 @@ namespace Assets.Scripts.Player
         /// </summary>
         private void StopMovementUponCollision()
         {
-            if (settings.movementState != MovementState.Jumping &&
-                settings.movementState != MovementState.WallJump &&
-                settings.movementState != MovementState.AirDashing)
+            if (playerSettings.movementState != MovementState.Jumping &&
+                playerSettings.movementState != MovementState.WallJump &&
+                playerSettings.movementState != MovementState.AirDashing)
                 return;
 
             // Handle wall bounce if in AdvancedMovement mode
             if (player.mode == Mode.AdvancedMovement &&
-                (settings.currentSurfaceState == SurfaceState.LeftWall || settings.currentSurfaceState == SurfaceState.RightWall))
+                (playerSettings.currentSurfaceState == SurfaceState.LeftWall || playerSettings.currentSurfaceState == SurfaceState.RightWall))
             {
                 if (InputManager.HasLeftStickMovement())
                 {
@@ -1240,16 +1232,16 @@ namespace Assets.Scripts.Player
 
             if (isMoving)
             {
-                if (settings.currentSurfaceState == SurfaceState.LeftWall || settings.currentSurfaceState == SurfaceState.RightWall)
+                if (playerSettings.currentSurfaceState == SurfaceState.LeftWall || playerSettings.currentSurfaceState == SurfaceState.RightWall)
                 {
-                    if (settings.movementState == MovementState.WallDescending) return;
+                    if (playerSettings.movementState == MovementState.WallDescending) return;
 
-                    settings.movementState = MovementState.Stucked;
+                    playerSettings.movementState = MovementState.Stucked;
                     stuckTimer = settings.stuckDurationWall;
                 }
-                else if (settings.currentSurfaceState == SurfaceState.Ceiling)
+                else if (playerSettings.currentSurfaceState == SurfaceState.Ceiling)
                 {
-                    settings.movementState = MovementState.Stucked;
+                    playerSettings.movementState = MovementState.Stucked;
                     stuckTimer = settings.stuckDurationCeiling;
                 }
 
@@ -1296,23 +1288,23 @@ namespace Assets.Scripts.Player
         /// </summary>
         private void ForceIdleState()
         {
-            if (settings.movementState == MovementState.Bouncing) return;
+            if (playerSettings.movementState == MovementState.Bouncing) return;
 
-            if (settings.movementState == MovementState.Charging ||
-                settings.movementState == MovementState.Jumping ||
-                settings.movementState == MovementState.WallJump ||
-                settings.movementState == MovementState.Dashing ||
-                settings.currentSurfaceState == SurfaceState.Ceiling ||
+            if (playerSettings.movementState == MovementState.Charging ||
+                playerSettings.movementState == MovementState.Jumping ||
+                playerSettings.movementState == MovementState.WallJump ||
+                playerSettings.movementState == MovementState.Dashing ||
+                playerSettings.currentSurfaceState == SurfaceState.Ceiling ||
                 actionInProgress)
                 return;
 
-            if (rb.linearVelocity.sqrMagnitude < 0.01f && settings.currentSurfaceState == SurfaceState.Ground)
+            if (rb.linearVelocity.sqrMagnitude < 0.01f && playerSettings.currentSurfaceState == SurfaceState.Ground)
             {
-                settings.movementState = MovementState.Idle;
+                playerSettings.movementState = MovementState.Idle;
                 ResetPhysicsSettings(false, true);
             }
 
-            if (settings.movementState == MovementState.Idle && settings.currentSurfaceState == SurfaceState.Ground) { isLandingBuffered = false; }
+            if (playerSettings.movementState == MovementState.Idle && playerSettings.currentSurfaceState == SurfaceState.Ground) { isLandingBuffered = false; }
 
             hasWallBounce = false;
         }
@@ -1359,7 +1351,7 @@ namespace Assets.Scripts.Player
             stuckTimer = 0f;
             isStuckFrozen = false;
             ResetPhysicsSettings(true, true);
-            settings.movementState = MovementState.WallDescending;
+            playerSettings.movementState = MovementState.WallDescending;
 
             // Remove the velocity component into the wall/ceiling
             // Vector3 restoredVel = Vector3.ProjectOnPlane(preStuckVelocity, preStuckNormal);
@@ -1378,19 +1370,19 @@ namespace Assets.Scripts.Player
         /// optionally snapping to discrete increments based on directionCount.
         /// Used by LeftAnalogStickInput.
         /// </summary>
-        private Vector3 GetSnappedDirection(Vector2 input)
-        {
-            if (input.sqrMagnitude < settings.minStickMagnitude) { return Vector3.zero; }
+        // private Vector3 GetSnappedDirection(Vector2 input)
+        // {
+        //     if (input.sqrMagnitude < settings.minStickMagnitude) { return Vector3.zero; }
 
-            float rawAngle = Mathf.Atan2(input.y, input.x) * Mathf.Rad2Deg;
-            if (settings.snapDirectionsEnabled)
-            {
-                float angleStep = 360f / settings.directionCount;
-                rawAngle = Mathf.Round(rawAngle / angleStep) * angleStep;
-            }
+        //     float rawAngle = Mathf.Atan2(input.y, input.x) * Mathf.Rad2Deg;
+        //     if (playerSettings.snapDirectionsEnabled)
+        //     {
+        //         float angleStep = 360f / playerSettings.directionCountMovement;
+        //         rawAngle = Mathf.Round(rawAngle / angleStep) * angleStep;
+        //     }
 
-            return Quaternion.Euler(0f, 0f, rawAngle) * Vector3.right;
-        }
+        //     return Quaternion.Euler(0f, 0f, rawAngle) * Vector3.right;
+        // }
 
         /// <summary>
         /// Finds the nearest direction label (e.g. "NNE") for a given Vector2 direction
@@ -1420,12 +1412,12 @@ namespace Assets.Scripts.Player
         /// On ground or ceiling only “W” (left) and “E” (right) are allowed; on walls only “N” (up) and “S” (down) are allowed.
         /// Used in PerformMovementAction to decide whether to execute a dash.
         /// </summary>
-        private bool IsDashDirectionAllowed(string label)
+        public bool IsDashDirectionAllowed(string label)
         {
-            if (settings.currentSurfaceState == SurfaceState.Ground || settings.currentSurfaceState == SurfaceState.Ceiling)
+            if (playerSettings.currentSurfaceState == SurfaceState.Ground || playerSettings.currentSurfaceState == SurfaceState.Ceiling)
             { return label == "W" || label == "E"; }
 
-            if (settings.currentSurfaceState == SurfaceState.LeftWall || settings.currentSurfaceState == SurfaceState.RightWall)
+            if (playerSettings.currentSurfaceState == SurfaceState.LeftWall || playerSettings.currentSurfaceState == SurfaceState.RightWall)
             { return label == "N" || label == "S"; }
 
             return false;
@@ -1440,24 +1432,24 @@ namespace Assets.Scripts.Player
         {
             if (label == "W" || label == "E")
             {
-                if (settings.currentSurfaceState == SurfaceState.LeftWall ||
-                    settings.currentSurfaceState == SurfaceState.RightWall)
+                if (playerSettings.currentSurfaceState == SurfaceState.LeftWall ||
+                    playerSettings.currentSurfaceState == SurfaceState.RightWall)
                 {
                     return true;
                 }
                 return false;
             }
 
-            if ((settings.currentSurfaceState == SurfaceState.LeftWall || settings.currentSurfaceState == SurfaceState.RightWall) &&
+            if ((playerSettings.currentSurfaceState == SurfaceState.LeftWall || playerSettings.currentSurfaceState == SurfaceState.RightWall) &&
                 (label == "N" || label == "S")) { return false; }
 
-            return allowedMoveLabels.TryGetValue(settings.currentSurfaceState, out var allowed) &&
+            return allowedMoveLabels.TryGetValue(playerSettings.currentSurfaceState, out var allowed) &&
                 System.Array.Exists(allowed, l => l == label);
         }
 
         private bool IsAirDashDirectionAllowed(string label)
         {
-            return allowedMoveLabels.TryGetValue(settings.currentSurfaceState, out var allowed) &&
+            return allowedMoveLabels.TryGetValue(playerSettings.currentSurfaceState, out var allowed) &&
                 System.Array.Exists(allowed, l => l == label);
         }
 
@@ -1467,7 +1459,7 @@ namespace Assets.Scripts.Player
         /// </summary>
         public string GetDirectionLabel(int index)
         {
-            if (!settings.useCardinalLabels) return (index + 1).ToString();
+            if (!playerSettings.useCardinalLabels) return (index + 1).ToString();
             string[] labels = new[]
             {
                 "E","ENE","NE","NNE","N","NNW","NW","WNW",
@@ -1483,8 +1475,8 @@ namespace Assets.Scripts.Player
         public void BuildLabelToAngleMap()
         {
             labelToAngle = new Dictionary<string, float>();
-            float angleStep = 360f / settings.directionCount;
-            for (int i = 0; i < settings.directionCount; i++)
+            float angleStep = 360f / playerSettings.directionCountMovement;
+            for (int i = 0; i < playerSettings.directionCountMovement; i++)
             {
                 string label = GetDirectionLabel(i);
                 float angle = (i * angleStep + 360f) % 360f;
@@ -1499,12 +1491,12 @@ namespace Assets.Scripts.Player
         #region GIZMOS
         public void OnDrawGizmos()
         {
-            if (settings.snapDirectionsEnabled)
+            if (playerSettings.snapDirectionsEnabled)
             {
                 Gizmos.color = settings.baseDirectionColor;
-                float angleStep = 360f / settings.directionCount;
+                float angleStep = 360f / playerSettings.directionCountMovement;
 
-                for (int i = 0; i < settings.directionCount; i++)
+                for (int i = 0; i < playerSettings.directionCountMovement; i++)
                 {
                     float angle = i * angleStep;
                     float angleRad = angle * Mathf.Deg2Rad;
@@ -1513,14 +1505,12 @@ namespace Assets.Scripts.Player
 
                     Gizmos.DrawLine(player.transform.position, endPt);
 
-#if UNITY_EDITOR
 
-                    if (settings.showDirectionLabels && !Application.isPlaying)
+                    if (playerSettings.showDirectionLabels && !Application.isPlaying)
                     {
                         UnityEditor.Handles.color = Color.white;
                         UnityEditor.Handles.Label(endPt + Vector3.up * 0.1f, GetDirectionLabel(i));
                     }
-#endif
                 }
             }
 
@@ -1533,15 +1523,14 @@ namespace Assets.Scripts.Player
                     if (rb == null) return;
                 }
 
-                float distanceToTarget = Vector3.Distance(rb.position, predictedTargetPoint);
                 Gizmos.color = hasReachedTarget ? settings.jumpTargetColor : settings.landingPointColor;
                 Gizmos.DrawSphere(predictedTargetPoint, 0.25f);
             }
 
 
-            if (Application.isPlaying && labelToAngle != null && allowedMoveLabels.ContainsKey(settings.currentSurfaceState))
+            if (Application.isPlaying && labelToAngle != null && allowedMoveLabels.ContainsKey(playerSettings.currentSurfaceState))
             {
-                string[] labels = allowedMoveLabels[settings.currentSurfaceState];
+                string[] labels = allowedMoveLabels[playerSettings.currentSurfaceState];
 
                 foreach (var label in labels)
                 {
@@ -1553,13 +1542,11 @@ namespace Assets.Scripts.Player
                         Gizmos.color = settings.allowedJumpColor;
                         Gizmos.DrawLine(rb.position, rb.position + dir.normalized * settings.directionLineLength);
 
-#if UNITY_EDITOR
-                        if (settings.showDirectionLabels)
+                        if (playerSettings.showDirectionLabels)
                         {
                             UnityEditor.Handles.color = settings.allowedJumpColor;
                             UnityEditor.Handles.Label(rb.position + dir.normalized * (settings.directionLineLength + 0.1f), label);
                         }
-#endif
                     }
                 }
             }
@@ -1580,13 +1567,11 @@ namespace Assets.Scripts.Player
                     Gizmos.color = settings.dashDirectionColor;
                     Gizmos.DrawLine(rb.position, rb.position + dir.normalized * settings.directionLineLength);
 
-#if UNITY_EDITOR
-                    if (settings.showDirectionLabels)
+                    if (playerSettings.showDirectionLabels)
                     {
                         UnityEditor.Handles.color = settings.dashDirectionColor;
                         UnityEditor.Handles.Label(rb.position + dir.normalized * (settings.directionLineLength + 0.1f), $"D:{label}");
                     }
-#endif
                 }
             }
 
@@ -1608,8 +1593,7 @@ namespace Assets.Scripts.Player
                 Gizmos.DrawLine(end, end - right * headLen);
                 Gizmos.DrawLine(end, end - left * headLen);
 
-#if UNITY_EDITOR
-                if (settings.showDirectionLabels)
+                if (playerSettings.showDirectionLabels)
                 {
 
                     var style = new GUIStyle();
@@ -1619,7 +1603,6 @@ namespace Assets.Scripts.Player
                     string lbl = GetClosestDirectionLabel(snappedDir);
                     UnityEditor.Handles.Label(end + Vector3.up * 0.1f, $"Input: {lbl}", style);
                 }
-#endif
             }
         }
         #endregion

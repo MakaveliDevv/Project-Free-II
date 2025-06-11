@@ -31,7 +31,7 @@ public class BoxSpawner : MonoBehaviour
     {
         float x = Random.Range(spawnRangeX.x, spawnRangeX.y);
         float y = Random.Range(spawnRangeY.x, spawnRangeY.y);
-        Vector3 spawnPos = new Vector3(x, y, spawnDistanceZ);
+        Vector3 spawnPos = new(x, y, spawnDistanceZ);
 
         GameObject b = Instantiate(boxPrefab, spawnPos, Quaternion.identity);
         // add simple mover

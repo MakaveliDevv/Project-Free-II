@@ -33,6 +33,8 @@ namespace Assets.Scripts.Player
         public Mode mode;
 
         // ─ Class References
+        // settings
+        public PlayerSettings playerSettings;
         public MovementSettings movementSettings;
         public AdvancedMovementSettings advancedMovementSettings;
         public CombatSettings combatSettings;
@@ -44,15 +46,17 @@ namespace Assets.Scripts.Player
 
         void Awake()
         {
+            playerSettings = new();
+            
             InputSystem.settings.maxEventBytesPerUpdate = 0;
-            InputManager.Initialize(inputActionAsset, movementSettings.useRawInput, movementSettings.minStickMagnitude);
+            InputManager.Initialize(inputActionAsset, playerSettings.useRawInput, movementSettings.minStickMagnitude);
 
-            moveContrl = new(this, movementSettings, inputActionAsset);
+            moveContrl = new(this, movementSettings);
             combatContrl = new(this, combatSettings);
-            moveInt = new(movementSettings);
+            moveInt = new(playerSettings);
 
             moveContrl?.Awake();
-            movementSettings.currentSurfaceState = SurfaceState.Ground;
+            playerSettings.currentSurfaceState = SurfaceState.Ground;
 
             mode = Mode.Normal;
         }
@@ -76,7 +80,7 @@ namespace Assets.Scripts.Player
             moveInt.Update();
 
             InputManager.UpdateInput();
-            movementSettings.useAutoHover = InputManager.useAutoHover;
+            movementSettings.useAutoHover = InputManager.UseAutoHover;
 
             moveContrl?.Update();
             combatContrl?.Update();
@@ -143,7 +147,6 @@ namespace Assets.Scripts.Player
         void OnDrawGizmos()
         {
             moveContrl?.OnDrawGizmos();
-            // moveInt?.OnDrawGizmos(transform.position, coneRange, coneRadius);
             moveInt?.OnDrawGizmosRay(transform.position, interactionSettings.selectionRange);
         }
     }   

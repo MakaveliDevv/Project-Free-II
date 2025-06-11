@@ -3,27 +3,24 @@ using UnityEngine;
 namespace Assets.Scripts.Player
 {
     [System.Serializable]
+    public class PlayerSettings
+    {
+        /*[HideInInspector]*/ public MovementState movementState = MovementState.Idle;
+        /*[HideInInspector]*/ public SurfaceState currentSurfaceState = SurfaceState.Ground;
+        /*[HideInInspector]*/ public bool useRawInput = true;
+        /*[HideInInspector]*/ public bool snapDirectionsEnabled = true;
+
+        /*[HideInInspector]*/ public int directionCountMovement = 16;
+        /*[HideInInspector]*/ public int directionCountSelection = 360;
+
+        /*[HideInInspector]*/ public bool showDirectionLabels = true;
+
+        /*[HideInInspector]*/ public bool useCardinalLabels = true;
+    }
+
+    [System.Serializable]
     public class MovementSettings
     {
-        // ─ Movement State
-        [Header("Movement State")]
-        [Tooltip("Current movement state of the character")]
-        public MovementState movementState = MovementState.Idle;
-
-        [Tooltip("Surface the character is currently on")]
-        public SurfaceState currentSurfaceState = SurfaceState.Ground;
-
-        [Tooltip("If true, bypasses Unity’s smoothing to use raw input values from inputActions")]
-        public bool useRawInput = true;
-
-        // ─ Direction Snapping
-        [Header("Direction Snapping")]
-        [Tooltip("Enable snapping of stick input to discrete directions; if false, full analog input is used")]
-        public bool snapDirectionsEnabled = false;
-
-        [Tooltip("Number of directions to snap to when snapDirectionsEnabled is true; used in angle quantization")]
-        public int directionCount = 16;
-        public int directionCountZ = 8;
 
         // ─ Stuck Mechanics
         [Header("Stuck Mechanics")]
@@ -33,16 +30,8 @@ namespace Assets.Scripts.Player
         [Tooltip("Time in seconds the character remains stuck when hitting the ceiling")]
         public float stuckDurationCeiling = 1.5f;
 
-        [Tooltip("Cooldown time after being stuck before stuck state can trigger again; ensures brief recovery")]
-        public float stuckCooldownDuration = 1f;
-
-        // ─ Display Settings
-        [Header("Display Settings")]
-        [Tooltip("Toggle the rendering of direction labels in gizmos; if false, useCardinalLabels is ignored")]
-        public bool showDirectionLabels = true;
-
-        [Tooltip("When true, uses only N/E/S/W labels instead of full 16 directions; requires showDirectionLabels")]
-        public bool useCardinalLabels = true;
+        // [Tooltip("Cooldown time after being stuck before stuck state can trigger again; ensures brief recovery")]
+        // public float stuckCooldownDuration = 1f;
 
         // ─ Jump & Dash Parameters
         [Header("Jump & Dash Parameters")]
@@ -268,10 +257,6 @@ namespace Assets.Scripts.Player
         public float WallAheadCheckDistance = 0.5f;
         // how close the landing point can be to a wall before we skip hover
         public float TargetWallProximityRadius = 1f;
-
-        [Tooltip("Number of discrete snap directions within that arc.")]
-        [Min(1)]
-        public int directionCount2 = 8;
     }
 
     [System.Serializable]

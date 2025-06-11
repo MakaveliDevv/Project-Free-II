@@ -53,7 +53,6 @@ public class Attackable : MonoBehaviour
         if (Application.isPlaying)
         {
             player = GameObject.FindGameObjectWithTag("Player");
-            // combatController = player.GetComponent<CombatController>();
             Player = player.GetComponent<Player>();
             rewardSystem = FindFirstObjectByType <RewardSystem>(); 
         }
@@ -61,7 +60,7 @@ public class Attackable : MonoBehaviour
 
     void Update()
     {
-        if (!Application.isPlaying || successTriggered || currentIndex >= colliders.Count || player == null)
+        if (successTriggered || currentIndex >= colliders.Count || player == null)
             return;
 
         var activeCollider = colliders[currentIndex];
@@ -76,9 +75,6 @@ public class Attackable : MonoBehaviour
             {
                 LatestHitResult = DetermineHitResult(currentIndex);
                 Debug.Log($"✅ {LatestHitResult} hit in collider {currentIndex + 1}");
-
-                // int score = rewardSystem.CalculatePoints(LatestHitResult);
-                // rewardSystem.ApplyScore(score);
                 rewardSystem.ApplyScore(LatestHitResult);
 
                 DisableAllOtherColliders();

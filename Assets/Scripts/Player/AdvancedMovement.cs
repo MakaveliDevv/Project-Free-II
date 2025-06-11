@@ -6,6 +6,7 @@ namespace Assets.Scripts.Player
     {
         private readonly Player player;
         private readonly MovementSystem movementSystem;
+        private readonly AdvancedMovementSettings advMoveSettings;
         public bool isAdvancedMovementActive = false;
 
         private bool bounceBufferActive = false;
@@ -17,10 +18,16 @@ namespace Assets.Scripts.Player
         public bool IsBlockingInput() => postBounceTimer > 0f;
         private Collider lastBouncedCollider = null;
 
-        public AdvancedMovement(Player player, MovementSystem movementSystem)
+        public AdvancedMovement
+        (
+            Player player,
+            MovementSystem movementSystem,
+            AdvancedMovementSettings advMoveSettings
+        )
         {
             this.player = player;
             this.movementSystem = movementSystem;
+            this.advMoveSettings = advMoveSettings; 
         }
 
         public void Update()
@@ -49,7 +56,7 @@ namespace Assets.Scripts.Player
                 }
             }
 
-            if (hasBounced && movementSystem.settings.movementState != MovementState.Bouncing)
+            if (hasBounced && player.playerSettings.movementState != MovementState.Bouncing)
             {
                 hasBounced = false;
             }
@@ -65,7 +72,7 @@ namespace Assets.Scripts.Player
             string dirLabel = movementSystem.GetClosestDirectionLabel(bufferedDirection);
 
             bool isAllowed = movementSystem.allowedMoveLabels.TryGetValue(
-                movementSystem.settings.currentSurfaceState,
+                player.playerSettings.currentSurfaceState,
                 out string[] allowedDirs
             ) && System.Array.Exists(allowedDirs, d => d == dirLabel);
 
@@ -87,18 +94,18 @@ namespace Assets.Scripts.Player
             }
 
             movementSystem.rb.linearVelocity = Vector3.zero;
-            movementSystem.rb.AddForce(bounceDirection * player.advancedMovementSettings.bounceForce, ForceMode.Impulse);
-            movementSystem.settings.movementState = MovementState.Bouncing;
+            movementSystem.rb.AddForce(bounceDirection * advMoveSettings.bounceForce, ForceMode.Impulse);
+            player.playerSettings.movementState = MovementState.Bouncing;
             movementSystem.hasAppliedForce = true;
 
-            postBounceTimer = player.advancedMovementSettings.postBounceCooldown;  // block actions for a short time
+            postBounceTimer = advMoveSettings.postBounceCooldown;  // block actions for a short time
         }
 
         public void OnCollisionEnter(Collision collision)
         {
             if (!isAdvancedMovementActive) return;
 
-            SurfaceState currentSurface = movementSystem.settings.currentSurfaceState;
+            SurfaceState currentSurface = player.playerSettings.currentSurfaceState;
 
             if (currentSurface == SurfaceState.Air)
                 return;
@@ -111,7 +118,7 @@ namespace Assets.Scripts.Player
                 return;
 
             bounceBufferActive = true;
-            bounceBufferTimer = player.advancedMovementSettings.bounceDelay;
+            bounceBufferTimer = advMoveSettings.bounceDelay;
             bufferedDirection = Vector2.zero;
             hasBounced = false;
 

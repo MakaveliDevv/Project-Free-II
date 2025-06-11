@@ -4,8 +4,9 @@ using UnityEngine.InputSystem;
 public static class InputManager
 {
     private static InputAction leftStick, rightStick;
-    private static InputAction southButton;
+    private static InputAction buttonSouth, buttonNorth;
     private static InputAction leftShoulder, rightShoulder;
+    public static InputAction leftTrigger, rightTrigger;
 
     public static Vector2 LeftStickInput { get; private set; }
     public static Vector2 RightStickInput { get; private set; }
@@ -15,6 +16,9 @@ public static class InputManager
 
     public static bool SouthButtonPressed { get; private set; }
     public static bool SouthButtonReleased { get; private set; }
+
+    public static bool NorthButtonPressed { get; private set; }
+    public static bool NorthButtonReleased { get; private set; }
 
     public static bool LeftShoulderPressed { get; set; }
     public static bool LeftShoulderReleased { get; private set; }
@@ -26,8 +30,13 @@ public static class InputManager
 
     public static bool RightShoulderDoublePressed { get; private set; }
 
-    public static int leftShoulderPressCount;
+    public static bool LeftTriggerPressed { get; private set; }
+    public static bool LeftTriggerReleased { get; private set; }
 
+    public static bool UseAutoHover { get; private set; } = false;
+    public static int LeftShoulderPressCount { get; private set; }
+    
+    public static bool TriggerLock { get; set; }
     private static bool useRawInput;
     private static float minStickMagnitude;
 
@@ -38,7 +47,6 @@ public static class InputManager
     private static float lastLeftShoulderPressTime = -Mathf.Infinity;
     private static float lastRightShoulderPressTime = -Mathf.Infinity;
 
-    public static bool useAutoHover = false;
 
     public static void Initialize(InputActionAsset inputAsset, bool rawInput, float stickThreshold)
     {
@@ -50,24 +58,34 @@ public static class InputManager
 
         leftStick = map.FindAction("DirCalculation");
         rightStick = map.FindAction("SwipeCalculation");
-        southButton = map.FindAction("MovementTrigger");
+        buttonSouth = map.FindAction("MovementTrigger");
+        buttonNorth = map.FindAction("PullTrigger");
+
         leftShoulder = map.FindAction("AdvancedMovementMode");
         rightShoulder = map.FindAction("CombatMode");
 
+        leftTrigger = map.FindAction("Launch");
         dPadUp = map2.FindAction("ToggleAutoHover");
 
         Enable();
 
         // South button:
-        southButton.started += ctx => SouthButtonPressed = true;
-        southButton.canceled += ctx =>
+        buttonSouth.started += ctx => SouthButtonPressed = true;
+        buttonSouth.canceled += ctx =>
         {
             SouthButtonPressed = false;
             SouthButtonReleased = true;
         };
 
+        buttonNorth.started += ctx => NorthButtonPressed = true;
+        buttonNorth.canceled += ctx =>
+        {
+            NorthButtonPressed = false;
+            NorthButtonReleased = true;
+        };
+
         // Left shoulder
-        leftShoulder.started += ctx =>
+            leftShoulder.started += ctx =>
         {
             LeftShoulderPressed = true;
             if (CheckDoublePress(ref lastLeftShoulderPressTime, shoulderDoublePressThreshold))
@@ -92,16 +110,23 @@ public static class InputManager
             RightShoulderReleased = true;
         };
 
+        leftTrigger.started += ctx => LeftTriggerPressed = true;
+        leftTrigger.canceled += ctx =>
+        {
+            LeftTriggerPressed = false;
+            LeftTriggerReleased = true;
+        };
+
         // Dpad Up
         dPadUp.started += ctx =>
         {
-            useAutoHover = !useAutoHover;
+            UseAutoHover = !UseAutoHover;
             Debug.Log("Toggle autoHover");
-        }; 
+        };
 
         dPadUp.started -= ctx =>
         {
-            useAutoHover = !useAutoHover;
+            UseAutoHover = !UseAutoHover;
             Debug.Log("Toggle autoHover");
         };
     }
@@ -109,10 +134,16 @@ public static class InputManager
     private static void Enable()
     {
         leftStick?.Enable();
-        southButton?.Enable();
         rightStick?.Enable();
-        rightShoulder?.Enable();
+
+        buttonSouth?.Enable();
+        buttonNorth?.Enable();
+
         leftShoulder?.Enable();
+        rightShoulder?.Enable();
+
+        leftTrigger?.Enable();
+
         dPadUp?.Enable();
     }
 
@@ -135,9 +166,13 @@ public static class InputManager
     public static void ResetFrameInputs()
     {
         SouthButtonReleased = false;
+        NorthButtonReleased = false;
+
         LeftShoulderReleased = false;
         RightShoulderReleased = false;
 
+        LeftTriggerReleased = false;
+        
         LeftShoulderDoublePressed = false;
         RightShoulderDoublePressed = false;
     }
@@ -158,6 +193,21 @@ public static class InputManager
             return false;
         }
     }
+
+    public static Vector3 GetSnappedDirection(Vector2 input, bool snapDirectionsEnabled, float directionCount)
+    {
+        if (input.sqrMagnitude < minStickMagnitude) { return Vector3.zero; }
+
+        float rawAngle = Mathf.Atan2(input.y, input.x) * Mathf.Rad2Deg;
+        if (snapDirectionsEnabled)
+        {
+            float angleStep = 360f / directionCount;
+            rawAngle = Mathf.Round(rawAngle / angleStep) * angleStep;
+        }
+
+        return Quaternion.Euler(0f, 0f, rawAngle) * Vector3.right;
+    }
+
     
     // private static void ToggleAutoHover(InputAction.CallbackContext ctx)
     // {

@@ -1,23 +1,20 @@
 using UnityEngine;
 using System.Collections;
 using Assets.Scripts.Player;
-using UnityEngine.InputSystem;
 
 public class Interactable : MonoBehaviour
 {
-    Player player;
-    Rigidbody playerRb;
-    BoxMover boxMover;
-    Collider col, pCol;
-    // MovementInteraction moverInt;
+    private Player player;
+    private Rigidbody playerRb;
+    private BoxMover boxMover;
+    private Collider col, pCol;
 
-    bool interacting = false;
-    bool isLaunching = false;
-    bool triggerLock = false;
-    Coroutine pullCoroutine;
+    private bool interacting = false;
+    private bool isLaunching = false;
+    private Coroutine pullCoroutine;
 
-    BoxMover selectedBox;
-    Color selectedOriginalColor;
+    private BoxMover selectedBox;
+    private Color selectedOriginalColor;
 
     void Awake()
     {
@@ -53,43 +50,35 @@ public class Interactable : MonoBehaviour
 
             UpdateHighlight(best);
 
-            var gp = Gamepad.current;
-            if (gp != null)
+            if (InputManager.LeftTriggerPressed && !InputManager.TriggerLock && selectedBox != null)
             {
-                if (gp.leftTrigger.isPressed && !triggerLock && selectedBox != null)
+                InputManager.TriggerLock = true;
+                if (pullCoroutine != null)
                 {
-                    triggerLock = true;
-                    if (pullCoroutine != null)
-                    {
-                        StopCoroutine(pullCoroutine);
-                        pullCoroutine = null;
-                    }
-                    StartCoroutine(LaunchToBoxRoutine(selectedBox));
-                    ClearHighlight();
+                    StopCoroutine(pullCoroutine);
+                    pullCoroutine = null;
                 }
-                else if (!gp.leftTrigger.isPressed)
-                {
-                    triggerLock = false;
-                }
+                StartCoroutine(LaunchToBoxRoutine(selectedBox));
+                ClearHighlight();
+            }
+            else if (!InputManager.LeftTriggerPressed || InputManager.LeftTriggerReleased)
+            {
+                InputManager.TriggerLock = false;
             }
             return;
         }
 
         // pull onto this box
-        var pad = Gamepad.current;
-        if (pad != null
-            && pad.buttonNorth.isPressed
-            && Vector3.Distance(playerRb.position, transform.position) <= player.interactionSettings.interactionRadius)
-        {
-            pullCoroutine = StartCoroutine(PullOntoBoxRoutine());
-        }
+        if(InputManager.NorthButtonPressed
+        && Vector3.Distance(playerRb.position, transform.position) <= player.interactionSettings.interactionRadius)
+            pullCoroutine = StartCoroutine(PullOntoBoxRoutine()); 
     }
 
     IEnumerator PullOntoBoxRoutine()
     {
         interacting = true;
-        player.movementSettings.movementState = MovementState.Interacting;
-        player.movementSettings.currentSurfaceState = SurfaceState.Nothing;
+        player.playerSettings.movementState = MovementState.Interacting;
+        player.playerSettings.currentSurfaceState = SurfaceState.Nothing;
 
         Vector3 start = playerRb.position;
         float t = 0f;
@@ -99,7 +88,7 @@ public class Interactable : MonoBehaviour
             float pct = Mathf.SmoothStep(0f, 1f, t / player.interactionSettings.pullDuration);
             var b = col.bounds;
             float h = pCol.bounds.extents.y;
-            Vector3 top = new Vector3(b.center.x, b.max.y + h, b.center.z);
+            Vector3 top = new(b.center.x, b.max.y + h, b.center.z);
             playerRb.MovePosition(Vector3.Lerp(start, top, pct));
             yield return null;
         }
@@ -111,8 +100,8 @@ public class Interactable : MonoBehaviour
     {
         isLaunching = true;
         interacting = false;
-        triggerLock = false;
-        player.movementSettings.movementState = MovementState.Launching;
+        InputManager.TriggerLock = false;
+        player.playerSettings.movementState = MovementState.Launching;
 
         Vector3 start = playerRb.position;
         float t = 0f;
@@ -122,7 +111,7 @@ public class Interactable : MonoBehaviour
             float pct = Mathf.SmoothStep(0f, 1f, t / player.interactionSettings.launchDuration);
             var b = target.transform.GetChild(0).GetComponent<Collider>().bounds;
             float h = pCol.bounds.extents.y;
-            Vector3 top = new Vector3(b.center.x, b.max.y + h, b.center.z);
+            Vector3 top = new(b.center.x, b.max.y + h, b.center.z);
             playerRb.MovePosition(Vector3.Lerp(start, top, pct));
             yield return null;
         }
@@ -136,8 +125,8 @@ public class Interactable : MonoBehaviour
         if (mv != null) mv.enabled = false;
 
         interacting = true;
-        player.movementSettings.movementState = MovementState.Interacting;
-        player.movementSettings.currentSurfaceState = SurfaceState.Nothing;
+        player.playerSettings.movementState = MovementState.Interacting;
+        player.playerSettings.currentSurfaceState = SurfaceState.Nothing;
         isLaunching = false;
     }
 

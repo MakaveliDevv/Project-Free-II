@@ -32,7 +32,7 @@ namespace Assets.Scripts.Player
 
         void Update()
         {
-            switch (player.movementSettings.movementState)
+            switch (player.playerSettings.movementState)
             {
                 case MovementState.Idle:
                     Debug.Log("Starting idle anim");
@@ -55,7 +55,7 @@ namespace Assets.Scripts.Player
                     break;
 
                 case MovementState.Dashing:
-                    switch (player.movementSettings.currentSurfaceState)
+                    switch (player.playerSettings.currentSurfaceState)
                     {
                         case SurfaceState.Ground:
                             GroundDashAnim();
@@ -77,8 +77,8 @@ namespace Assets.Scripts.Player
                     break;
 
                 case MovementState.WallJump:
-                    if (player.movementSettings.currentSurfaceState != SurfaceState.Ground ||
-                        player.movementSettings.currentSurfaceState != SurfaceState.Ceiling)
+                    if (player.playerSettings.currentSurfaceState != SurfaceState.Ground ||
+                        player.playerSettings.currentSurfaceState != SurfaceState.Ceiling)
                     {
                         Debug.Log("Invoke wall jump anim");
                         if (player.moveContrl.movementSystem.isWallJumpRight)
@@ -137,11 +137,11 @@ namespace Assets.Scripts.Player
                     break;
 
                 case MovementState.WallDescending:
-                    if (player.movementSettings.currentSurfaceState == SurfaceState.RightWall)
+                    if (player.playerSettings.currentSurfaceState == SurfaceState.RightWall)
                     {
                         RightWallDescendingAnim();
                     }
-                    else if (player.movementSettings.currentSurfaceState == SurfaceState.LeftWall)
+                    else if (player.playerSettings.currentSurfaceState == SurfaceState.LeftWall)
                     {
                         LeftWallDescendingAnim();
                     }
