@@ -900,7 +900,7 @@ Transform:
   m_GameObject: {fileID: 206922466}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1.127, y: 2.988, z: -1.65}
+  m_LocalPosition: {x: 1.127, y: 6.43, z: 1.727}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -964,6 +964,14 @@ MonoBehaviour:
       m_Calls: []
     m_ActionId: 9f6e0a0b-02fd-433b-bd0d-05f41bce439d
     m_ActionName: 'Player/CombatMode[/XInputControllerWindows/rightShoulder]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 31afbe48-8c26-4c0e-b43a-79adbbcfe044
+    m_ActionName: 'Player/Launch[/XInputControllerWindows/leftTrigger]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 74363b48-7c69-4a13-9f92-d4d247ad1724
+    m_ActionName: 'Player/PullTrigger[/XInputControllerWindows/buttonNorth]'
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
   m_DefaultActionMap: Player
@@ -1014,11 +1022,11 @@ MonoBehaviour:
     movementState: 0
     currentSurfaceState: 0
     useRawInput: 1
-    snapDirectionsEnabled: 1
-    directionCountMovement: 32
-    directionCountSelection: 64
-    showDirectionLabels: 0
-    useCardinalLabels: 0
+    snapDirectionsEnabled: 0
+    directionCountMovement: 16
+    directionCountSelection: 360
+    showDirectionLabels: 1
+    useCardinalLabels: 1
   movementSettings:
     stuckDurationWall: 1
     stuckDurationCeiling: 10

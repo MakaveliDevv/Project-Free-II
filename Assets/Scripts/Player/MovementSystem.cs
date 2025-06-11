@@ -42,6 +42,8 @@ namespace Assets.Scripts.Player
         // ─ Surface Memory
         [HideInInspector] public GameObject lastSurfaceObject;
 
+        public bool IsNearGround { get; private set; }
+
         // ─────────────────────────────────────────────────────────────────────────
         // PRIVATE VARIABLES
         // ─────────────────────────────────────────────────────────────────────────
@@ -241,6 +243,12 @@ namespace Assets.Scripts.Player
                 float angleDiff = Mathf.DeltaAngle(rawAngle, 270f); // 270° is straight down
                 rawDown = Mathf.Abs(angleDiff) <= settings.dropAngleTolerance;
             }
+
+            
+            IsNearGround = playerSettings.movementState == MovementState.Descending
+            || playerSettings.movementState == MovementState.WallDashing && IsLanding();
+
+            if (IsNearGround) { Debug.Log("Landed..."); }
 
             isDropping = Gamepad.current != null &&
                         Gamepad.current.buttonEast.isPressed &&
@@ -1196,6 +1204,16 @@ namespace Assets.Scripts.Player
                 settings.surfaceLayer
             );
             return hits.Length > 0;
+        }
+
+        private bool IsLanding()
+        {
+            return Physics.Raycast(
+                rb.position,
+                Vector3.down,
+                .5f,
+                settings.surfaceLayer
+            );
         }
         #endregion
 
