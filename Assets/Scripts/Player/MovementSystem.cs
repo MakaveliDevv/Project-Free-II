@@ -94,6 +94,11 @@ namespace Assets.Scripts.Player
         private float wallDescendingGravityStrength = 0f;
         private float initialBounciness = 0;
 
+        // ─── queued action & direction for deferred jumps/dashes ────────────────
+        private string queuedFetchedAction = "";
+        private Vector2 queuedSnappedDir = Vector2.zero;
+        private bool queuedActionPending = false;
+
         private Vector3 ConvertToVector(GravityDirection dir)
         {
             return dir switch
@@ -151,7 +156,7 @@ namespace Assets.Scripts.Player
         // ─ Miscellaneous
         private SurfaceState lastWallSide;
         private Coroutine landingResetCoroutine;
-        private Collider[] colliders = new Collider[10]; 
+        private Collider[] colliders = new Collider[10];
         private const int maxBufferSize = 1000;
         private Coroutine freezeCoroutine = null;
         private bool isJumpAllowed;
@@ -182,15 +187,11 @@ namespace Assets.Scripts.Player
         #region UNITY LIFECYCLE
         public void Awake()
         {
-            // rb = player.GetComponent<Rigidbody>();
-            // col = player.GetComponent<Collider>();
             rb = player.rb;
             col = player.col;
-
-            // rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
-            // rb.interpolation = RigidbodyInterpolation.Interpolate;
-
             BuildLabelToAngleMap();
+
+            InputManager.minButtonPressTime = settings.minButtonPressTime;
         }
 
         public void Start()
@@ -213,26 +214,18 @@ namespace Assets.Scripts.Player
             ResetActionState();
             ResetPhysicsSettings(false, true);
 
-            // Debug.Log("Timer finished, starting descend...");
-
             yield break;
         }
 
         public void Update()
         {
-            FetchActionType();
+            InputManager.buttonHoldTimer = buttonHoldTimer;
+
+            if (!queuedActionPending)
+                FetchActionType();
+
             bool stickMoving = InputManager.HasLeftStickMovement();
             bool jumpHeld = InputManager.SouthButtonPressed;
-
-            if (stickMoving)
-            {
-                // snappedDir = GetSnappedDirection(stick).normalized;
-                snappedDir = InputManager.GetSnappedDirection(InputManager.LeftStickInput, playerSettings.snapDirectionsEnabled, playerSettings.directionCountMovement);
-            }
-            else
-            {
-                snappedDir = Vector2.zero;
-            }
 
             // Determine downward stick angle
             bool canDrop = playerSettings.currentSurfaceState == SurfaceState.Air || playerSettings.movementState == MovementState.Stucked;
@@ -240,33 +233,59 @@ namespace Assets.Scripts.Player
 
             if (stickMoving)
             {
+                snappedDir = InputManager.GetSnappedDirection(InputManager.LeftStickInput, playerSettings.snapDirectionsEnabled, playerSettings.directionCountMovement);
+
                 float rawAngle = Mathf.Atan2(InputManager.LeftStickInput.y, InputManager.LeftStickInput.x) * Mathf.Rad2Deg;
                 rawAngle = (rawAngle + 360f) % 360f;
                 float angleDiff = Mathf.DeltaAngle(rawAngle, 270f); // 270° is straight down
                 rawDown = Mathf.Abs(angleDiff) <= settings.dropAngleTolerance;
             }
+            else
+            {
+                snappedDir = Vector2.zero;
+            }
 
-            
             IsNearGround = playerSettings.movementState == MovementState.Descending
             || playerSettings.movementState == MovementState.WallDescending && IsLanding();
-
 
             isDropping = Gamepad.current != null &&
                         Gamepad.current.buttonEast.isPressed &&
                         rawDown &&
                         canDrop &&
                         playerSettings.movementState != MovementState.Idle &&
-                        playerSettings.movementState != MovementState.Charging &&
-                        !ActionInputDetected();
+                        !InputManager.ActionInputDetected();
 
             if (jumpHeld && buttonHoldTimer >= settings.minButtonPressTime && !buttonPressedLongEnough)
             {
                 buttonPressedLongEnough = true;
-                // Debug.Log("✓ Button held long enough → charge initiated");
-
-                if (playerSettings.movementState != MovementState.Charging && stickMoving && allowedToMove)
+                bool isAirDash = player.mode == Mode.AdvancedMovement && fetchedAction == "AirDash";
+                
+                // only enter Charging if we have a real Jump/Dash to queue
+                if (!isAirDash
+                    && playerSettings.movementState != MovementState.Charging
+                    && stickMoving
+                    && (allowedToMove || isInAir))
                 {
-                    playerSettings.movementState = MovementState.Charging;
+                    string actionToQueue = "";
+                    if (allowedToMove)
+                    {
+                        actionToQueue = fetchedAction;
+                    }
+                    else // mid‐air queue: infer Jump vs Dash from the stick
+                    {
+                        var label = GetClosestDirectionLabel(snappedDir);
+                        if (IsDashDirectionAllowed(label)) actionToQueue = "Dash";
+                        else if (IsJumpDirectionAllowed(label)) actionToQueue = "Jump";
+                    }
+
+                    if (!string.IsNullOrEmpty(actionToQueue))
+                    {
+                        // latch state
+                        playerSettings.movementState = MovementState.Charging;
+                        queuedFetchedAction = actionToQueue;
+                        queuedSnappedDir = snappedDir;
+                        queuedActionPending = true;
+                    }
                 }
             }
 
@@ -320,9 +339,29 @@ namespace Assets.Scripts.Player
             {
                 buttonPressedLongEnough = false;
 
-                if (snappedDir != Vector2.zero && playerSettings.movementState == MovementState.Charging)
+                if (playerSettings.movementState == MovementState.Charging && queuedActionPending)
                 {
-                    PerformMovementAction();
+                    // restore what we queued
+                    fetchedAction = queuedFetchedAction;
+                    snappedDir = queuedSnappedDir;
+                    allowedToMove = true;
+
+                    // Advanced‐Movement air‐dash still fires immediately on release
+                    if (player.mode == Mode.AdvancedMovement && fetchedAction == "AirDash")
+                    {
+                        PerformMovementAction();
+                        hasBurstDropped = false;
+                        queuedActionPending = false;
+                        ResetPhysicsSettings(true, true);
+                    }
+                    // ground Jump/Dash only if landed
+                    else if (!isInAir)
+                    {
+                        PerformMovementAction();
+                        hasBurstDropped = false;
+                        queuedActionPending = false;
+                    }
+                    // otherwise stay in Charging and wait for collision
                 }
                 else
                 {
@@ -331,10 +370,6 @@ namespace Assets.Scripts.Player
 
                 actionReady = true;
             }
-
-            // if (settings.currentSurfaceState == SurfaceState.Ground)
-            //     player.movementController.advancedMovement.ResetLastBouncedSurface();
-
 
             if (playerSettings.movementState == MovementState.Idle || playerSettings.movementState == MovementState.Dashing || playerSettings.movementState == MovementState.WallDescending)
                 col.material.bounciness = initialBounciness;
@@ -367,7 +402,7 @@ namespace Assets.Scripts.Player
 
         public void LateUpdate()
         {
-            if (settings.enableZLock && 
+            if (settings.enableZLock &&
             playerSettings.movementState != MovementState.Interacting &&
             playerSettings.movementState != MovementState.Launching)
             {
@@ -379,27 +414,20 @@ namespace Assets.Scripts.Player
 
         public void FixedUpdate()
         {
-            // if (settings.movementState == MovementState.Stucked)
-            // {
-            //     FreezePlayer();
-            //     return;
-            // }
-
             if (playerSettings.movementState != MovementState.Hovering) ApplyCustomGravity();
             GetLastCollidedSurface();
 
             // isInAir = !IsCollidingWithSurface();
             isInAir = !CheckSurfaces();
 
+            Debug.Log($"previous stick down drop -> {prevStickDownDrop}");
             if (settings.useHandleActionForces) { HandleActionForces(); }
-            // Debug.Log($"isDropping = {isDropping}, prevStickDownDrop = {prevStickDownDrop}, hasBurstDropped = {hasBurstDropped}");
             if (isDropping && !prevStickDownDrop && !hasBurstDropped) { ApplyBurstDropForce(); }
             prevStickDownDrop = isDropping;
 
             SmoothMovement();
 
             isMoving = rb.linearVelocity.sqrMagnitude > settings.isMovingThreshold;
-            // Debug.Log($"IsMoving = {isMoving}");
 
             if ((playerSettings.movementState == MovementState.Jumping ||
                 playerSettings.movementState == MovementState.WallJump ||
@@ -413,9 +441,25 @@ namespace Assets.Scripts.Player
 
         public void OnCollisionEnter(Collision collision)
         {
+            player.CancelInvoke(nameof(ResetActionState));
             HandleSurfaceState(collision, out _);
-            // if (player.mode != Mode.AdvancedMovement) { TryStickToWall(collision); }
             if (player.mode != Mode.AdvancedMovement) { StopMovementUponCollision(); }
+
+            // dequeue the queued Jump/Dash as soon as we hit any surface
+            if (playerSettings.movementState == MovementState.Charging
+                && playerSettings.currentSurfaceState != SurfaceState.Air
+                && queuedActionPending)
+            {
+                // restore what we latched
+                fetchedAction = queuedFetchedAction;
+                snappedDir = queuedSnappedDir;
+                allowedToMove = true;
+
+                PerformMovementAction();
+                hasBurstDropped = false;
+                queuedActionPending = false;
+                ResetPhysicsSettings(true, true);
+            }
 
             player.Invoke(nameof(ResetActionState), .1f);
 
@@ -447,19 +491,7 @@ namespace Assets.Scripts.Player
         // ─────────────────────────────────────────────────────────────────────────
         // ACTION DETECTION & HANDLING
         // ─────────────────────────────────────────────────────────────────────────
-        #region ACTION DETECTION & HANDLING
-        /// <summary>
-        /// Determines if the stick movement and button hold satisfy the criteria for an action input.
-        /// Used by Update to transition into the Charging state.
-        /// </summary>
-        private bool ActionInputDetected()
-        {
-            if (InputManager.HasLeftStickMovement() && InputManager.SouthButtonPressed && buttonHoldTimer >= settings.minButtonPressTime) { return true; }
-
-            buttonHoldTimer = 0;
-            // InputManager.SouthButtonPressed = false;
-            return false;
-        }
+        #region ACTION HANDLING
 
         private void FetchActionType()
         {
@@ -730,7 +762,7 @@ namespace Assets.Scripts.Player
         {
             if (Vector3.Distance(rb.position, predictedTargetPoint) < settings.arrivalRadius
             && !isDropping && player.mode != Mode.AdvancedMovement)
-            { 
+            {
                 hasReachedTarget = true;
                 Debug.Log($"hasReachedTarget = {hasReachedTarget}");
             }
@@ -759,7 +791,6 @@ namespace Assets.Scripts.Player
                 hasBurstDropped = false;
                 ResetPhysicsSettings(false, true);
                 ResetActionState();
-                // Debug.Log("DelayedLandingReset...");
             }
 
             landingResetCoroutine = null;
@@ -883,7 +914,6 @@ namespace Assets.Scripts.Player
             }
             else if (settings.useAutoHover)
             {
-                // Debug.Log("Auto hover.."); 
                 Hover();
                 return true;
             }
@@ -910,8 +940,6 @@ namespace Assets.Scripts.Player
         /// </summary>
         private void WobbleEffect()
         {
-            // if (player.mode == Mode.AdvancedMovement) return;
-
             if (settings.useHoverWobble && hoverTimer < (settings.hoverDuration - settings.hoverStartDelay)
             && hasReachedTarget)
             {
@@ -976,7 +1004,6 @@ namespace Assets.Scripts.Player
                 if (verticalVelocity > dropCap)
                     rb.linearVelocity -= dir * (verticalVelocity - dropCap);
 
-                // Debug.Log($"[Fast-fall] speed={verticalVelocity:F2}  gravity={dropGravity:F2}");
                 return;
             }
 
@@ -986,8 +1013,6 @@ namespace Assets.Scripts.Player
             if (verticalVelocity > 0.1f) { dynamicGravity *= settings.fallMultiplier; }
             rb.AddForce(dir * dynamicGravity, settings.fallForceMode);
             if (verticalVelocity > settings.maxFallSpeed) { rb.linearVelocity -= dir * (verticalVelocity - settings.maxFallSpeed); }
-
-            // Debug.Log($"[Fall] speed={verticalVelocity:F2}  height={heightAboveStart:F2}  gravity={dynamicGravity:F2}");
         }
 
 
@@ -1275,7 +1300,6 @@ namespace Assets.Scripts.Player
         {
             // Enter stuck state
             rb.isKinematic = true;
-            // settings.gravityStrength = 0f;
             isStuckFrozen = true;
 
             yield return new WaitForSeconds(duration);
@@ -1343,6 +1367,11 @@ namespace Assets.Scripts.Player
             isWallJumping = false;
             snappedDir = Vector2.zero;
 
+            // clear any queued Jump/Dash
+            queuedFetchedAction = "";
+            queuedSnappedDir = Vector2.zero;
+            queuedActionPending = false;
+
             // advanced movement
             hasWallBounce = false;
         }
@@ -1370,11 +1399,6 @@ namespace Assets.Scripts.Player
             isStuckFrozen = false;
             ResetPhysicsSettings(true, true);
             playerSettings.movementState = MovementState.WallDescending;
-
-            // Remove the velocity component into the wall/ceiling
-            // Vector3 restoredVel = Vector3.ProjectOnPlane(preStuckVelocity, preStuckNormal);
-            // rb.linearVelocity = restoredVel;
-
         }
 
         #endregion
@@ -1383,25 +1407,6 @@ namespace Assets.Scripts.Player
         // DIRECTION & LABEL MAPPING
         // ─────────────────────────────────────────────────────────────────────────
         #region DIRECTION & LABEL MAPPING
-        /// <summary>
-        /// Converts raw 2D stick input into a world-space Vector3 direction,
-        /// optionally snapping to discrete increments based on directionCount.
-        /// Used by LeftAnalogStickInput.
-        /// </summary>
-        // private Vector3 GetSnappedDirection(Vector2 input)
-        // {
-        //     if (input.sqrMagnitude < settings.minStickMagnitude) { return Vector3.zero; }
-
-        //     float rawAngle = Mathf.Atan2(input.y, input.x) * Mathf.Rad2Deg;
-        //     if (playerSettings.snapDirectionsEnabled)
-        //     {
-        //         float angleStep = 360f / playerSettings.directionCountMovement;
-        //         rawAngle = Mathf.Round(rawAngle / angleStep) * angleStep;
-        //     }
-
-        //     return Quaternion.Euler(0f, 0f, rawAngle) * Vector3.right;
-        // }
-
         /// <summary>
         /// Finds the nearest direction label (e.g. "NNE") for a given Vector2 direction
         /// based on the labelToAngle map. Used by PerformMovementAction and permission checks.

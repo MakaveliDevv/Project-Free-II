@@ -43,13 +43,13 @@ namespace Assets.Scripts.Player
 
             if (currState != _prevMovementState || player.playerSettings.currentSurfaceState != _prevSurfaceState)
             {
-                HandleStateEntry(currState, currSurface, settings);
+                HandleStateEntry(currState, currSurface);
                 _prevMovementState = currState;
                 _prevSurfaceState = currSurface;
             }
         }
 
-        private void HandleStateEntry(MovementState ms, SurfaceState ss, PlayerSettings settings)
+        private void HandleStateEntry(MovementState ms, SurfaceState ss)
         {
             // Landing detection: Descending -> Idle on Ground
             if (_prevMovementState == MovementState.Descending
@@ -169,8 +169,19 @@ namespace Assets.Scripts.Player
         {
             Debug.Log("Invoke landing anim");
             // Clear all and set landing bool
-            IdleAnim();
-            animator.SetBool("Landing", true);
+
+            if (InputManager.ActionInputDetected())
+            {
+                ChargingAnim();
+                Debug.Log("Invoked charging anim on landing");
+            }
+            else
+            {
+                IdleAnim();
+                animator.SetBool("Landing", true);
+                Debug.Log("No input detected, transition to Idle anim");
+            } 
+
         }
 
         // --- Core pose methods (reset & set one flag) ---
@@ -180,9 +191,27 @@ namespace Assets.Scripts.Player
             SetAllFalse();
             animator.SetBool("Idle", true);
         }
-        private void ChargingAnim() { SetAllFalse(); animator.SetBool("Charge", true); }
-        private void HoverAnim() { hasPlayedJumpParticles = false; hasPlayedStuckParticles = false; SetAllFalse(); animator.SetBool("Hover", true); }
-        private void DescendingAnim() { hasPlayedJumpParticles = false; SetAllFalse(); animator.SetBool("Descent", true); }
+
+        private void ChargingAnim()
+        {
+            SetAllFalse();
+            animator.SetBool("Charge", true);
+        }
+
+        private void HoverAnim()
+        {
+            hasPlayedJumpParticles = false;
+            hasPlayedStuckParticles = false;
+            SetAllFalse();
+            animator.SetBool("Hover", true);
+        }
+
+        private void DescendingAnim()
+        {
+            hasPlayedJumpParticles = false;
+            SetAllFalse();
+            animator.SetBool("Descent", true);
+        }
 
         // Resets all relevant bools before setting one
         private void SetAllFalse()

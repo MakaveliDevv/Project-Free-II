@@ -43,7 +43,7 @@ namespace Assets.Scripts.Player
 
         public MovementSystemController moveContrl;
         public CombatController combatContrl;
-        public MovementInteraction moveInt;
+        // public MovementInteraction moveInt;
         private AnimationController animContr;
 
         [HideInInspector] public Rigidbody rb;
@@ -67,7 +67,7 @@ namespace Assets.Scripts.Player
             // Class instances
             moveContrl = new(this, movementSettings);
             combatContrl = new(this, combatSettings);
-            moveInt = new(this);
+            // moveInt = new(this);
             animContr = new(this, animSettings, animator);
 
             moveContrl?.Awake();
@@ -92,8 +92,6 @@ namespace Assets.Scripts.Player
 
         void Update()
         {
-            moveInt.Update();
-
             InputManager.UpdateInput();
             movementSettings.useAutoHover = InputManager.UseAutoHover;
 
@@ -125,7 +123,10 @@ namespace Assets.Scripts.Player
                     break;
             }
 
-            if (playerSettings.movementState == MovementState.Idle && playerSettings.currentSurfaceState == SurfaceState.Ground) moveInt.interacting = false;
+            if (playerSettings.movementState == MovementState.Idle
+                && playerSettings.currentSurfaceState == SurfaceState.Ground
+                && mode == Mode.AdvancedMovement)
+                moveContrl.advancedMovement.moveInt.interacting = false;
 
             animContr.Update();
 
@@ -155,7 +156,7 @@ namespace Assets.Scripts.Player
         void OnTriggerEnter(Collider collider)
         {
             combatContrl?.OnTriggerEnter(collider);
-            moveInt.OnTriggerEnter(collider);
+            moveContrl?.OnTriggerEnter(collider);
         }
 
         void OnTriggerExit(Collider collider)
@@ -166,8 +167,7 @@ namespace Assets.Scripts.Player
 
         void OnDrawGizmos()
         {
-            moveContrl?.OnDrawGizmos();
-            moveInt?.OnDrawGizmosRay(transform.position, interactionSettings.selectionRange);
+            moveContrl?.OnDrawGizmos(transform.position, interactionSettings.selectionRange);
         }
     }   
 }

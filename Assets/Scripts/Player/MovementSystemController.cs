@@ -55,10 +55,18 @@ namespace Assets.Scripts.Player
             movementSystem?.OnCollisionExit(collision);
         }
 
-        public void OnDrawGizmos()
+        public void OnTriggerEnter(Collider collider)
+        { 
+            advancedMovement?.OnTriggerEnter(collider);
+        }
+
+        public void OnDrawGizmos(Vector3 origin, float range)
         {
             if (Application.isPlaying)
+            {
                 movementSystem?.OnDrawGizmos();
+                advancedMovement?.OnDrawGizmos(origin, range);
+            }
         }
     }
 }

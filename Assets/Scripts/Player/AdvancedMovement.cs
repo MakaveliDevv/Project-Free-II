@@ -6,6 +6,7 @@ namespace Assets.Scripts.Player
     {
         private readonly Player player;
         private readonly MovementSystem movementSystem;
+        public MovementInteraction moveInt;
         private readonly AdvancedMovementSettings advMoveSettings;
         public bool isAdvancedMovementActive = false;
 
@@ -27,7 +28,9 @@ namespace Assets.Scripts.Player
         {
             this.player = player;
             this.movementSystem = movementSystem;
-            this.advMoveSettings = advMoveSettings; 
+            this.advMoveSettings = advMoveSettings;
+
+            moveInt = new(player);
         }
 
         public void Update()
@@ -41,29 +44,34 @@ namespace Assets.Scripts.Player
 
             if (InputManager.LeftShoulderPressed && !isAdvancedMovementActive) { player.mode = Mode.AdvancedMovement; }
 
-            if (bounceBufferActive)
+            if (player.mode == Mode.AdvancedMovement)
             {
-                bounceBufferTimer -= Time.deltaTime;
-
-                if (InputManager.LeftStickInput.magnitude > 0.1f)
-                    bufferedDirection = InputManager.LeftStickInput.normalized;
-
-                if (bounceBufferTimer <= 0f && !hasBounced)
+                if (bounceBufferActive)
                 {
-                    ApplyBufferedBounce();
-                    hasBounced = true;
-                    bounceBufferActive = false;
+                    bounceBufferTimer -= Time.deltaTime;
+
+                    if (InputManager.LeftStickInput.magnitude > 0.1f)
+                        bufferedDirection = InputManager.LeftStickInput.normalized;
+
+                    if (bounceBufferTimer <= 0f && !hasBounced)
+                    {
+                        ApplyBufferedBounce();
+                        hasBounced = true;
+                        bounceBufferActive = false;
+                    }
                 }
-            }
 
-            if (hasBounced && player.playerSettings.movementState != MovementState.Bouncing)
-            {
-                hasBounced = false;
-            }
+                if (hasBounced && player.playerSettings.movementState != MovementState.Bouncing)
+                {
+                    hasBounced = false;
+                }
 
-            if (postBounceTimer > 0f)
-            {
-                postBounceTimer -= Time.deltaTime;
+                if (postBounceTimer > 0f)
+                {
+                    postBounceTimer -= Time.deltaTime;
+                }
+
+                moveInt.Update();
             }
         }
 
@@ -124,7 +132,17 @@ namespace Assets.Scripts.Player
 
             lastBouncedCollider = currentCollider;
 
-            movementSystem.SetActionSinceLastBounce(false); 
+            movementSystem.SetActionSinceLastBounce(false);
+
+        }
+        public void OnTriggerEnter(Collider collider)
+        {
+            moveInt.OnTriggerEnter(collider);
+        }
+
+        public void OnDrawGizmos(Vector3 origin, float range)
+        {
+            moveInt.OnDrawGizmosRay(origin, range);
         }
     }
 }

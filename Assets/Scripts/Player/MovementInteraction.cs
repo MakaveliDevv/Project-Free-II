@@ -1,6 +1,7 @@
 using System.Collections;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.LowLevel;
 
 namespace Assets.Scripts.Player
 {
@@ -26,6 +27,7 @@ namespace Assets.Scripts.Player
 
         public void Update()
         {
+            Debug.Log("Activated");
             snappedDir = InputManager.GetSnappedDirection(
                 InputManager.RightStickInput,
                 player.playerSettings.snapDirectionsEnabled,
@@ -47,12 +49,11 @@ namespace Assets.Scripts.Player
                 }
 
                 // ray-based selection
-                var best = player.moveInt.SelectTargetRay(
+                var best = SelectTargetRay(
                     player.rb.position,
                     player.interactionSettings.selectionRange);
 
                 interactable.UpdateHighlight(best);
-                // selectedBox = best; 
 
                 if (InputManager.LeftTriggerPressed && !InputManager.TriggerLock && best != null)
                 {
@@ -80,6 +81,14 @@ namespace Assets.Scripts.Player
                 && Vector3.Distance(player.rb.position, firstInteractable.transform.position) <= player.interactionSettings.interactionRadius)
                     pullCoroutine = player.StartCoroutine(PullOntoBoxRoutine());
             }
+
+            // if (player.playerSettings.movementState == MovementState.Idle
+            //     && player.playerSettings.currentSurfaceState == SurfaceState.Ground)
+            // {
+            //     Debug.Log("Setting interacting to false");
+            //     interacting = false;
+            // }
+            // else { Debug.Log("movement state not idle and surface state not on ground"); }
         }
 
         public BoxMover SelectTargetRay(Vector3 origin, float range)
@@ -188,11 +197,6 @@ namespace Assets.Scripts.Player
                 Interactable interactable = collider.GetComponent<Interactable>();
                 this.interactable = interactable;
             }
-        }
-
-        public void OnTriggerExit(Collider collider)
-        { 
-            // if()
         }
 
         public void OnDrawGizmosRay(Vector3 origin, float range)

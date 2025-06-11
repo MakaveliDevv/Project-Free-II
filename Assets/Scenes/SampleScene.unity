@@ -1001,14 +1001,14 @@ MonoBehaviour:
   movementSettings:
     stuckDurationWall: 1
     stuckDurationCeiling: 10
-    jumpForce: 5
-    maxJumpDistance: 5
-    maxJumpSpeed: 10
+    jumpForce: 20
+    maxJumpDistance: 8
+    maxJumpSpeed: 40
     bounceSpeed: 5
-    dashForce: 5
-    maxDashDistance: 5
-    airDashForce: 5
-    maxAirDashDistance: 5
+    dashForce: 15
+    maxDashDistance: 8
+    airDashForce: 7
+    maxAirDashDistance: 10
     defaultDamping: 0
     movementForceMode: 0
     jumpForceMode: 2
@@ -1027,7 +1027,7 @@ MonoBehaviour:
     defaultDropMultiplier: 2
     wallDropMultiplier: 2
     maxFallSpeed: 40
-    dropAngleTolerance: 15
+    dropAngleTolerance: 45
     dropForceMode: 1
     fallForceMode: 5
     useHoverWobble: 1
@@ -1039,7 +1039,7 @@ MonoBehaviour:
     hoverDuration: 2
     minHoverHeight: 2
     minHoverLinearDamping: 0
-    hoverLinearDamping: 5
+    hoverLinearDamping: 10
     groundProximityCheckDistance: 1
     minAirborneTimeBeforeIdle: 0.15
     distanceToSurfaceThreshold: 0.05

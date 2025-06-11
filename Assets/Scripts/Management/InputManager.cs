@@ -35,7 +35,7 @@ public static class InputManager
 
     public static bool UseAutoHover { get; private set; } = false;
     public static int LeftShoulderPressCount { get; private set; }
-    
+
     public static bool TriggerLock { get; set; }
     private static bool useRawInput;
     private static float minStickMagnitude;
@@ -85,12 +85,12 @@ public static class InputManager
         };
 
         // Left shoulder
-            leftShoulder.started += ctx =>
-        {
-            LeftShoulderPressed = true;
-            if (CheckDoublePress(ref lastLeftShoulderPressTime, shoulderDoublePressThreshold))
-                LeftShoulderDoublePressed = true;
-        };
+        leftShoulder.started += ctx =>
+    {
+        LeftShoulderPressed = true;
+        if (CheckDoublePress(ref lastLeftShoulderPressTime, shoulderDoublePressThreshold))
+            LeftShoulderDoublePressed = true;
+    };
         leftShoulder.canceled += ctx =>
         {
             LeftShoulderPressed = false;
@@ -172,7 +172,7 @@ public static class InputManager
         RightShoulderReleased = false;
 
         LeftTriggerReleased = false;
-        
+
         LeftShoulderDoublePressed = false;
         RightShoulderDoublePressed = false;
     }
@@ -208,6 +208,35 @@ public static class InputManager
         return Quaternion.Euler(0f, 0f, rawAngle) * Vector3.right;
     }
 
+    public static float buttonHoldTimer;
+    public static float minButtonPressTime;
+    // public static bool ActionInputDetected()
+    // {
+    //     if (HasLeftStickMovement() && SouthButtonPressed && buttonHoldTimer >= minButtonPressTime) { return true; }
+
+    //     buttonHoldTimer = 0;
+
+    //     Debug.Log("Action Input Detected");
+    //     return false;
+    // }
+
+    public static bool ActionInputDetected()
+    {
+        return HasLeftStickMovement()
+                        && SouthButtonPressed
+                        && buttonHoldTimer >= minButtonPressTime;
+                        
+        // if (detected)
+        // {
+        //     Debug.Log("Action input detected");
+        //     return true;
+        // }
+        // else
+        // {
+        //     Debug.Log("No action input detected");
+        //     return false;
+        // }
+    }
     
     // private static void ToggleAutoHover(InputAction.CallbackContext ctx)
     // {
