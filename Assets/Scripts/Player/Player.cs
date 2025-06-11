@@ -46,12 +46,9 @@ namespace Assets.Scripts.Player
         public MovementInteraction moveInt;
         private AnimationController2 animContr;
 
-        [Header("Component Settings")]
-        public Rigidbody rb;
-        public Collider col;
+        [HideInInspector] public Rigidbody rb;
+        [HideInInspector] public Collider col;
         private Animator animator;
-
-        public bool interacting = false;
 
         void Awake()
         {

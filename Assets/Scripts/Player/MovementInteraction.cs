@@ -26,8 +26,6 @@ namespace Assets.Scripts.Player
 
         public void Update()
         {
-            player.interacting = this.interacting;
-
             snappedDir = InputManager.GetSnappedDirection(
                 InputManager.RightStickInput,
                 player.playerSettings.snapDirectionsEnabled,
@@ -74,9 +72,6 @@ namespace Assets.Scripts.Player
 
                 return;
             }
-
-            // bool first = firstInteractable != null;
-            // Debug.Log(first);
 
             if (firstInteractable != null)
             {
