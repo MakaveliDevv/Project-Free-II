@@ -1,891 +1,902 @@
-using UnityEngine;
-
-namespace Assets.Scripts.Player
-{
-    public class AnimationController2
-    {
-        private readonly Player player;
-        private readonly AnimationSettings animSettings;
-        private readonly Animator animator;
-
-        private bool hasPlayedJumpParticles = false;
-        private bool hasPlayedDashParticles = false;
-        private bool hasPlayedStuckParticles = false;
-
-        public AnimationController2(Player player, AnimationSettings animSettings, Animator animator)
-        {
-            this.player = player;
-            this.animSettings = animSettings;
-            this.animator = animator;
-
-            bool anim = animator != null;
-            Debug.Log(anim);
-
-            Transform particlesParent = player.transform.Find("Particles");
-
-            // Jump 
-            if (animSettings.jumpParticlePrefab == null)
-                animSettings.jumpParticlePrefab = particlesParent.Find(animSettings.jumpParticlePrefabName).GetComponent<ParticleSystem>();
-            // Jump E
-            if (animSettings.jumpEParticlePrefab == null)
-                animSettings.jumpEParticlePrefab = particlesParent.Find(animSettings.jumpEParticlePrefabName).GetComponent<ParticleSystem>();
-            // Jump W
-            if (animSettings.jumpWParticlePrefab == null)
-                animSettings.jumpWParticlePrefab = particlesParent.Find(animSettings.jumpWParticlePrefabName).GetComponent<ParticleSystem>();
-            // Dash R
-            if (animSettings.dashRParticlePrefab == null)
-                animSettings.dashRParticlePrefab = particlesParent.Find(animSettings.dashRParticlePrefabName).GetComponent<ParticleSystem>();
-            // Dash L
-            if (animSettings.dashLParticlePrefab == null)
-                animSettings.dashLParticlePrefab = particlesParent.Find(animSettings.dashLParticlePrefabName).GetComponent<ParticleSystem>();
-            // Stuck L
-            if (animSettings.stuckLParticlePrefab == null)
-                animSettings.stuckLParticlePrefab = particlesParent.Find(animSettings.stuckLParticlePrefabName).GetComponent<ParticleSystem>();
-            // Stuck R
-            if (animSettings.stuckRParticlePrefab == null)
-                animSettings.stuckRParticlePrefab = particlesParent.Find(animSettings.stuckRParticlePrefabName).GetComponent<ParticleSystem>();
-        }
-
-        public void Update()
-        {
-            switch (player.playerSettings.movementState)
-            {
-                case MovementState.Idle:
-                    Debug.Log("Starting idle anim");
-                    // if (animator != null)
-                    IdleAnim();
-
-                    break;
-
-                case MovementState.Charging:
-                    ChargingAnim();
-
-                    break;
-
-                case MovementState.Jumping:
-                    if (player.moveContrl.movementSystem.isStraightJump) { JumpStraightAnim(); }
-                    else
-                    {
-                        if (player.moveContrl.movementSystem.isDiagonalJumpRight) { JumpDiagonalRightAnim(); }
-                        else { JumpDiagonalLeftAnim(); }
-                    }
-                    break;
-
-                case MovementState.Dashing:
-                    switch (player.playerSettings.currentSurfaceState)
-                    {
-                        case SurfaceState.Ground:
-                            GroundDashAnim();
-                            break;
-
-                        case SurfaceState.Ceiling:
-                            CeilingDashAnim();
-                            break;
-
-                        case SurfaceState.RightWall:
-                            RightWallDashAnim();
-                            break;
-
-                        case SurfaceState.LeftWall:
-                            LeftWallDashAnim();
-                            break;
-                    }
-
-                    break;
-
-                case MovementState.WallJump:
-                    if (player.playerSettings.currentSurfaceState != SurfaceState.Ground ||
-                        player.playerSettings.currentSurfaceState != SurfaceState.Ceiling)
-                    {
-                        Debug.Log("Invoke wall jump anim");
-                        if (player.moveContrl.movementSystem.isWallJumpRight)
-                        {
-                            InvokeRightWallJumpAnim();
-                        }
-                        else
-                        {
-                            InvokeLeftWallJumpAnim();
-                        }
-                    }
-
-                    break;
-
-                case MovementState.Hovering:
-                    HoverAnim();
-
-                    break;
-
-                case MovementState.Descending:
-                    DescendingAnim();
-
-                    break;
-
-                case MovementState.AirDashing:
-                    if (player.moveContrl.movementSystem.isVerticalAirDash)
-                    {
-                        if (player.moveContrl.movementSystem.isAirDashAscend) { AirDashVerticalAscend(); }
-                        else { AirDashVerticalDescend(); }
-                    }
-                    else if (player.moveContrl.movementSystem.isHorizontalAirDash)
-                    {
-                        if (player.moveContrl.movementSystem.isRightAirDash) { AirDashHorizontalRight(); }
-                        else { AirDashHorizontalLeft(); }
-                    }
-                    else
-                    {
-                        if (player.moveContrl.movementSystem.isRightDiagonalAirDash)
-                        {
-                            if (player.moveContrl.movementSystem.isAirDashAscend) { AirDashDiagonalRightUp(); }
-                            else { AirDashDiagonalRightDown(); }
-                        }
-                        else
-                        {
-                            if (player.moveContrl.movementSystem.isAirDashAscend) { AirDashDiagonalLeftUp(); }
-                            else { AirDashDiagonalLeftDown(); }
-                        }
-                    }
-
-
-                    break;
-
-                case MovementState.Stucked:
-                    StuckedAnim();
-
-                    break;
-
-                case MovementState.WallDescending:
-                    if (player.playerSettings.currentSurfaceState == SurfaceState.RightWall)
-                    {
-                        RightWallDescendingAnim();
-                    }
-                    else if (player.playerSettings.currentSurfaceState == SurfaceState.LeftWall)
-                    {
-                        LeftWallDescendingAnim();
-                    }
-
-                    break;
-            }
-
-            if (player.moveContrl.movementSystem.IsNearGround)
-            {
-                OnLandingAnim();
-                Debug.Log("Landed...");
-            }
-        }
-
-        private void IdleAnim()
-        {
-            hasPlayedDashParticles = false;
-
-            animator.SetBool("Idle", true);
-            animator.SetBool("Charge", false);
-            animator.SetBool("JumpUp", false);
-            animator.SetBool("JumpNE", false);
-            animator.SetBool("JumpNW", false);
-            animator.SetBool("JumpE", false);
-            animator.SetBool("JumpW", false);
-            animator.SetBool("Hover", false);
-            animator.SetBool("Descent", false);
-            animator.SetBool("QuickDescent", false);
-            animator.SetBool("Landing", false);
-            animator.SetBool("DashR", false);
-            animator.SetBool("DashL", false);
-            animator.SetBool("StuckedR", false);
-            animator.SetBool("RWJumpA", false);
-            animator.SetBool("RWJumpH", false);
-            animator.SetBool("RWJumpD", false);
-            animator.SetBool("LWJumpA", false);
-            animator.SetBool("LWJumpH", false);
-            animator.SetBool("LWJumpD", false);
-        }
-
-        private void ChargingAnim()
-        {
-            Debug.Log("Invoke charging anim");
-            animator.SetBool("Idle", false);
-            animator.SetBool("Charge", true);
-            animator.SetBool("JumpUp", false);
-            animator.SetBool("JumpNE", false);
-            animator.SetBool("JumpNW", false);
-            animator.SetBool("JumpE", false);
-            animator.SetBool("JumpW", false);
-            animator.SetBool("Hover", false);
-            animator.SetBool("Descent", false);
-            animator.SetBool("QuickDescent", false);
-            animator.SetBool("Landing", false);
-            animator.SetBool("DashR", false);
-            animator.SetBool("DashL", false);
-            animator.SetBool("StuckedR", false);
-            animator.SetBool("RWJumpA", false);
-            animator.SetBool("RWJumpH", false);
-            animator.SetBool("RWJumpD", false);
-            animator.SetBool("LWJumpA", false);
-            animator.SetBool("LWJumpH", false);
-            animator.SetBool("LWJumpD", false);
-        }
-
-        private void HoverAnim()
-        {
-
-            hasPlayedJumpParticles = false; // Mark as played
-            hasPlayedStuckParticles = false;
-
-            Debug.Log("Invoke hover anim");
-            animator.SetBool("Idle", false);
-            animator.SetBool("Charge", false);
-            animator.SetBool("JumpUp", false);
-            animator.SetBool("JumpNE", false);
-            animator.SetBool("JumpNW", false);
-            animator.SetBool("JumpE", false);
-            animator.SetBool("JumpW", false);
-            animator.SetBool("Hover", true);
-            animator.SetBool("Descent", false);
-            animator.SetBool("QuickDescent", false);
-            animator.SetBool("Landing", false);
-            animator.SetBool("DashR", false);
-            animator.SetBool("DashL", false);
-            animator.SetBool("StuckedR", false);
-            animator.SetBool("RWJumpA", false);
-            animator.SetBool("RWJumpH", false);
-            animator.SetBool("RWJumpD", false);
-            animator.SetBool("LWJumpA", false);
-            animator.SetBool("LWJumpH", false);
-            animator.SetBool("LWJumpD", false);
-        }
-
-        private void DescendingAnim()
-        {
-
-
-            hasPlayedJumpParticles = false; // Mark as played
-
-
-            Debug.Log("Invoke descend anim");
-            animator.SetBool("Idle", false);
-            animator.SetBool("Charge", false);
-            animator.SetBool("JumpUp", false);
-            animator.SetBool("JumpNE", false);
-            animator.SetBool("JumpNW", false);
-            animator.SetBool("JumpE", false);
-            animator.SetBool("JumpW", false);
-            animator.SetBool("Hover", false);
-            animator.SetBool("Descent", true);
-            animator.SetBool("QuickDescent", false);
-            animator.SetBool("Landing", false);
-            animator.SetBool("DashR", false);
-            animator.SetBool("DashL", false);
-            animator.SetBool("StuckedR", false);
-            animator.SetBool("RWJumpA", false);
-            animator.SetBool("RWJumpH", false);
-            animator.SetBool("RWJumpD", false);
-            animator.SetBool("LWJumpA", false);
-            animator.SetBool("LWJumpH", false);
-            animator.SetBool("LWJumpD", false);
-        }
-
-        private void RightWallDescendingAnim()
-        {
-            Debug.Log("Invoke wall descend anim (right wall)");
-        }
-
-        private void LeftWallDescendingAnim()
-        {
-            Debug.Log("Invoke wall descend anim (left wall)");
-        }
-
-        private ParticleSystem InstantiateParticle(ParticleSystem particlePrefab)
-        {
-            return Object.Instantiate(particlePrefab, player.transform.position, Quaternion.identity) as ParticleSystem;
-        }
-
-        private void StuckedAnim()
-        {
-            hasPlayedJumpParticles = false;
-
-            if (!hasPlayedStuckParticles)
-            {
-                Debug.Log("Invoke jump straight anim");
-
-                // Spawn and play a temporary particle system at current position
-                // ParticleSystem newParticles = Instantiate(stuckRParticlePrefab, transform.position, Quaternion.identity);
-                ParticleSystem p = InstantiateParticle(animSettings.stuckRParticlePrefab);
-                p.Play();
-
-                float totalDuration = p.main.duration + p.main.startLifetime.constantMax;
-                Object.Destroy(p.gameObject, totalDuration);
-
-                hasPlayedStuckParticles = true; // Mark as played
-            }
-
-            Debug.Log("Invoke stucked anim");
-            animator.SetBool("Idle", false);
-            animator.SetBool("Charge", false);
-            animator.SetBool("JumpUp", false);
-            animator.SetBool("JumpNE", false);
-            animator.SetBool("JumpNW", false);
-            animator.SetBool("JumpE", false);
-            animator.SetBool("JumpW", false);
-            animator.SetBool("Hover", false);
-            animator.SetBool("Descent", false);
-            animator.SetBool("QuickDescent", false);
-            animator.SetBool("Landing", false);
-            animator.SetBool("DashR", false);
-            animator.SetBool("DashL", false);
-            animator.SetBool("StuckedR", true);
-
-        }
-
-        // Jump animations
-        #region Jump Animations
-        // -- DEFAULT JUMP
-        private void JumpStraightAnim() // VERTICAL UP
-        {
-            Debug.Log("Invoke jump straight anim");
-
-            if (!hasPlayedJumpParticles)
-            {
-                Debug.Log("Invoke jump straight anim");
-
-                // Spawn and play a temporary particle system at current position
-                // ParticleSystem newParticles = Instantiate(jumpParticlePrefab, transform.position, Quaternion.identity);
-                ParticleSystem p = InstantiateParticle(animSettings.jumpParticlePrefab);
-                p.Play();
-
-                float totalDuration = p.main.duration + p.main.startLifetime.constantMax;
-                Object.Destroy(p.gameObject, totalDuration);
-
-                hasPlayedJumpParticles = true; // Mark as played
-            }
-
-            animator.SetBool("Charge", false);
-            animator.SetBool("JumpUp", true);
-            animator.SetBool("JumpNE", false);
-            animator.SetBool("JumpNW", false);
-            animator.SetBool("JumpE", false);
-            animator.SetBool("JumpW", false);
-            animator.SetBool("Hover", false);
-            animator.SetBool("Descent", false);
-            animator.SetBool("QuickDescent", false);
-            animator.SetBool("Landing", false);
-            animator.SetBool("DashR", false);
-            animator.SetBool("DashL", false);
-            animator.SetBool("StuckedR", false);
-            animator.SetBool("RWJumpA", false);
-            animator.SetBool("RWJumpH", false);
-            animator.SetBool("RWJumpD", false);
-            animator.SetBool("LWJumpA", false);
-            animator.SetBool("LWJumpH", false);
-            animator.SetBool("LWJumpD", false);
-        }
-
-        private void JumpDiagonalRightAnim()  // DIAGONAL RIGHT
-        {
-
-            Debug.Log("Invoke jump straight anim");
-
-            if (!hasPlayedJumpParticles)
-            {
-                Debug.Log("Invoke jump straight anim");
-
-                // Spawn and play a temporary particle system at current position
-                // ParticleSystem newParticles = Instantiate(jumpEParticlePrefab, transform.position, Quaternion.identity);
-                ParticleSystem p = InstantiateParticle(animSettings.jumpEParticlePrefab);
-                p.Play();
-
-                float totalDuration = p.main.duration + p.main.startLifetime.constantMax;
-                Object.Destroy(p.gameObject, totalDuration);
-
-                hasPlayedJumpParticles = true; // Mark as played
-            }
-
-
-            Debug.Log("Invoke jump diagonal anim (right)");
-            animator.SetBool("Idle", false);
-            animator.SetBool("Charge", false);
-            animator.SetBool("JumpUp", false);
-            animator.SetBool("JumpNE", true);
-            animator.SetBool("JumpNW", false);
-            animator.SetBool("JumpE", false);
-            animator.SetBool("JumpW", false);
-            animator.SetBool("Hover", false);
-            animator.SetBool("Descent", false);
-            animator.SetBool("QuickDescent", false);
-            animator.SetBool("Landing", false);
-            animator.SetBool("DashR", false);
-            animator.SetBool("DashL", false);
-            animator.SetBool("StuckedR", false);
-            animator.SetBool("RWJumpA", false);
-            animator.SetBool("RWJumpH", false);
-            animator.SetBool("RWJumpD", false);
-            animator.SetBool("LWJumpA", false);
-            animator.SetBool("LWJumpH", false);
-            animator.SetBool("LWJumpD", false);
-        }
-
-        private void JumpDiagonalLeftAnim()  // DIAGONAL LEFT
-        {
-
-            if (!hasPlayedJumpParticles)
-            {
-                Debug.Log("Invoke jump straight anim");
-
-                // Spawn and play a temporary particle system at current position
-                // ParticleSystem newParticles = Instantiate(jumpWParticlePrefab, transform.position, Quaternion.identity);
-                ParticleSystem p = InstantiateParticle(animSettings.jumpWParticlePrefab);
-                p.Play();
-
-                float totalDuration = p.main.duration + p.main.startLifetime.constantMax;
-                Object.Destroy(p.gameObject, totalDuration);
-
-                hasPlayedJumpParticles = true; // Mark as played
-            }
-
-            Debug.Log("Invoke jump diagonal anim (left)");
-            animator.SetBool("Idle", false);
-            animator.SetBool("Charge", false);
-            animator.SetBool("JumpUp", false);
-            animator.SetBool("JumpNE", false);
-            animator.SetBool("JumpNW", true);
-            animator.SetBool("JumpE", false);
-            animator.SetBool("JumpW", false);
-            animator.SetBool("Hover", false);
-            animator.SetBool("Descent", false);
-            animator.SetBool("QuickDescent", false);
-            animator.SetBool("Landing", false);
-            animator.SetBool("DashR", false);
-            animator.SetBool("DashL", false);
-            animator.SetBool("StuckedR", false);
-            animator.SetBool("RWJumpA", false);
-            animator.SetBool("RWJumpH", false);
-            animator.SetBool("RWJumpD", false);
-            animator.SetBool("LWJumpA", false);
-            animator.SetBool("LWJumpH", false);
-            animator.SetBool("LWJumpD", false);
-        }
-
-        private void InvokeRightWallJumpAnim() // DONT TOUCH THIS METHOD
-        {
-            if (player.moveContrl.movementSystem.isWallJumpHorizontal) { RightWallJumpHorizontal(); }
-            else if (player.moveContrl.movementSystem.isWallJumpAscend) { RightWallJumpAscendAnim(); }
-            else { RightWallJumpDescendAnim(); }
-        }
-
-        private void InvokeLeftWallJumpAnim() // DONT TOUCH THIS METHOD
-        {
-            if (player.moveContrl.movementSystem.isWallJumpHorizontal) { LeftWallJumpHorizontal(); }
-            else if (player.moveContrl.movementSystem.isWallJumpAscend) { LeftWallJumpAscendAnim(); }
-            else { LeftWallJumpDescendAnim(); }
-        }
-
-        // -- WALL JUMP
-        // Right wall
-        private void RightWallJumpAscendAnim() // RIGHT WALL JUMP ASCEND
-        {
-            if (!hasPlayedJumpParticles)
-            {
-                Debug.Log("Invoke jump straight anim");
-
-                // Spawn and play a temporary particle system at current position
-                // ParticleSystem newParticles = Instantiate(jumpEParticlePrefab, transform.position, Quaternion.identity);
-                ParticleSystem p = InstantiateParticle(animSettings.jumpEParticlePrefab);
-                p.Play();
-
-                float totalDuration = p.main.duration + p.main.startLifetime.constantMax;
-                Object.Destroy(p.gameObject, totalDuration);
-
-                hasPlayedJumpParticles = true; // Mark as played
-            }
-
-
-            Debug.Log("Invoke right wall jump ascend anim");
-            animator.SetBool("Idle", false);
-            animator.SetBool("Charge", false);
-            animator.SetBool("JumpUp", false);
-            animator.SetBool("Hover", false);
-            animator.SetBool("Descent", false);
-            animator.SetBool("QuickDescent", false);
-            animator.SetBool("Landing", false);
-            animator.SetBool("DashR", false);
-            animator.SetBool("DashL", false);
-            animator.SetBool("StuckedR", false);
-            animator.SetBool("RWJumpA", true);
-            animator.SetBool("RWJumpH", false);
-            animator.SetBool("RWJumpD", false);
-            animator.SetBool("LWJumpA", false);
-            animator.SetBool("LWJumpH", false);
-            animator.SetBool("LWJumpD", false);
-        }
-
-        private void RightWallJumpDescendAnim() // RIGHT WALL JUMP DESCEND
-        {
-
-            if (!hasPlayedJumpParticles)
-            {
-                Debug.Log("Invoke jump straight anim");
-
-                // Spawn and play a temporary particle system at current position
-                // ParticleSystem newParticles = Instantiate(jumpEParticlePrefab, transform.position, Quaternion.identity);
-                ParticleSystem p = InstantiateParticle(animSettings.jumpEParticlePrefab);
-                p.Play();
-
-                float totalDuration = p.main.duration + p.main.startLifetime.constantMax;
-                Object.Destroy(p.gameObject, totalDuration);
-
-                hasPlayedJumpParticles = true; // Mark as played
-            }
-
-            Debug.Log("Invoke right wall jump descend anim");
-            animator.SetBool("Idle", false);
-            animator.SetBool("Charge", false);
-            animator.SetBool("JumpUp", false);
-            animator.SetBool("Hover", false);
-            animator.SetBool("Descent", false);
-            animator.SetBool("QuickDescent", false);
-            animator.SetBool("Landing", false);
-            animator.SetBool("DashR", false);
-            animator.SetBool("DashL", false);
-            animator.SetBool("StuckedR", false);
-            animator.SetBool("RWJumpA", false);
-            animator.SetBool("RWJumpH", true);
-            animator.SetBool("RWJumpD", false);
-            animator.SetBool("LWJumpA", false);
-            animator.SetBool("LWJumpH", false);
-            animator.SetBool("LWJumpD", false);
-
-
-        }
-
-        private void RightWallJumpHorizontal() // RIGHT WALL JUMP HORIZONTAL
-        {
-
-            if (!hasPlayedJumpParticles)
-            {
-                Debug.Log("Invoke jump straight anim");
-
-                // Spawn and play a temporary particle system at current position
-                // ParticleSystem newParticles = Instantiate(jumpEParticlePrefab, transform.position, Quaternion.identity);
-                ParticleSystem p = InstantiateParticle(animSettings.jumpEParticlePrefab);
-                p.Play();
-
-                float totalDuration = p.main.duration + p.main.startLifetime.constantMax;
-                Object.Destroy(p.gameObject, totalDuration);
-
-                hasPlayedJumpParticles = true; // Mark as played
-            }
-
-            Debug.Log("Invoke wall jump horizontal <--");
-            animator.SetBool("Idle", false);
-            animator.SetBool("Charge", false);
-            animator.SetBool("JumpUp", false);
-            animator.SetBool("Hover", false);
-            animator.SetBool("Descent", false);
-            animator.SetBool("QuickDescent", false);
-            animator.SetBool("Landing", false);
-            animator.SetBool("DashR", false);
-            animator.SetBool("DashL", false);
-            animator.SetBool("StuckedR", false);
-            animator.SetBool("RWJumpA", false);
-            animator.SetBool("RWJumpH", false);
-            animator.SetBool("RWJumpD", true);
-
-        }
-
-        // Left wall
-        private void LeftWallJumpAscendAnim() // LEFT WALL JUMP ASCEND
-        {
-            if (!hasPlayedJumpParticles)
-            {
-                Debug.Log("Invoke jump straight anim");
-
-                // Spawn and play a temporary particle system at current position
-                // ParticleSystem newParticles = Instantiate(jumpWParticlePrefab, transform.position, Quaternion.identity);
-                ParticleSystem p = InstantiateParticle(animSettings.jumpWParticlePrefab);
-                p.Play();
-
-                float totalDuration = p.main.duration + p.main.startLifetime.constantMax;
-                Object.Destroy(p.gameObject, totalDuration);
-
-                hasPlayedJumpParticles = true; // Mark as played
-            }
-
-            Debug.Log("Invoke left wall jump ascend anim");
-            animator.SetBool("Idle", false);
-            animator.SetBool("Charge", false);
-            animator.SetBool("JumpUp", false);
-            animator.SetBool("JumpNE", false);
-            animator.SetBool("JumpNW", false);
-            animator.SetBool("JumpE", false);
-            animator.SetBool("JumpW", false);
-            animator.SetBool("Hover", false);
-            animator.SetBool("Descent", false);
-            animator.SetBool("QuickDescent", false);
-            animator.SetBool("Landing", false);
-            animator.SetBool("DashR", false);
-            animator.SetBool("DashL", false);
-            animator.SetBool("StuckedR", false);
-            animator.SetBool("RWJumpA", false);
-            animator.SetBool("RWJumpH", false);
-            animator.SetBool("RWJumpD", false);
-            animator.SetBool("LWJumpA", true);
-            animator.SetBool("LWJumpH", false);
-            animator.SetBool("LWJumpD", false);
-        }
-
-        private void LeftWallJumpDescendAnim() // LEFT WASLL JUMP DESCEND
-        {
-            Debug.Log("Invoke left wall jump descend anim");
-            if (!hasPlayedJumpParticles)
-            {
-                Debug.Log("Invoke jump straight anim");
-
-                // Spawn and play a temporary particle system at current position
-                // ParticleSystem newParticles = Instantiate(jumpWParticlePrefab, transform.position, Quaternion.identity);
-                ParticleSystem p = InstantiateParticle(animSettings.jumpWParticlePrefab);
-                p.Play();
-
-                float totalDuration = p.main.duration + p.main.startLifetime.constantMax;
-                Object.Destroy(p.gameObject, totalDuration);
-
-                hasPlayedJumpParticles = true; // Mark as played
-            }
-
-
-            animator.SetBool("Idle", false);
-            animator.SetBool("Charge", false);
-            animator.SetBool("JumpUp", false);
-            animator.SetBool("JumpNE", false);
-            animator.SetBool("JumpNW", false);
-            animator.SetBool("JumpE", false);
-            animator.SetBool("JumpW", false);
-            animator.SetBool("Hover", false);
-            animator.SetBool("Descent", false);
-            animator.SetBool("QuickDescent", false);
-            animator.SetBool("Landing", false);
-            animator.SetBool("DashR", false);
-            animator.SetBool("DashL", false);
-            animator.SetBool("StuckedR", false);
-            animator.SetBool("RWJumpA", false);
-            animator.SetBool("RWJumpH", false);
-            animator.SetBool("RWJumpD", false);
-            animator.SetBool("LWJumpA", false);
-            animator.SetBool("LWJumpH", false);
-            animator.SetBool("LWJumpD", true);
-        }
-
-        private void LeftWallJumpHorizontal() // LEFT WALL JUMP HORIZONTAL
-        {
-            if (!hasPlayedJumpParticles)
-            {
-                Debug.Log("Invoke jump straight anim");
-
-                // Spawn and play a temporary particle system at current position
-                // ParticleSystem newParticles = Instantiate(jumpWParticlePrefab, transform.position, Quaternion.identity);
-                ParticleSystem p = InstantiateParticle(animSettings.jumpWParticlePrefab);
-                p.Play();
-
-                float totalDuration = p.main.duration + p.main.startLifetime.constantMax;
-                Object.Destroy(p.gameObject, totalDuration);
-
-                hasPlayedJumpParticles = true; // Mark as played
-            }
-
-            Debug.Log("Invoke left wall jump horizontal -->");
-            animator.SetBool("Idle", false);
-            animator.SetBool("Charge", false);
-            animator.SetBool("JumpUp", false);
-            animator.SetBool("JumpNE", false);
-            animator.SetBool("JumpNW", false);
-            animator.SetBool("JumpE", false);
-            animator.SetBool("JumpW", false);
-            animator.SetBool("Hover", false);
-            animator.SetBool("Descent", false);
-            animator.SetBool("QuickDescent", false);
-            animator.SetBool("Landing", false);
-            animator.SetBool("DashR", false);
-            animator.SetBool("DashL", false);
-            animator.SetBool("StuckedR", false);
-            animator.SetBool("RWJumpA", false);
-            animator.SetBool("RWJumpH", false);
-            animator.SetBool("RWJumpD", false);
-            animator.SetBool("LWJumpA", true);
-            animator.SetBool("LWJumpH", false);
-            animator.SetBool("LWJumpD", false);
-        }
-
-        #endregion Jump Animations
-
-        #region Dash Animations
-        // -- GROUND DASH
-        private void GroundDashAnim() // DONT TOUCH THIS METHOD
-        {
-            if (player.moveContrl.movementSystem.isRightGroundDash) { RightGroundDashAnim(); }
-            else { LeftGroundDashAnim(); }
-            Debug.Log("Invoke ground dash anim");
-        }
-
-        private void RightGroundDashAnim() // RIGHT ->> 
-        {
-            if (!hasPlayedDashParticles)
-            {
-                Debug.Log("Invoke dash particles");
-
-                // Spawn and play a temporary particle system at current position
-                // ParticleSystem newParticles = Instantiate(dashRParticlePrefab, transform.position, Quaternion.identity);
-                ParticleSystem p = InstantiateParticle(animSettings.dashRParticlePrefab);
-                p.Play();
-
-                float totalDuration = p.main.duration + p.main.startLifetime.constantMax;
-                Object.Destroy(p.gameObject, totalDuration);
-
-                hasPlayedDashParticles = true; // Mark as played
-            }
-            Debug.Log("Ground dash anim ->");
-            animator.SetBool("Idle", false);
-            animator.SetBool("Charge", false);
-            animator.SetBool("JumpUp", false);
-            animator.SetBool("Hover", false);
-            animator.SetBool("Descent", false);
-            animator.SetBool("QuickDescent", false);
-            animator.SetBool("Landing", false);
-            animator.SetBool("DashR", true);
-            animator.SetBool("DashL", false);
-            animator.SetBool("Wallstick", false);
-        }
-
-        private void LeftGroundDashAnim() // LEFT <<-
-        {
-
-            if (!hasPlayedDashParticles)
-            {
-                Debug.Log("Invoke dash particles");
-
-                // Spawn and play a temporary particle system at current position
-                // ParticleSystem newParticles = Instantiate(dashLParticlePrefab, transform.position, Quaternion.identity);
-                ParticleSystem p = InstantiateParticle(animSettings.dashLParticlePrefab);
-                p.Play();
-
-                float totalDuration = p.main.duration + p.main.startLifetime.constantMax;
-                Object.Destroy(p.gameObject, totalDuration);
-
-                hasPlayedDashParticles = true; // Mark as played
-            }
-            Debug.Log("Ground dash anim <-");
-            animator.SetBool("Idle", false);
-            animator.SetBool("Charge", false);
-            animator.SetBool("JumpUp", false);
-            animator.SetBool("Hover", false);
-            animator.SetBool("Descent", false);
-            animator.SetBool("QuickDescent", false);
-            animator.SetBool("Landing", false);
-            animator.SetBool("DashR", false);
-            animator.SetBool("DashL", true);
-            animator.SetBool("Wallstick", false);
-        }
-
-        // -- CEILING DASH
-        private void CeilingDashAnim() // DONT TOUCH THIS METHOD
-        {
-            if (player.moveContrl.movementSystem.isRightGroundDash) { RightCeilingDashAnim(); }
-            else { LeftCeilingDashAnim(); }
-
-        }
-
-        private void RightCeilingDashAnim() // RIGHT ->> 
-        {
-            Debug.Log("Ceiling dash anim ->");
-        }
-
-        private void LeftCeilingDashAnim() // LEFT <--
-        {
-            Debug.Log("Ceiling dash anim <-");
-        }
-
-        // -- WALL DASH
-        // RIGHT WALL
-        private void RightWallDashAnim() // DONT TOUCH THIS METHOD
-        {
-            if (player.moveContrl.movementSystem.isUpWallDash) { UpRightWallDashAnim(); }
-            else { DownRightWallDashAnim(); }
-            Debug.Log("Invoke wall dash anim (right)");
-        }
-
-        private void UpRightWallDashAnim() // UP 
-        {
-            Debug.Log("Invoke upward dash on the right wall");
-        }
-
-        private void DownRightWallDashAnim() // DOWN 
-        {
-            Debug.Log("Invoke downward dash on the right wall");
-        }
-
-        // LEFT WALL
-        private void LeftWallDashAnim() // DONT TOUCH THIS METHOD
-        {
-            if (player.moveContrl.movementSystem.isUpWallDash) { UpLeftWallDashAnim(); }
-            else { DownLeftWallDashAnim(); }
-            Debug.Log("Invoke wall dash anim (left)");
-        }
-
-        private void UpLeftWallDashAnim() // UP
-        {
-            Debug.Log("Invoke upward dash on the left wall");
-        }
-
-        private void DownLeftWallDashAnim() // DOWN
-        {
-            Debug.Log("Invoke downward dash on the left wall");
-
-        }
-
-        #endregion Dash Animations
-
-        #region Air Dash Animations
-        private void AirDashVerticalAscend() // VERTICAL UP
-        {
-            Debug.Log("Invoke air dash straight up anim");
-        }
-
-        private void AirDashVerticalDescend() // VERTICAL DOWN
-        {
-            Debug.Log("Invoke air dash straight down anim");
-        }
-
-        private void AirDashHorizontalRight() // HORIZONTAL RIGHT
-        {
-            Debug.Log("Invoke air dash right anim (horizontal)");
-        }
-
-        private void AirDashHorizontalLeft() // HORIZONTAL LEFT
-        {
-            Debug.Log("Invoke air dash left anim (horizontal)");
-        }
-
-        private void AirDashDiagonalRightUp() // DIAGONAL RIGHT UP
-        {
-            Debug.Log("Invoke air dash up diagonally anim (right)");
-        }
-
-        private void AirDashDiagonalRightDown() // DIAGONAL RIGHT DOWN
-        {
-            Debug.Log("Invoke air dash down diagonally anim (right)");
-        }
-
-        private void AirDashDiagonalLeftUp() // DIAGONAL LEFT UP
-        {
-            Debug.Log("Invoke air dash up diagonally anim (left)");
-        }
-
-        private void AirDashDiagonalLeftDown() // DIAGONAL LEFT DOWN
-        {
-            Debug.Log("Invoke air dash down diagonally anim (left)");
-        }
-
-        #endregion Air Dash Animations
-
-        private void OnLandingAnim()
-        { 
+// using UnityEngine;
+
+// namespace Assets.Scripts.Player
+// {
+//     public class AnimationController2
+//     {
+//         private readonly Player player;
+//         private readonly AnimationSettings animSettings;
+//         private readonly Animator animator;
+
+//         private bool hasPlayedJumpParticles = false;
+//         private bool hasPlayedDashParticles = false;
+//         private bool hasPlayedStuckParticles = false;
+
+//         private MovementState _prevState;
+//         public AnimationController2(Player player, AnimationSettings animSettings, Animator animator)
+//         {
+//             this.player = player;
+//             this.animSettings = animSettings;
+//             this.animator = animator;
+
+//             _prevState = player.playerSettings.movementState;
+
+//             bool anim = animator != null;
+//             Debug.Log(anim);
+
+//             Transform particlesParent = player.transform.Find("Particles");
+
+//             // Jump 
+//             if (animSettings.jumpParticlePrefab == null)
+//                 animSettings.jumpParticlePrefab = particlesParent.Find(animSettings.jumpParticlePrefabName).GetComponent<ParticleSystem>();
+//             // Jump E
+//             if (animSettings.jumpEParticlePrefab == null)
+//                 animSettings.jumpEParticlePrefab = particlesParent.Find(animSettings.jumpEParticlePrefabName).GetComponent<ParticleSystem>();
+//             // Jump W
+//             if (animSettings.jumpWParticlePrefab == null)
+//                 animSettings.jumpWParticlePrefab = particlesParent.Find(animSettings.jumpWParticlePrefabName).GetComponent<ParticleSystem>();
+//             // Dash R
+//             if (animSettings.dashRParticlePrefab == null)
+//                 animSettings.dashRParticlePrefab = particlesParent.Find(animSettings.dashRParticlePrefabName).GetComponent<ParticleSystem>();
+//             // Dash L
+//             if (animSettings.dashLParticlePrefab == null)
+//                 animSettings.dashLParticlePrefab = particlesParent.Find(animSettings.dashLParticlePrefabName).GetComponent<ParticleSystem>();
+//             // Stuck L
+//             if (animSettings.stuckLParticlePrefab == null)
+//                 animSettings.stuckLParticlePrefab = particlesParent.Find(animSettings.stuckLParticlePrefabName).GetComponent<ParticleSystem>();
+//             // Stuck R
+//             if (animSettings.stuckRParticlePrefab == null)
+//                 animSettings.stuckRParticlePrefab = particlesParent.Find(animSettings.stuckRParticlePrefabName).GetComponent<ParticleSystem>();
+//         }
+
+//         public void Update()
+//         {
+//             var settings = player.playerSettings;
+//             var current = settings.movementState;
+
+//             if (_prevState == MovementState.Descending
+//                 && current == MovementState.Idle
+//                 && settings.currentSurfaceState == SurfaceState.Ground)
+//             {
+//                 OnLandingAnim();
+//                 Debug.Log("Landed…");
+//             }
+
+//             switch (player.playerSettings.movementState)
+//             {
+//                 case MovementState.Idle:
+//                     Debug.Log("Starting idle anim");
+//                     // if (animator != null)
+//                     IdleAnim();
+
+//                     break;
+
+//                 case MovementState.Charging:
+//                     ChargingAnim();
+
+//                     break;
+
+//                 case MovementState.Jumping:
+//                     if (player.moveContrl.movementSystem.isStraightJump) { JumpStraightAnim(); }
+//                     else
+//                     {
+//                         if (player.moveContrl.movementSystem.isDiagonalJumpRight) { JumpDiagonalRightAnim(); }
+//                         else { JumpDiagonalLeftAnim(); }
+//                     }
+//                     break;
+
+//                 case MovementState.Dashing:
+//                     switch (player.playerSettings.currentSurfaceState)
+//                     {
+//                         case SurfaceState.Ground:
+//                             GroundDashAnim();
+//                             break;
+
+//                         case SurfaceState.Ceiling:
+//                             CeilingDashAnim();
+//                             break;
+
+//                         case SurfaceState.RightWall:
+//                             RightWallDashAnim();
+//                             break;
+
+//                         case SurfaceState.LeftWall:
+//                             LeftWallDashAnim();
+//                             break;
+//                     }
+
+//                     break;
+
+//                 case MovementState.WallJump:
+//                     if (player.playerSettings.currentSurfaceState != SurfaceState.Ground ||
+//                         player.playerSettings.currentSurfaceState != SurfaceState.Ceiling)
+//                     {
+//                         Debug.Log("Invoke wall jump anim");
+//                         if (player.moveContrl.movementSystem.isWallJumpRight)
+//                         {
+//                             InvokeRightWallJumpAnim();
+//                         }
+//                         else
+//                         {
+//                             InvokeLeftWallJumpAnim();
+//                         }
+//                     }
+
+//                     break;
+
+//                 case MovementState.Hovering:
+//                     HoverAnim();
+
+//                     break;
+
+//                 case MovementState.Descending:
+//                     DescendingAnim();
+
+//                     break;
+
+//                 case MovementState.AirDashing:
+//                     if (player.moveContrl.movementSystem.isVerticalAirDash)
+//                     {
+//                         if (player.moveContrl.movementSystem.isAirDashAscend) { AirDashVerticalAscend(); }
+//                         else { AirDashVerticalDescend(); }
+//                     }
+//                     else if (player.moveContrl.movementSystem.isHorizontalAirDash)
+//                     {
+//                         if (player.moveContrl.movementSystem.isRightAirDash) { AirDashHorizontalRight(); }
+//                         else { AirDashHorizontalLeft(); }
+//                     }
+//                     else
+//                     {
+//                         if (player.moveContrl.movementSystem.isRightDiagonalAirDash)
+//                         {
+//                             if (player.moveContrl.movementSystem.isAirDashAscend) { AirDashDiagonalRightUp(); }
+//                             else { AirDashDiagonalRightDown(); }
+//                         }
+//                         else
+//                         {
+//                             if (player.moveContrl.movementSystem.isAirDashAscend) { AirDashDiagonalLeftUp(); }
+//                             else { AirDashDiagonalLeftDown(); }
+//                         }
+//                     }
+
+
+//                     break;
+
+//                 case MovementState.Stucked:
+//                     StuckedAnim();
+
+//                     break;
+
+//                 case MovementState.WallDescending:
+//                     if (player.playerSettings.currentSurfaceState == SurfaceState.RightWall)
+//                     {
+//                         RightWallDescendingAnim();
+//                     }
+//                     else if (player.playerSettings.currentSurfaceState == SurfaceState.LeftWall)
+//                     {
+//                         LeftWallDescendingAnim();
+//                     }
+
+//                     break;
+//             }
             
-        }
-    } 
-}
+//             _prevState = current;
+//         }
+
+//         private void IdleAnim()
+//         {
+//             hasPlayedDashParticles = false;
+
+//             animator.SetBool("Idle", true);
+//             animator.SetBool("Charge", false);
+//             animator.SetBool("JumpUp", false);
+//             animator.SetBool("JumpNE", false);
+//             animator.SetBool("JumpNW", false);
+//             animator.SetBool("JumpE", false);
+//             animator.SetBool("JumpW", false);
+//             animator.SetBool("Hover", false);
+//             animator.SetBool("Descent", false);
+//             animator.SetBool("QuickDescent", false);
+//             animator.SetBool("Landing", false);
+//             animator.SetBool("DashR", false);
+//             animator.SetBool("DashL", false);
+//             animator.SetBool("StuckedR", false);
+//             animator.SetBool("RWJumpA", false);
+//             animator.SetBool("RWJumpH", false);
+//             animator.SetBool("RWJumpD", false);
+//             animator.SetBool("LWJumpA", false);
+//             animator.SetBool("LWJumpH", false);
+//             animator.SetBool("LWJumpD", false);
+//         }
+
+//         private void ChargingAnim()
+//         {
+//             Debug.Log("Invoke charging anim");
+//             animator.SetBool("Idle", false);
+//             animator.SetBool("Charge", true);
+//             animator.SetBool("JumpUp", false);
+//             animator.SetBool("JumpNE", false);
+//             animator.SetBool("JumpNW", false);
+//             animator.SetBool("JumpE", false);
+//             animator.SetBool("JumpW", false);
+//             animator.SetBool("Hover", false);
+//             animator.SetBool("Descent", false);
+//             animator.SetBool("QuickDescent", false);
+//             animator.SetBool("Landing", false);
+//             animator.SetBool("DashR", false);
+//             animator.SetBool("DashL", false);
+//             animator.SetBool("StuckedR", false);
+//             animator.SetBool("RWJumpA", false);
+//             animator.SetBool("RWJumpH", false);
+//             animator.SetBool("RWJumpD", false);
+//             animator.SetBool("LWJumpA", false);
+//             animator.SetBool("LWJumpH", false);
+//             animator.SetBool("LWJumpD", false);
+//         }
+
+//         private void HoverAnim()
+//         {
+
+//             hasPlayedJumpParticles = false; // Mark as played
+//             hasPlayedStuckParticles = false;
+
+//             Debug.Log("Invoke hover anim");
+//             animator.SetBool("Idle", false);
+//             animator.SetBool("Charge", false);
+//             animator.SetBool("JumpUp", false);
+//             animator.SetBool("JumpNE", false);
+//             animator.SetBool("JumpNW", false);
+//             animator.SetBool("JumpE", false);
+//             animator.SetBool("JumpW", false);
+//             animator.SetBool("Hover", true);
+//             animator.SetBool("Descent", false);
+//             animator.SetBool("QuickDescent", false);
+//             animator.SetBool("Landing", false);
+//             animator.SetBool("DashR", false);
+//             animator.SetBool("DashL", false);
+//             animator.SetBool("StuckedR", false);
+//             animator.SetBool("RWJumpA", false);
+//             animator.SetBool("RWJumpH", false);
+//             animator.SetBool("RWJumpD", false);
+//             animator.SetBool("LWJumpA", false);
+//             animator.SetBool("LWJumpH", false);
+//             animator.SetBool("LWJumpD", false);
+//         }
+
+//         private void DescendingAnim()
+//         {
+
+
+//             hasPlayedJumpParticles = false; // Mark as played
+
+
+//             Debug.Log("Invoke descend anim");
+//             animator.SetBool("Idle", false);
+//             animator.SetBool("Charge", false);
+//             animator.SetBool("JumpUp", false);
+//             animator.SetBool("JumpNE", false);
+//             animator.SetBool("JumpNW", false);
+//             animator.SetBool("JumpE", false);
+//             animator.SetBool("JumpW", false);
+//             animator.SetBool("Hover", false);
+//             animator.SetBool("Descent", true);
+//             animator.SetBool("QuickDescent", false);
+//             animator.SetBool("Landing", false);
+//             animator.SetBool("DashR", false);
+//             animator.SetBool("DashL", false);
+//             animator.SetBool("StuckedR", false);
+//             animator.SetBool("RWJumpA", false);
+//             animator.SetBool("RWJumpH", false);
+//             animator.SetBool("RWJumpD", false);
+//             animator.SetBool("LWJumpA", false);
+//             animator.SetBool("LWJumpH", false);
+//             animator.SetBool("LWJumpD", false);
+//         }
+
+//         private void RightWallDescendingAnim()
+//         {
+//             Debug.Log("Invoke wall descend anim (right wall)");
+//         }
+
+//         private void LeftWallDescendingAnim()
+//         {
+//             Debug.Log("Invoke wall descend anim (left wall)");
+//         }
+
+//         private ParticleSystem InstantiateParticle(ParticleSystem particlePrefab)
+//         {
+//             return Object.Instantiate(particlePrefab, player.transform.position, Quaternion.identity) as ParticleSystem;
+//         }
+
+//         private void StuckedAnim()
+//         {
+//             hasPlayedJumpParticles = false;
+
+//             if (!hasPlayedStuckParticles)
+//             {
+//                 Debug.Log("Invoke jump straight anim");
+
+//                 // Spawn and play a temporary particle system at current position
+//                 // ParticleSystem newParticles = Instantiate(stuckRParticlePrefab, transform.position, Quaternion.identity);
+//                 ParticleSystem p = InstantiateParticle(animSettings.stuckRParticlePrefab);
+//                 p.Play();
+
+//                 float totalDuration = p.main.duration + p.main.startLifetime.constantMax;
+//                 Object.Destroy(p.gameObject, totalDuration);
+
+//                 hasPlayedStuckParticles = true; // Mark as played
+//             }
+
+//             Debug.Log("Invoke stucked anim");
+//             animator.SetBool("Idle", false);
+//             animator.SetBool("Charge", false);
+//             animator.SetBool("JumpUp", false);
+//             animator.SetBool("JumpNE", false);
+//             animator.SetBool("JumpNW", false);
+//             animator.SetBool("JumpE", false);
+//             animator.SetBool("JumpW", false);
+//             animator.SetBool("Hover", false);
+//             animator.SetBool("Descent", false);
+//             animator.SetBool("QuickDescent", false);
+//             animator.SetBool("Landing", false);
+//             animator.SetBool("DashR", false);
+//             animator.SetBool("DashL", false);
+//             animator.SetBool("StuckedR", true);
+
+//         }
+
+//         // Jump animations
+//         #region Jump Animations
+//         // -- DEFAULT JUMP
+//         private void JumpStraightAnim() // VERTICAL UP
+//         {
+//             Debug.Log("Invoke jump straight anim");
+
+//             if (!hasPlayedJumpParticles)
+//             {
+//                 Debug.Log("Invoke jump straight anim");
+
+//                 // Spawn and play a temporary particle system at current position
+//                 // ParticleSystem newParticles = Instantiate(jumpParticlePrefab, transform.position, Quaternion.identity);
+//                 ParticleSystem p = InstantiateParticle(animSettings.jumpParticlePrefab);
+//                 p.Play();
+
+//                 float totalDuration = p.main.duration + p.main.startLifetime.constantMax;
+//                 Object.Destroy(p.gameObject, totalDuration);
+
+//                 hasPlayedJumpParticles = true; // Mark as played
+//             }
+
+//             animator.SetBool("Charge", false);
+//             animator.SetBool("JumpUp", true);
+//             animator.SetBool("JumpNE", false);
+//             animator.SetBool("JumpNW", false);
+//             animator.SetBool("JumpE", false);
+//             animator.SetBool("JumpW", false);
+//             animator.SetBool("Hover", false);
+//             animator.SetBool("Descent", false);
+//             animator.SetBool("QuickDescent", false);
+//             animator.SetBool("Landing", false);
+//             animator.SetBool("DashR", false);
+//             animator.SetBool("DashL", false);
+//             animator.SetBool("StuckedR", false);
+//             animator.SetBool("RWJumpA", false);
+//             animator.SetBool("RWJumpH", false);
+//             animator.SetBool("RWJumpD", false);
+//             animator.SetBool("LWJumpA", false);
+//             animator.SetBool("LWJumpH", false);
+//             animator.SetBool("LWJumpD", false);
+//         }
+
+//         private void JumpDiagonalRightAnim()  // DIAGONAL RIGHT
+//         {
+
+//             Debug.Log("Invoke jump straight anim");
+
+//             if (!hasPlayedJumpParticles)
+//             {
+//                 Debug.Log("Invoke jump straight anim");
+
+//                 // Spawn and play a temporary particle system at current position
+//                 // ParticleSystem newParticles = Instantiate(jumpEParticlePrefab, transform.position, Quaternion.identity);
+//                 ParticleSystem p = InstantiateParticle(animSettings.jumpEParticlePrefab);
+//                 p.Play();
+
+//                 float totalDuration = p.main.duration + p.main.startLifetime.constantMax;
+//                 Object.Destroy(p.gameObject, totalDuration);
+
+//                 hasPlayedJumpParticles = true; // Mark as played
+//             }
+
+
+//             Debug.Log("Invoke jump diagonal anim (right)");
+//             animator.SetBool("Idle", false);
+//             animator.SetBool("Charge", false);
+//             animator.SetBool("JumpUp", false);
+//             animator.SetBool("JumpNE", true);
+//             animator.SetBool("JumpNW", false);
+//             animator.SetBool("JumpE", false);
+//             animator.SetBool("JumpW", false);
+//             animator.SetBool("Hover", false);
+//             animator.SetBool("Descent", false);
+//             animator.SetBool("QuickDescent", false);
+//             animator.SetBool("Landing", false);
+//             animator.SetBool("DashR", false);
+//             animator.SetBool("DashL", false);
+//             animator.SetBool("StuckedR", false);
+//             animator.SetBool("RWJumpA", false);
+//             animator.SetBool("RWJumpH", false);
+//             animator.SetBool("RWJumpD", false);
+//             animator.SetBool("LWJumpA", false);
+//             animator.SetBool("LWJumpH", false);
+//             animator.SetBool("LWJumpD", false);
+//         }
+
+//         private void JumpDiagonalLeftAnim()  // DIAGONAL LEFT
+//         {
+
+//             if (!hasPlayedJumpParticles)
+//             {
+//                 Debug.Log("Invoke jump straight anim");
+
+//                 // Spawn and play a temporary particle system at current position
+//                 // ParticleSystem newParticles = Instantiate(jumpWParticlePrefab, transform.position, Quaternion.identity);
+//                 ParticleSystem p = InstantiateParticle(animSettings.jumpWParticlePrefab);
+//                 p.Play();
+
+//                 float totalDuration = p.main.duration + p.main.startLifetime.constantMax;
+//                 Object.Destroy(p.gameObject, totalDuration);
+
+//                 hasPlayedJumpParticles = true; // Mark as played
+//             }
+
+//             Debug.Log("Invoke jump diagonal anim (left)");
+//             animator.SetBool("Idle", false);
+//             animator.SetBool("Charge", false);
+//             animator.SetBool("JumpUp", false);
+//             animator.SetBool("JumpNE", false);
+//             animator.SetBool("JumpNW", true);
+//             animator.SetBool("JumpE", false);
+//             animator.SetBool("JumpW", false);
+//             animator.SetBool("Hover", false);
+//             animator.SetBool("Descent", false);
+//             animator.SetBool("QuickDescent", false);
+//             animator.SetBool("Landing", false);
+//             animator.SetBool("DashR", false);
+//             animator.SetBool("DashL", false);
+//             animator.SetBool("StuckedR", false);
+//             animator.SetBool("RWJumpA", false);
+//             animator.SetBool("RWJumpH", false);
+//             animator.SetBool("RWJumpD", false);
+//             animator.SetBool("LWJumpA", false);
+//             animator.SetBool("LWJumpH", false);
+//             animator.SetBool("LWJumpD", false);
+//         }
+
+//         private void InvokeRightWallJumpAnim() // DONT TOUCH THIS METHOD
+//         {
+//             if (player.moveContrl.movementSystem.isWallJumpHorizontal) { RightWallJumpHorizontal(); }
+//             else if (player.moveContrl.movementSystem.isWallJumpAscend) { RightWallJumpAscendAnim(); }
+//             else { RightWallJumpDescendAnim(); }
+//         }
+
+//         private void InvokeLeftWallJumpAnim() // DONT TOUCH THIS METHOD
+//         {
+//             if (player.moveContrl.movementSystem.isWallJumpHorizontal) { LeftWallJumpHorizontal(); }
+//             else if (player.moveContrl.movementSystem.isWallJumpAscend) { LeftWallJumpAscendAnim(); }
+//             else { LeftWallJumpDescendAnim(); }
+//         }
+
+//         // -- WALL JUMP
+//         // Right wall
+//         private void RightWallJumpAscendAnim() // RIGHT WALL JUMP ASCEND
+//         {
+//             if (!hasPlayedJumpParticles)
+//             {
+//                 Debug.Log("Invoke jump straight anim");
+
+//                 // Spawn and play a temporary particle system at current position
+//                 // ParticleSystem newParticles = Instantiate(jumpEParticlePrefab, transform.position, Quaternion.identity);
+//                 ParticleSystem p = InstantiateParticle(animSettings.jumpEParticlePrefab);
+//                 p.Play();
+
+//                 float totalDuration = p.main.duration + p.main.startLifetime.constantMax;
+//                 Object.Destroy(p.gameObject, totalDuration);
+
+//                 hasPlayedJumpParticles = true; // Mark as played
+//             }
+
+
+//             Debug.Log("Invoke right wall jump ascend anim");
+//             animator.SetBool("Idle", false);
+//             animator.SetBool("Charge", false);
+//             animator.SetBool("JumpUp", false);
+//             animator.SetBool("Hover", false);
+//             animator.SetBool("Descent", false);
+//             animator.SetBool("QuickDescent", false);
+//             animator.SetBool("Landing", false);
+//             animator.SetBool("DashR", false);
+//             animator.SetBool("DashL", false);
+//             animator.SetBool("StuckedR", false);
+//             animator.SetBool("RWJumpA", true);
+//             animator.SetBool("RWJumpH", false);
+//             animator.SetBool("RWJumpD", false);
+//             animator.SetBool("LWJumpA", false);
+//             animator.SetBool("LWJumpH", false);
+//             animator.SetBool("LWJumpD", false);
+//         }
+
+//         private void RightWallJumpDescendAnim() // RIGHT WALL JUMP DESCEND
+//         {
+
+//             if (!hasPlayedJumpParticles)
+//             {
+//                 Debug.Log("Invoke jump straight anim");
+
+//                 // Spawn and play a temporary particle system at current position
+//                 // ParticleSystem newParticles = Instantiate(jumpEParticlePrefab, transform.position, Quaternion.identity);
+//                 ParticleSystem p = InstantiateParticle(animSettings.jumpEParticlePrefab);
+//                 p.Play();
+
+//                 float totalDuration = p.main.duration + p.main.startLifetime.constantMax;
+//                 Object.Destroy(p.gameObject, totalDuration);
+
+//                 hasPlayedJumpParticles = true; // Mark as played
+//             }
+
+//             Debug.Log("Invoke right wall jump descend anim");
+//             animator.SetBool("Idle", false);
+//             animator.SetBool("Charge", false);
+//             animator.SetBool("JumpUp", false);
+//             animator.SetBool("Hover", false);
+//             animator.SetBool("Descent", false);
+//             animator.SetBool("QuickDescent", false);
+//             animator.SetBool("Landing", false);
+//             animator.SetBool("DashR", false);
+//             animator.SetBool("DashL", false);
+//             animator.SetBool("StuckedR", false);
+//             animator.SetBool("RWJumpA", false);
+//             animator.SetBool("RWJumpH", true);
+//             animator.SetBool("RWJumpD", false);
+//             animator.SetBool("LWJumpA", false);
+//             animator.SetBool("LWJumpH", false);
+//             animator.SetBool("LWJumpD", false);
+
+
+//         }
+
+//         private void RightWallJumpHorizontal() // RIGHT WALL JUMP HORIZONTAL
+//         {
+
+//             if (!hasPlayedJumpParticles)
+//             {
+//                 Debug.Log("Invoke jump straight anim");
+
+//                 // Spawn and play a temporary particle system at current position
+//                 // ParticleSystem newParticles = Instantiate(jumpEParticlePrefab, transform.position, Quaternion.identity);
+//                 ParticleSystem p = InstantiateParticle(animSettings.jumpEParticlePrefab);
+//                 p.Play();
+
+//                 float totalDuration = p.main.duration + p.main.startLifetime.constantMax;
+//                 Object.Destroy(p.gameObject, totalDuration);
+
+//                 hasPlayedJumpParticles = true; // Mark as played
+//             }
+
+//             Debug.Log("Invoke wall jump horizontal <--");
+//             animator.SetBool("Idle", false);
+//             animator.SetBool("Charge", false);
+//             animator.SetBool("JumpUp", false);
+//             animator.SetBool("Hover", false);
+//             animator.SetBool("Descent", false);
+//             animator.SetBool("QuickDescent", false);
+//             animator.SetBool("Landing", false);
+//             animator.SetBool("DashR", false);
+//             animator.SetBool("DashL", false);
+//             animator.SetBool("StuckedR", false);
+//             animator.SetBool("RWJumpA", false);
+//             animator.SetBool("RWJumpH", false);
+//             animator.SetBool("RWJumpD", true);
+
+//         }
+
+//         // Left wall
+//         private void LeftWallJumpAscendAnim() // LEFT WALL JUMP ASCEND
+//         {
+//             if (!hasPlayedJumpParticles)
+//             {
+//                 Debug.Log("Invoke jump straight anim");
+
+//                 // Spawn and play a temporary particle system at current position
+//                 // ParticleSystem newParticles = Instantiate(jumpWParticlePrefab, transform.position, Quaternion.identity);
+//                 ParticleSystem p = InstantiateParticle(animSettings.jumpWParticlePrefab);
+//                 p.Play();
+
+//                 float totalDuration = p.main.duration + p.main.startLifetime.constantMax;
+//                 Object.Destroy(p.gameObject, totalDuration);
+
+//                 hasPlayedJumpParticles = true; // Mark as played
+//             }
+
+//             Debug.Log("Invoke left wall jump ascend anim");
+//             animator.SetBool("Idle", false);
+//             animator.SetBool("Charge", false);
+//             animator.SetBool("JumpUp", false);
+//             animator.SetBool("JumpNE", false);
+//             animator.SetBool("JumpNW", false);
+//             animator.SetBool("JumpE", false);
+//             animator.SetBool("JumpW", false);
+//             animator.SetBool("Hover", false);
+//             animator.SetBool("Descent", false);
+//             animator.SetBool("QuickDescent", false);
+//             animator.SetBool("Landing", false);
+//             animator.SetBool("DashR", false);
+//             animator.SetBool("DashL", false);
+//             animator.SetBool("StuckedR", false);
+//             animator.SetBool("RWJumpA", false);
+//             animator.SetBool("RWJumpH", false);
+//             animator.SetBool("RWJumpD", false);
+//             animator.SetBool("LWJumpA", true);
+//             animator.SetBool("LWJumpH", false);
+//             animator.SetBool("LWJumpD", false);
+//         }
+
+//         private void LeftWallJumpDescendAnim() // LEFT WASLL JUMP DESCEND
+//         {
+//             Debug.Log("Invoke left wall jump descend anim");
+//             if (!hasPlayedJumpParticles)
+//             {
+//                 Debug.Log("Invoke jump straight anim");
+
+//                 // Spawn and play a temporary particle system at current position
+//                 // ParticleSystem newParticles = Instantiate(jumpWParticlePrefab, transform.position, Quaternion.identity);
+//                 ParticleSystem p = InstantiateParticle(animSettings.jumpWParticlePrefab);
+//                 p.Play();
+
+//                 float totalDuration = p.main.duration + p.main.startLifetime.constantMax;
+//                 Object.Destroy(p.gameObject, totalDuration);
+
+//                 hasPlayedJumpParticles = true; // Mark as played
+//             }
+
+
+//             animator.SetBool("Idle", false);
+//             animator.SetBool("Charge", false);
+//             animator.SetBool("JumpUp", false);
+//             animator.SetBool("JumpNE", false);
+//             animator.SetBool("JumpNW", false);
+//             animator.SetBool("JumpE", false);
+//             animator.SetBool("JumpW", false);
+//             animator.SetBool("Hover", false);
+//             animator.SetBool("Descent", false);
+//             animator.SetBool("QuickDescent", false);
+//             animator.SetBool("Landing", false);
+//             animator.SetBool("DashR", false);
+//             animator.SetBool("DashL", false);
+//             animator.SetBool("StuckedR", false);
+//             animator.SetBool("RWJumpA", false);
+//             animator.SetBool("RWJumpH", false);
+//             animator.SetBool("RWJumpD", false);
+//             animator.SetBool("LWJumpA", false);
+//             animator.SetBool("LWJumpH", false);
+//             animator.SetBool("LWJumpD", true);
+//         }
+
+//         private void LeftWallJumpHorizontal() // LEFT WALL JUMP HORIZONTAL
+//         {
+//             if (!hasPlayedJumpParticles)
+//             {
+//                 Debug.Log("Invoke jump straight anim");
+
+//                 // Spawn and play a temporary particle system at current position
+//                 // ParticleSystem newParticles = Instantiate(jumpWParticlePrefab, transform.position, Quaternion.identity);
+//                 ParticleSystem p = InstantiateParticle(animSettings.jumpWParticlePrefab);
+//                 p.Play();
+
+//                 float totalDuration = p.main.duration + p.main.startLifetime.constantMax;
+//                 Object.Destroy(p.gameObject, totalDuration);
+
+//                 hasPlayedJumpParticles = true; // Mark as played
+//             }
+
+//             Debug.Log("Invoke left wall jump horizontal -->");
+//             animator.SetBool("Idle", false);
+//             animator.SetBool("Charge", false);
+//             animator.SetBool("JumpUp", false);
+//             animator.SetBool("JumpNE", false);
+//             animator.SetBool("JumpNW", false);
+//             animator.SetBool("JumpE", false);
+//             animator.SetBool("JumpW", false);
+//             animator.SetBool("Hover", false);
+//             animator.SetBool("Descent", false);
+//             animator.SetBool("QuickDescent", false);
+//             animator.SetBool("Landing", false);
+//             animator.SetBool("DashR", false);
+//             animator.SetBool("DashL", false);
+//             animator.SetBool("StuckedR", false);
+//             animator.SetBool("RWJumpA", false);
+//             animator.SetBool("RWJumpH", false);
+//             animator.SetBool("RWJumpD", false);
+//             animator.SetBool("LWJumpA", true);
+//             animator.SetBool("LWJumpH", false);
+//             animator.SetBool("LWJumpD", false);
+//         }
+
+//         #endregion Jump Animations
+
+//         #region Dash Animations
+//         // -- GROUND DASH
+//         private void GroundDashAnim() // DONT TOUCH THIS METHOD
+//         {
+//             if (player.moveContrl.movementSystem.isRightGroundDash) { RightGroundDashAnim(); }
+//             else { LeftGroundDashAnim(); }
+//             Debug.Log("Invoke ground dash anim");
+//         }
+
+//         private void RightGroundDashAnim() // RIGHT ->> 
+//         {
+//             if (!hasPlayedDashParticles)
+//             {
+//                 Debug.Log("Invoke dash particles");
+
+//                 // Spawn and play a temporary particle system at current position
+//                 // ParticleSystem newParticles = Instantiate(dashRParticlePrefab, transform.position, Quaternion.identity);
+//                 ParticleSystem p = InstantiateParticle(animSettings.dashRParticlePrefab);
+//                 p.Play();
+
+//                 float totalDuration = p.main.duration + p.main.startLifetime.constantMax;
+//                 Object.Destroy(p.gameObject, totalDuration);
+
+//                 hasPlayedDashParticles = true; // Mark as played
+//             }
+//             Debug.Log("Ground dash anim ->");
+//             animator.SetBool("Idle", false);
+//             animator.SetBool("Charge", false);
+//             animator.SetBool("JumpUp", false);
+//             animator.SetBool("Hover", false);
+//             animator.SetBool("Descent", false);
+//             animator.SetBool("QuickDescent", false);
+//             animator.SetBool("Landing", false);
+//             animator.SetBool("DashR", true);
+//             animator.SetBool("DashL", false);
+//             animator.SetBool("Wallstick", false);
+//         }
+
+//         private void LeftGroundDashAnim() // LEFT <<-
+//         {
+
+//             if (!hasPlayedDashParticles)
+//             {
+//                 Debug.Log("Invoke dash particles");
+
+//                 // Spawn and play a temporary particle system at current position
+//                 // ParticleSystem newParticles = Instantiate(dashLParticlePrefab, transform.position, Quaternion.identity);
+//                 ParticleSystem p = InstantiateParticle(animSettings.dashLParticlePrefab);
+//                 p.Play();
+
+//                 float totalDuration = p.main.duration + p.main.startLifetime.constantMax;
+//                 Object.Destroy(p.gameObject, totalDuration);
+
+//                 hasPlayedDashParticles = true; // Mark as played
+//             }
+//             Debug.Log("Ground dash anim <-");
+//             animator.SetBool("Idle", false);
+//             animator.SetBool("Charge", false);
+//             animator.SetBool("JumpUp", false);
+//             animator.SetBool("Hover", false);
+//             animator.SetBool("Descent", false);
+//             animator.SetBool("QuickDescent", false);
+//             animator.SetBool("Landing", false);
+//             animator.SetBool("DashR", false);
+//             animator.SetBool("DashL", true);
+//             animator.SetBool("Wallstick", false);
+//         }
+
+//         // -- CEILING DASH
+//         private void CeilingDashAnim() // DONT TOUCH THIS METHOD
+//         {
+//             if (player.moveContrl.movementSystem.isRightGroundDash) { RightCeilingDashAnim(); }
+//             else { LeftCeilingDashAnim(); }
+
+//         }
+
+//         private void RightCeilingDashAnim() // RIGHT ->> 
+//         {
+//             Debug.Log("Ceiling dash anim ->");
+//         }
+
+//         private void LeftCeilingDashAnim() // LEFT <--
+//         {
+//             Debug.Log("Ceiling dash anim <-");
+//         }
+
+//         // -- WALL DASH
+//         // RIGHT WALL
+//         private void RightWallDashAnim() // DONT TOUCH THIS METHOD
+//         {
+//             if (player.moveContrl.movementSystem.isUpWallDash) { UpRightWallDashAnim(); }
+//             else { DownRightWallDashAnim(); }
+//             Debug.Log("Invoke wall dash anim (right)");
+//         }
+
+//         private void UpRightWallDashAnim() // UP 
+//         {
+//             Debug.Log("Invoke upward dash on the right wall");
+//         }
+
+//         private void DownRightWallDashAnim() // DOWN 
+//         {
+//             Debug.Log("Invoke downward dash on the right wall");
+//         }
+
+//         // LEFT WALL
+//         private void LeftWallDashAnim() // DONT TOUCH THIS METHOD
+//         {
+//             if (player.moveContrl.movementSystem.isUpWallDash) { UpLeftWallDashAnim(); }
+//             else { DownLeftWallDashAnim(); }
+//             Debug.Log("Invoke wall dash anim (left)");
+//         }
+
+//         private void UpLeftWallDashAnim() // UP
+//         {
+//             Debug.Log("Invoke upward dash on the left wall");
+//         }
+
+//         private void DownLeftWallDashAnim() // DOWN
+//         {
+//             Debug.Log("Invoke downward dash on the left wall");
+
+//         }
+
+//         #endregion Dash Animations
+
+//         #region Air Dash Animations
+//         private void AirDashVerticalAscend() // VERTICAL UP
+//         {
+//             Debug.Log("Invoke air dash straight up anim");
+//         }
+
+//         private void AirDashVerticalDescend() // VERTICAL DOWN
+//         {
+//             Debug.Log("Invoke air dash straight down anim");
+//         }
+
+//         private void AirDashHorizontalRight() // HORIZONTAL RIGHT
+//         {
+//             Debug.Log("Invoke air dash right anim (horizontal)");
+//         }
+
+//         private void AirDashHorizontalLeft() // HORIZONTAL LEFT
+//         {
+//             Debug.Log("Invoke air dash left anim (horizontal)");
+//         }
+
+//         private void AirDashDiagonalRightUp() // DIAGONAL RIGHT UP
+//         {
+//             Debug.Log("Invoke air dash up diagonally anim (right)");
+//         }
+
+//         private void AirDashDiagonalRightDown() // DIAGONAL RIGHT DOWN
+//         {
+//             Debug.Log("Invoke air dash down diagonally anim (right)");
+//         }
+
+//         private void AirDashDiagonalLeftUp() // DIAGONAL LEFT UP
+//         {
+//             Debug.Log("Invoke air dash up diagonally anim (left)");
+//         }
+
+//         private void AirDashDiagonalLeftDown() // DIAGONAL LEFT DOWN
+//         {
+//             Debug.Log("Invoke air dash down diagonally anim (left)");
+//         }
+
+//         #endregion Air Dash Animations
+
+//         private void OnLandingAnim()
+//         { 
+            
+//         }
+//     } 
+// }
+

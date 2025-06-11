@@ -44,7 +44,7 @@ namespace Assets.Scripts.Player
         public MovementSystemController moveContrl;
         public CombatController combatContrl;
         public MovementInteraction moveInt;
-        private AnimationController2 animContr;
+        private AnimationController animContr;
 
         [HideInInspector] public Rigidbody rb;
         [HideInInspector] public Collider col;
