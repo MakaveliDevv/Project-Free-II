@@ -29,19 +29,19 @@ namespace Assets.Scripts.Player
 
         private Coroutine dashAnimCoroutine;
 
-        private IEnumerator PlayDashSpriteAnimation()
-        {
-            dashEffectObject.SetActive(true);
-            SpriteRenderer sr = dashEffectObject.GetComponent<SpriteRenderer>();
+        // private IEnumerator PlayDashSpriteAnimation()
+        // {
+        //     dashEffectObject.SetActive(true);
+        //     SpriteRenderer sr = dashEffectObject.GetComponent<SpriteRenderer>();
 
-            for (int i = 0; i < dashSprites.Length; i++)
-            {
-                sr.sprite = dashSprites[i];
-                yield return new WaitForSeconds(frameRate);
-            }
+        //     for (int i = 0; i < dashSprites.Length; i++)
+        //     {
+        //         sr.sprite = dashSprites[i];
+        //         yield return new WaitForSeconds(frameRate);
+        //     }
 
-            dashEffectObject.SetActive(false);
-        }
+        //     dashEffectObject.SetActive(false);
+        // }
 
         void Awake()
         {
