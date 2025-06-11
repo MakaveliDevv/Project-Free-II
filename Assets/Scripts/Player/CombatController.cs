@@ -119,6 +119,8 @@ namespace Assets.Scripts.Player
             bool pass = snapped == opposite;
             string key = $"{startLabel}-{snapped}";
 
+            LastDirectionKey = key;
+
             if (inRangeForCombat)
             {
                 Debug.Log("In range for combat, start processing...");
@@ -131,7 +133,7 @@ namespace Assets.Scripts.Player
                 Debug.Log($"[Attackable] ❌ FAILURE: {startLabel} → {snapped} (expected {opposite})");
 
             previousEndLabel = snapped;
-            LastDirectionKey = key;
+            // LastDirectionKey = key;
 
             Reset();
             OnSwipePerformed?.Invoke(key, pass);
@@ -153,7 +155,7 @@ namespace Assets.Scripts.Player
             else
             {
                 Debug.Log($"[Attackable] ▶️ ❌ FAILURE {key} → mapped " +
-                        $"{(attackable.directions.TryGetValue(key, out performed) ? performed : (Attackable.AttackDirection)(-1))}, " +
+                        $"{(attackable.directions.TryGetValue(key, out performed) ? performed : (AttackDirection)(-1))}, " +
                         $"expected {attackable.attackDirection}");
             }
         }
@@ -176,6 +178,17 @@ namespace Assets.Scripts.Player
             float snapAngle = Mathf.Round(angle / 45f) * 45f;
             int idx = Mathf.RoundToInt(snapAngle / 45f) % 8;
             return labels[idx];
+        }
+
+        public AttackDirection? GetAttemptedAttackDirection()
+        {
+            if (string.IsNullOrEmpty(LastDirectionKey) || attackable == null)
+                return null;
+
+            attackable.directions.TryGetValue(LastDirectionKey, out var dir);
+            LastDirectionKey = null;
+
+            return dir;
         }
 
         public void OnTriggerEnter(Collider collider)

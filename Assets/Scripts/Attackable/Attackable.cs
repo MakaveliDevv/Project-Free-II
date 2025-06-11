@@ -6,13 +6,6 @@ public class Attackable : MonoBehaviour
 {
     private RewardSystem rewardSystem;
 
-    // === Public Enums ===
-    public enum AttackDirection
-    {
-        TopToBottom, BottomToTop, LeftToRight, RightToLeft,
-        BottomLeftToTopRight, TopRightToBottomLeft, BottomRightToTopLeft, TopLeftToBottomRight
-    }
-
     public enum HitResult
     {
         None, Early, Good, Perfect, Late

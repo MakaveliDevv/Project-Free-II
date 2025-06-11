@@ -26,6 +26,12 @@ namespace Assets.Scripts.Player
     public enum GravityDirection { Down, Up, Left, Right }
     public enum Mode { Normal, AdvancedMovement, Combat }
 
+    public enum AttackDirection
+    {
+        TopToBottom, BottomToTop, LeftToRight, RightToLeft,
+        BottomLeftToTopRight, TopRightToBottomLeft, BottomRightToTopLeft, TopLeftToBottomRight
+    }
+
     [RequireComponent(typeof(Rigidbody))]
     public class Player : MonoBehaviour
     {
@@ -43,7 +49,6 @@ namespace Assets.Scripts.Player
 
         public MovementSystemController moveContrl;
         public CombatController combatContrl;
-        // public MovementInteraction moveInt;
         private AnimationController animContr;
 
         [HideInInspector] public Rigidbody rb;

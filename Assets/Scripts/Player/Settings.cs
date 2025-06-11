@@ -334,5 +334,22 @@ namespace Assets.Scripts.Player
         public string stuckLParticlePrefabName = "";
         public string stuckRParticlePrefabName = "";
     }
+
+    public static class AttackDirections
+    {
+        public enum AttackDirection
+        {
+            TopToBottom, BottomToTop, LeftToRight, RightToLeft,
+            BottomLeftToTopRight, TopRightToBottomLeft, BottomRightToTopLeft, TopLeftToBottomRight
+        }
+    }
+
+    public static class HitResults
+    { 
+        public enum HitResult
+        {
+            None, Early, Good, Perfect, Late
+        }
+    }
 }
 

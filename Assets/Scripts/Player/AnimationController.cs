@@ -47,11 +47,100 @@ namespace Assets.Scripts.Player
                 _prevMovementState = currState;
                 _prevSurfaceState = currSurface;
             }
+
+            var attempted = player.combatContrl.GetAttemptedAttackDirection();
+            if (attempted.HasValue)
+            {
+                Debug.Log($"Player attacked: {attempted.Value}");
+            }
+
+            // Att dir
+
+            switch (attempted)
+            {
+                case AttackDirection.TopToBottom:
+                    TopToBottom_AttAnim();
+                    break;
+
+                case AttackDirection.BottomToTop:
+                    BottomToTop_AttAnim();
+
+                    break;
+
+                case AttackDirection.LeftToRight:
+                    LeftToRight_AttAnim();
+
+                    break;
+
+                case AttackDirection.RightToLeft:
+                    RightToLeft_AttAnim();
+
+                    break;
+
+                case AttackDirection.BottomLeftToTopRight:
+                    BottomLeftToTopRight_AttAnim();
+
+                    break;
+
+                case AttackDirection.TopRightToBottomLeft:
+                    TopRightToBottomLeft_AttAnim();
+
+                    break;
+
+                case AttackDirection.BottomRightToTopLeft:
+                    BottomRightToTopLeft_AttAnim();
+
+                    break;
+
+                case AttackDirection.TopLeftToBottomRight:
+                    TopLeftToBottomRight_AttAnim();
+
+                    break;
+            }
+        }
+
+        private void TopToBottom_AttAnim()
+        { 
+            
+        }
+
+        private void BottomToTop_AttAnim()
+        { 
+            
+        }
+
+        private void LeftToRight_AttAnim()
+        { 
+            
+        }
+
+        private void RightToLeft_AttAnim()
+        { 
+            
+        }
+
+        private void BottomLeftToTopRight_AttAnim()
+        { 
+            
+        }
+
+        private void TopRightToBottomLeft_AttAnim()
+        { 
+            
+        }
+
+        private void BottomRightToTopLeft_AttAnim()
+        { 
+            
+        }
+
+        private void TopLeftToBottomRight_AttAnim()
+        { 
+            
         }
 
         private void HandleStateEntry(MovementState ms, SurfaceState ss)
         {
-            // Landing detection: Descending -> Idle on Ground
             if (_prevMovementState == MovementState.Descending
                 && ms == MovementState.Idle
                 && ss == SurfaceState.Ground)
@@ -138,16 +227,19 @@ namespace Assets.Scripts.Player
                     StuckedAnim();
                     Debug.Log("Played stucked pose");
                     break;
+
+                case MovementState.Interacting:
+                    OnInteractionAnim();
+                    break;
+
+                case MovementState.Launching:
+                    OnLaunchAnim();
+                    break;
             }
 
-            if (player.playerSettings.movementState == MovementState.Interacting)
+            if (player.mode == Mode.Combat)
             {
-                OnInteractionAnim();
-            }
-
-            if (player.playerSettings.movementState == MovementState.Launching)
-            { 
-                
+                CombatModeAnim();
             }
         }
 
@@ -202,6 +294,14 @@ namespace Assets.Scripts.Player
         { 
 
         }
+
+        // Combat
+        private void CombatModeAnim()
+        {
+
+        }
+
+
 
         // --- Core pose methods (reset & set one flag) ---
         private void IdleAnim()

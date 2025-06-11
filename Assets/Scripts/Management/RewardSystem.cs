@@ -139,7 +139,6 @@ public class RewardSystem : MonoBehaviour
                 }
                 else if (pendingGood == 1)
                 {
-                    // Debug.Log($"💥 Good combo started! Count: 2");
                     Debug.Log("<color=cyan>💥 Good combo started! Count: 2</color>");
 
                     // Second good hit → start combo
@@ -182,9 +181,7 @@ public class RewardSystem : MonoBehaviour
 
         GoodComboCount = 0;
         PerfectComboCount = 0;
-
-        // if (goodComboActive) Debug.Log("❌ Good combo ended.");
-        // if (perfectComboActive) Debug.Log("❌ Perfect combo ended.");
+        
         if (goodComboActive) Debug.Log("<color=red>❌ Good combo ended.</color>");
         if (perfectComboActive) Debug.Log("<color=red>❌ Perfect combo ended.</color>");
     }
