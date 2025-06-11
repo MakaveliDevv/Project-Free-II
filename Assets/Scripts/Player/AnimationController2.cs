@@ -23,6 +23,26 @@ namespace Assets.Scripts.Player
         private bool hasPlayedStuckParticles = false;
 
 
+        public Sprite[] dashSprites; // Assign via inspector
+        public GameObject dashEffectObject; // Assign the GameObject with SpriteRenderer
+        public float frameRate = 0.05f; // Adjust for desired speed
+
+        private Coroutine dashAnimCoroutine;
+
+        private IEnumerator PlayDashSpriteAnimation()
+        {
+            dashEffectObject.SetActive(true);
+            SpriteRenderer sr = dashEffectObject.GetComponent<SpriteRenderer>();
+
+            for (int i = 0; i < dashSprites.Length; i++)
+            {
+                sr.sprite = dashSprites[i];
+                yield return new WaitForSeconds(frameRate);
+            }
+
+            dashEffectObject.SetActive(false);
+        }
+
         void Awake()
         {
             player = GetComponent<Player>();
@@ -31,6 +51,14 @@ namespace Assets.Scripts.Player
 
         void Update()
         {
+
+            if (player.moveContrl.movementSystem.IsNearGround)
+            {
+                Debug.Log("Landed");
+
+
+            }
+
             switch (player.playerSettings.movementState)
             {
                 case MovementState.Idle:
