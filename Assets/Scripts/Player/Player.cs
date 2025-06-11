@@ -39,21 +39,39 @@ namespace Assets.Scripts.Player
         public AdvancedMovementSettings advancedMovementSettings;
         public CombatSettings combatSettings;
         public InteractionSettings interactionSettings;
+        public AnimationSettings animSettings;
 
         public MovementSystemController moveContrl;
         public CombatController combatContrl;
         public MovementInteraction moveInt;
+        private AnimationController2 animContr;
+
+        [Header("Component Settings")]
+        public Rigidbody rb;
+        public Collider col;
+        private Animator animator;
+
+        public bool interacting = false;
 
         void Awake()
         {
-            playerSettings = new();
-            
+            rb = GetComponent<Rigidbody>();
+            col = GetComponent<Collider>();
+            animator = transform.GetChild(0).GetComponent<Animator>();
+
+            rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+            rb.interpolation = RigidbodyInterpolation.Interpolate;
+
             InputSystem.settings.maxEventBytesPerUpdate = 0;
+
+            playerSettings = new();
             InputManager.Initialize(inputActionAsset, playerSettings.useRawInput, movementSettings.minStickMagnitude);
 
+            // Class instances
             moveContrl = new(this, movementSettings);
             combatContrl = new(this, combatSettings);
-            moveInt = new(playerSettings);
+            moveInt = new(this);
+            animContr = new(this, animSettings, animator);
 
             moveContrl?.Awake();
             playerSettings.currentSurfaceState = SurfaceState.Ground;
@@ -110,6 +128,10 @@ namespace Assets.Scripts.Player
                     break;
             }
 
+            if (playerSettings.movementState == MovementState.Idle && playerSettings.currentSurfaceState == SurfaceState.Ground) moveInt.interacting = false;
+
+            animContr.Update();
+
             InputManager.ResetFrameInputs();
         }
 
@@ -136,6 +158,7 @@ namespace Assets.Scripts.Player
         void OnTriggerEnter(Collider collider)
         {
             combatContrl?.OnTriggerEnter(collider);
+            moveInt.OnTriggerEnter(collider);
         }
 
         void OnTriggerExit(Collider collider)

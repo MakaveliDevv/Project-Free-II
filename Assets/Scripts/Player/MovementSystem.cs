@@ -182,11 +182,13 @@ namespace Assets.Scripts.Player
         #region UNITY LIFECYCLE
         public void Awake()
         {
-            rb = player.GetComponent<Rigidbody>();
-            col = player.GetComponent<Collider>();
+            // rb = player.GetComponent<Rigidbody>();
+            // col = player.GetComponent<Collider>();
+            rb = player.rb;
+            col = player.col;
 
-            rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
-            rb.interpolation = RigidbodyInterpolation.Interpolate;
+            // rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+            // rb.interpolation = RigidbodyInterpolation.Interpolate;
 
             BuildLabelToAngleMap();
         }
@@ -362,7 +364,6 @@ namespace Assets.Scripts.Player
                     break;
             }
 
-            // InputManager.ResetFrameInputs();
         }
 
         public void LateUpdate()

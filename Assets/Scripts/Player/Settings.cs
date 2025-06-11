@@ -5,17 +5,25 @@ namespace Assets.Scripts.Player
     [System.Serializable]
     public class PlayerSettings
     {
-        /*[HideInInspector]*/ public MovementState movementState = MovementState.Idle;
-        /*[HideInInspector]*/ public SurfaceState currentSurfaceState = SurfaceState.Ground;
-        /*[HideInInspector]*/ public bool useRawInput = true;
-        /*[HideInInspector]*/ public bool snapDirectionsEnabled = true;
+        /*[HideInInspector]*/
+        public MovementState movementState = MovementState.Idle;
+        /*[HideInInspector]*/
+        public SurfaceState currentSurfaceState = SurfaceState.Ground;
+        /*[HideInInspector]*/
+        public bool useRawInput = true;
+        /*[HideInInspector]*/
+        public bool snapDirectionsEnabled = true;
 
-        /*[HideInInspector]*/ public int directionCountMovement = 16;
-        /*[HideInInspector]*/ public int directionCountSelection = 360;
+        /*[HideInInspector]*/
+        public int directionCountMovement = 16;
+        /*[HideInInspector]*/
+        public int directionCountSelection = 360;
 
-        /*[HideInInspector]*/ public bool showDirectionLabels = true;
+        /*[HideInInspector]*/
+        public bool showDirectionLabels = true;
 
-        /*[HideInInspector]*/ public bool useCardinalLabels = true;
+        /*[HideInInspector]*/
+        public bool useCardinalLabels = true;
     }
 
     [System.Serializable]
@@ -304,6 +312,27 @@ namespace Assets.Scripts.Player
         // [Header("Selection Pitch")]
         // [Tooltip("Max vertical angle (degrees) above/below horizontal).")]
         // public float selectionPitchDegrees = 45f;
+    }
+
+    [System.Serializable]
+    public class AnimationSettings
+    {
+        public ParticleSystem jumpParticlePrefab;
+        public ParticleSystem jumpEParticlePrefab;
+        public ParticleSystem jumpWParticlePrefab;
+        public ParticleSystem dashRParticlePrefab;
+        public ParticleSystem dashLParticlePrefab;
+        public ParticleSystem stuckLParticlePrefab;
+        public ParticleSystem stuckRParticlePrefab;
+
+        // Strings
+        public string jumpParticlePrefabName = "";
+        public string jumpEParticlePrefabName = "";
+        public string jumpWParticlePrefabName = "";
+        public string dashRParticlePrefabName = "";
+        public string dashLParticlePrefabName = "";
+        public string stuckLParticlePrefabName = "";
+        public string stuckRParticlePrefabName = "";
     }
 }
 

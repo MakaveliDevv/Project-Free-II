@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEditor;
 using UnityEngine;
 
@@ -5,19 +6,85 @@ namespace Assets.Scripts.Player
 {
     public class MovementInteraction
     {
-        readonly PlayerSettings playerSettings;
+        private readonly Player player;
+        private Interactable interactable;
+        private BoxMover bm; // Remove later
+        // private BoxMover selectedBox;
+        private Collider interactableCol;
+        private Vector3 snappedDir = Vector3.zero;
 
-        Vector3 snappedDir = Vector3.zero;
-        public Vector3 SnappedDir3D => snappedDir;
+        public bool interacting = false;
+        private bool isLaunching = false;
 
-        public MovementInteraction(PlayerSettings playerSettings)
+        private Coroutine pullCoroutine;
+        private GameObject firstInteractable = null;
+
+        public MovementInteraction(Player player)
         {
-            this.playerSettings = playerSettings;
+            this.player = player;
         }
 
         public void Update()
         {
-            snappedDir = InputManager.GetSnappedDirection(InputManager.RightStickInput, playerSettings.snapDirectionsEnabled, playerSettings.directionCountSelection);
+            player.interacting = this.interacting;
+
+            snappedDir = InputManager.GetSnappedDirection(
+                InputManager.RightStickInput,
+                player.playerSettings.snapDirectionsEnabled,
+                player.playerSettings.directionCountSelection
+            );
+
+            if (isLaunching) return;
+
+            if (interacting)
+            {
+                // clamp Z to ground plane
+                if (player.interactionSettings.groundBoundsCollider != null)
+                {
+                    var v = player.rb.position;
+                    v.z = Mathf.Clamp(v.z,
+                        player.interactionSettings.groundBoundsCollider.bounds.min.z,
+                        player.interactionSettings.groundBoundsCollider.bounds.max.z);
+                    player.rb.MovePosition(v);
+                }
+
+                // ray-based selection
+                var best = player.moveInt.SelectTargetRay(
+                    player.rb.position,
+                    player.interactionSettings.selectionRange);
+
+                interactable.UpdateHighlight(best);
+                // selectedBox = best; 
+
+                if (InputManager.LeftTriggerPressed && !InputManager.TriggerLock && best != null)
+                {
+                    InputManager.TriggerLock = true;
+                    if (pullCoroutine != null)
+                    {
+                        player.StopCoroutine(pullCoroutine);
+                        pullCoroutine = null;
+                    }
+                    player.StartCoroutine(LaunchToBoxRoutine(best));
+                    interactable.ClearHighlight();
+                }
+                else if (!InputManager.LeftTriggerPressed || InputManager.LeftTriggerReleased)
+                {
+                    InputManager.TriggerLock = false;
+                }
+
+                return;
+            }
+
+            // bool first = firstInteractable != null;
+            // Debug.Log(first);
+
+            if (firstInteractable != null)
+            {
+                // pull onto this box
+                if (InputManager.NorthButtonPressed
+                && Vector3.Distance(player.rb.position, firstInteractable.transform.position) <= player.interactionSettings.interactionRadius)
+                    pullCoroutine = player.StartCoroutine(PullOntoBoxRoutine());
+            }
         }
 
         public BoxMover SelectTargetRay(Vector3 origin, float range)
@@ -46,6 +113,91 @@ namespace Assets.Scripts.Player
                 }
             }
             return best;
+        }
+
+        IEnumerator PullOntoBoxRoutine()
+        {
+            interacting = true;
+            player.playerSettings.movementState = MovementState.Interacting;
+            player.playerSettings.currentSurfaceState = SurfaceState.Nothing;
+
+            Vector3 start = player.rb.position;
+            float t = 0f;
+            while (t < player.interactionSettings.pullDuration)
+            {
+                t += Time.deltaTime;
+                float pct = Mathf.SmoothStep(0f, 1f, t / player.interactionSettings.pullDuration);
+                var b = interactableCol.bounds;
+                float h = player.col.bounds.extents.y;
+                Vector3 top = new(b.center.x, b.max.y + h, b.center.z);
+                player.rb.MovePosition(Vector3.Lerp(start, top, pct));
+                yield return null;
+            }
+            if (bm != null) bm.enabled = false;
+            pullCoroutine = null;
+        }
+
+        IEnumerator LaunchToBoxRoutine(BoxMover target)
+        {
+            isLaunching = true;
+            interacting = false;
+            InputManager.TriggerLock = false;
+            player.playerSettings.movementState = MovementState.Launching;
+
+            Vector3 start = player.rb.position;
+            float t = 0f;
+            while (t < player.interactionSettings.launchDuration)
+            {
+                t += Time.deltaTime;
+                float pct = Mathf.SmoothStep(0f, 1f, t / player.interactionSettings.launchDuration);
+                var b = target.transform.GetChild(0).GetComponent<Collider>().bounds;
+                float h = player.col.bounds.extents.y;
+                Vector3 top = new(b.center.x, b.max.y + h, b.center.z);
+                player.rb.MovePosition(Vector3.Lerp(start, top, pct));
+                yield return null;
+            }
+
+            var bf = target.transform.GetChild(0).GetComponent<Collider>().bounds;
+            float hf = player.col.bounds.extents.y;
+            player.rb.MovePosition(
+                new Vector3(bf.center.x, bf.max.y + hf, bf.center.z));
+
+            if (target.TryGetComponent<BoxMover>(out var mv)) mv.enabled = false;
+
+            interacting = true;
+            player.playerSettings.movementState = MovementState.Interacting;
+            player.playerSettings.currentSurfaceState = SurfaceState.Nothing;
+            isLaunching = false;
+        }
+
+        public void OnTriggerEnter(Collider collider)
+        {
+            if ((player.playerSettings.movementState == MovementState.Hovering
+            || player.playerSettings.movementState == MovementState.Jumping
+            || player.playerSettings.movementState == MovementState.WallJump
+            || player.playerSettings.movementState == MovementState.Descending)
+            && collider.CompareTag("Interactable"))
+            {
+                firstInteractable = collider.gameObject;
+                Debug.Log($"First Interactable => {firstInteractable} ");
+            }
+
+            if (collider.CompareTag("Interactable"))
+            {
+                Collider col = collider.transform.GetChild(0).GetComponent<Collider>();
+                interactableCol = col;
+
+                BoxMover bm = collider.GetComponent<BoxMover>();
+                this.bm = bm;
+
+                Interactable interactable = collider.GetComponent<Interactable>();
+                this.interactable = interactable;
+            }
+        }
+
+        public void OnTriggerExit(Collider collider)
+        { 
+            // if()
         }
 
         public void OnDrawGizmosRay(Vector3 origin, float range)

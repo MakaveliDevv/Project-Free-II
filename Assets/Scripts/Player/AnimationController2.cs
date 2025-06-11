@@ -2,67 +2,57 @@ using UnityEngine;
 
 namespace Assets.Scripts.Player
 {
-    public class AnimationController2 : MonoBehaviour
+    public class AnimationController2 
     {
-        public Animator animator;
-        public AnimationController2 animationController;
-        private Player player;
-
-        //Particle systems
-        [SerializeField] private ParticleSystem jumpParticlePrefab;
-        [SerializeField] private ParticleSystem jumpEParticlePrefab;
-        [SerializeField] private ParticleSystem jumpWParticlePrefab;
-        [SerializeField] private ParticleSystem dashRParticlePrefab;
-        [SerializeField] private ParticleSystem dashLParticlePrefab;
-        [SerializeField] private ParticleSystem stuckLParticlePrefab;
-        [SerializeField] private ParticleSystem stuckRParticlePrefab;
-
+        private readonly Player player;
+        private readonly AnimationSettings animSettings;
+        private readonly Animator animator;
 
         private bool hasPlayedJumpParticles = false;
         private bool hasPlayedDashParticles = false;
         private bool hasPlayedStuckParticles = false;
 
-
-        public Sprite[] dashSprites; // Assign via inspector
-        public GameObject dashEffectObject; // Assign the GameObject with SpriteRenderer
-        public float frameRate = 0.05f; // Adjust for desired speed
-
-        private Coroutine dashAnimCoroutine;
-
-        // private IEnumerator PlayDashSpriteAnimation()
-        // {
-        //     dashEffectObject.SetActive(true);
-        //     SpriteRenderer sr = dashEffectObject.GetComponent<SpriteRenderer>();
-
-        //     for (int i = 0; i < dashSprites.Length; i++)
-        //     {
-        //         sr.sprite = dashSprites[i];
-        //         yield return new WaitForSeconds(frameRate);
-        //     }
-
-        //     dashEffectObject.SetActive(false);
-        // }
-
-        void Awake()
+        public AnimationController2(Player player, AnimationSettings animSettings, Animator animator)
         {
-            player = GetComponent<Player>();
-            animationController = GetComponent<AnimationController2>();
+            this.player = player;
+            this.animSettings = animSettings;
+            this.animator = animator;
+
+            bool anim = animator != null;
+            Debug.Log(anim);
+
+            Transform particlesParent = player.transform.Find("Particles");
+            
+            // Jump 
+            if (animSettings.jumpParticlePrefab == null)
+                animSettings.jumpParticlePrefab = particlesParent.Find(animSettings.jumpParticlePrefabName).GetComponent<ParticleSystem>();
+            // Jump E
+            if(animSettings.jumpEParticlePrefab == null)
+                animSettings.jumpEParticlePrefab = particlesParent.Find(animSettings.jumpEParticlePrefabName).GetComponent<ParticleSystem>();
+            // Jump W
+            if(animSettings.jumpWParticlePrefab == null)
+                animSettings.jumpWParticlePrefab = particlesParent.Find(animSettings.jumpWParticlePrefabName).GetComponent<ParticleSystem>();
+            // Dash R
+            if(animSettings.dashRParticlePrefab == null)
+                animSettings.dashRParticlePrefab = particlesParent.Find(animSettings.dashRParticlePrefabName).GetComponent<ParticleSystem>();
+            // Dash L
+            if(animSettings.dashLParticlePrefab == null)
+                animSettings.dashLParticlePrefab = particlesParent.Find(animSettings.dashLParticlePrefabName).GetComponent<ParticleSystem>();
+            // Stuck L
+            if(animSettings.stuckLParticlePrefab == null)
+                animSettings.stuckLParticlePrefab = particlesParent.Find(animSettings.stuckLParticlePrefabName).GetComponent<ParticleSystem>();
+            // Stuck R
+            if(animSettings.stuckRParticlePrefab == null)
+                animSettings.stuckRParticlePrefab = particlesParent.Find(animSettings.stuckRParticlePrefabName).GetComponent<ParticleSystem>();
         }
 
-        void Update()
+        public void Update()
         {
-
-            if (player.moveContrl.movementSystem.IsNearGround)
-            {
-                Debug.Log("Landed");
-
-
-            }
-
             switch (player.playerSettings.movementState)
             {
                 case MovementState.Idle:
                     Debug.Log("Starting idle anim");
+                    // if (animator != null)
                     IdleAnim();
 
                     break;
@@ -297,6 +287,11 @@ namespace Assets.Scripts.Player
             Debug.Log("Invoke wall descend anim (left wall)");
         }
 
+        private ParticleSystem InstantiateParticle(ParticleSystem particlePrefab)
+        { 
+            return Object.Instantiate(particlePrefab, player.transform.position, Quaternion.identity) as ParticleSystem;
+        }
+
         private void StuckedAnim()
         {
             hasPlayedJumpParticles = false;
@@ -306,11 +301,12 @@ namespace Assets.Scripts.Player
                 Debug.Log("Invoke jump straight anim");
 
                 // Spawn and play a temporary particle system at current position
-                ParticleSystem newParticles = Instantiate(stuckRParticlePrefab, transform.position, Quaternion.identity);
-                newParticles.Play();
+                // ParticleSystem newParticles = Instantiate(stuckRParticlePrefab, transform.position, Quaternion.identity);
+                ParticleSystem p = InstantiateParticle(animSettings.stuckRParticlePrefab);
+                p.Play();
 
-                float totalDuration = newParticles.main.duration + newParticles.main.startLifetime.constantMax;
-                Destroy(newParticles.gameObject, totalDuration);
+                float totalDuration = p.main.duration + p.main.startLifetime.constantMax;
+                Object.Destroy(p.gameObject, totalDuration);
 
                 hasPlayedStuckParticles = true; // Mark as played
             }
@@ -345,11 +341,12 @@ namespace Assets.Scripts.Player
                 Debug.Log("Invoke jump straight anim");
 
                 // Spawn and play a temporary particle system at current position
-                ParticleSystem newParticles = Instantiate(jumpParticlePrefab, transform.position, Quaternion.identity);
-                newParticles.Play();
+                // ParticleSystem newParticles = Instantiate(jumpParticlePrefab, transform.position, Quaternion.identity);
+                ParticleSystem p = InstantiateParticle(animSettings.jumpParticlePrefab);
+                p.Play();
 
-                float totalDuration = newParticles.main.duration + newParticles.main.startLifetime.constantMax;
-                Destroy(newParticles.gameObject, totalDuration);
+                float totalDuration = p.main.duration + p.main.startLifetime.constantMax;
+                Object.Destroy(p.gameObject, totalDuration);
 
                 hasPlayedJumpParticles = true; // Mark as played
             }
@@ -385,11 +382,12 @@ namespace Assets.Scripts.Player
                 Debug.Log("Invoke jump straight anim");
 
                 // Spawn and play a temporary particle system at current position
-                ParticleSystem newParticles = Instantiate(jumpEParticlePrefab, transform.position, Quaternion.identity);
-                newParticles.Play();
+                // ParticleSystem newParticles = Instantiate(jumpEParticlePrefab, transform.position, Quaternion.identity);
+                ParticleSystem p = InstantiateParticle(animSettings.jumpEParticlePrefab);
+                p.Play();
 
-                float totalDuration = newParticles.main.duration + newParticles.main.startLifetime.constantMax;
-                Destroy(newParticles.gameObject, totalDuration);
+                float totalDuration = p.main.duration + p.main.startLifetime.constantMax;
+                Object.Destroy(p.gameObject, totalDuration);
 
                 hasPlayedJumpParticles = true; // Mark as played
             }
@@ -426,11 +424,12 @@ namespace Assets.Scripts.Player
                 Debug.Log("Invoke jump straight anim");
 
                 // Spawn and play a temporary particle system at current position
-                ParticleSystem newParticles = Instantiate(jumpWParticlePrefab, transform.position, Quaternion.identity);
-                newParticles.Play();
+                // ParticleSystem newParticles = Instantiate(jumpWParticlePrefab, transform.position, Quaternion.identity);
+                ParticleSystem p = InstantiateParticle(animSettings.jumpWParticlePrefab);
+                p.Play();
 
-                float totalDuration = newParticles.main.duration + newParticles.main.startLifetime.constantMax;
-                Destroy(newParticles.gameObject, totalDuration);
+                float totalDuration = p.main.duration + p.main.startLifetime.constantMax;
+                Object.Destroy(p.gameObject, totalDuration);
 
                 hasPlayedJumpParticles = true; // Mark as played
             }
@@ -481,11 +480,12 @@ namespace Assets.Scripts.Player
                 Debug.Log("Invoke jump straight anim");
 
                 // Spawn and play a temporary particle system at current position
-                ParticleSystem newParticles = Instantiate(jumpEParticlePrefab, transform.position, Quaternion.identity);
-                newParticles.Play();
+                // ParticleSystem newParticles = Instantiate(jumpEParticlePrefab, transform.position, Quaternion.identity);
+                ParticleSystem p = InstantiateParticle(animSettings.jumpEParticlePrefab);
+                p.Play();
 
-                float totalDuration = newParticles.main.duration + newParticles.main.startLifetime.constantMax;
-                Destroy(newParticles.gameObject, totalDuration);
+                float totalDuration = p.main.duration + p.main.startLifetime.constantMax;
+                Object.Destroy(p.gameObject, totalDuration);
 
                 hasPlayedJumpParticles = true; // Mark as played
             }
@@ -518,11 +518,12 @@ namespace Assets.Scripts.Player
                 Debug.Log("Invoke jump straight anim");
 
                 // Spawn and play a temporary particle system at current position
-                ParticleSystem newParticles = Instantiate(jumpEParticlePrefab, transform.position, Quaternion.identity);
-                newParticles.Play();
+                // ParticleSystem newParticles = Instantiate(jumpEParticlePrefab, transform.position, Quaternion.identity);
+                ParticleSystem p = InstantiateParticle(animSettings.jumpEParticlePrefab);
+                p.Play();
 
-                float totalDuration = newParticles.main.duration + newParticles.main.startLifetime.constantMax;
-                Destroy(newParticles.gameObject, totalDuration);
+                float totalDuration = p.main.duration + p.main.startLifetime.constantMax;
+                Object.Destroy(p.gameObject, totalDuration);
 
                 hasPlayedJumpParticles = true; // Mark as played
             }
@@ -556,11 +557,12 @@ namespace Assets.Scripts.Player
                 Debug.Log("Invoke jump straight anim");
 
                 // Spawn and play a temporary particle system at current position
-                ParticleSystem newParticles = Instantiate(jumpEParticlePrefab, transform.position, Quaternion.identity);
-                newParticles.Play();
+                // ParticleSystem newParticles = Instantiate(jumpEParticlePrefab, transform.position, Quaternion.identity);
+                ParticleSystem p = InstantiateParticle(animSettings.jumpEParticlePrefab);
+                p.Play();
 
-                float totalDuration = newParticles.main.duration + newParticles.main.startLifetime.constantMax;
-                Destroy(newParticles.gameObject, totalDuration);
+                float totalDuration = p.main.duration + p.main.startLifetime.constantMax;
+                Object.Destroy(p.gameObject, totalDuration);
 
                 hasPlayedJumpParticles = true; // Mark as played
             }
@@ -590,11 +592,12 @@ namespace Assets.Scripts.Player
                 Debug.Log("Invoke jump straight anim");
 
                 // Spawn and play a temporary particle system at current position
-                ParticleSystem newParticles = Instantiate(jumpWParticlePrefab, transform.position, Quaternion.identity);
-                newParticles.Play();
+                // ParticleSystem newParticles = Instantiate(jumpWParticlePrefab, transform.position, Quaternion.identity);
+                ParticleSystem p = InstantiateParticle(animSettings.jumpWParticlePrefab);
+                p.Play();
 
-                float totalDuration = newParticles.main.duration + newParticles.main.startLifetime.constantMax;
-                Destroy(newParticles.gameObject, totalDuration);
+                float totalDuration = p.main.duration + p.main.startLifetime.constantMax;
+                Object.Destroy(p.gameObject, totalDuration);
 
                 hasPlayedJumpParticles = true; // Mark as played
             }
@@ -630,11 +633,12 @@ namespace Assets.Scripts.Player
                 Debug.Log("Invoke jump straight anim");
 
                 // Spawn and play a temporary particle system at current position
-                ParticleSystem newParticles = Instantiate(jumpWParticlePrefab, transform.position, Quaternion.identity);
-                newParticles.Play();
+                // ParticleSystem newParticles = Instantiate(jumpWParticlePrefab, transform.position, Quaternion.identity);
+                ParticleSystem p = InstantiateParticle(animSettings.jumpWParticlePrefab);
+                p.Play();
 
-                float totalDuration = newParticles.main.duration + newParticles.main.startLifetime.constantMax;
-                Destroy(newParticles.gameObject, totalDuration);
+                float totalDuration = p.main.duration + p.main.startLifetime.constantMax;
+                Object.Destroy(p.gameObject, totalDuration);
 
                 hasPlayedJumpParticles = true; // Mark as played
             }
@@ -669,11 +673,12 @@ namespace Assets.Scripts.Player
                 Debug.Log("Invoke jump straight anim");
 
                 // Spawn and play a temporary particle system at current position
-                ParticleSystem newParticles = Instantiate(jumpWParticlePrefab, transform.position, Quaternion.identity);
-                newParticles.Play();
+                // ParticleSystem newParticles = Instantiate(jumpWParticlePrefab, transform.position, Quaternion.identity);
+                ParticleSystem p = InstantiateParticle(animSettings.jumpWParticlePrefab);
+                p.Play();
 
-                float totalDuration = newParticles.main.duration + newParticles.main.startLifetime.constantMax;
-                Destroy(newParticles.gameObject, totalDuration);
+                float totalDuration = p.main.duration + p.main.startLifetime.constantMax;
+                Object.Destroy(p.gameObject, totalDuration);
 
                 hasPlayedJumpParticles = true; // Mark as played
             }
@@ -719,11 +724,12 @@ namespace Assets.Scripts.Player
                 Debug.Log("Invoke dash particles");
 
                 // Spawn and play a temporary particle system at current position
-                ParticleSystem newParticles = Instantiate(dashRParticlePrefab, transform.position, Quaternion.identity);
-                newParticles.Play();
+                // ParticleSystem newParticles = Instantiate(dashRParticlePrefab, transform.position, Quaternion.identity);
+                ParticleSystem p = InstantiateParticle(animSettings.dashRParticlePrefab);
+                p.Play();
 
-                float totalDuration = newParticles.main.duration + newParticles.main.startLifetime.constantMax;
-                Destroy(newParticles.gameObject, totalDuration);
+                float totalDuration = p.main.duration + p.main.startLifetime.constantMax;
+                Object.Destroy(p.gameObject, totalDuration);
 
                 hasPlayedDashParticles = true; // Mark as played
             }
@@ -748,11 +754,12 @@ namespace Assets.Scripts.Player
                 Debug.Log("Invoke dash particles");
 
                 // Spawn and play a temporary particle system at current position
-                ParticleSystem newParticles = Instantiate(dashLParticlePrefab, transform.position, Quaternion.identity);
-                newParticles.Play();
+                // ParticleSystem newParticles = Instantiate(dashLParticlePrefab, transform.position, Quaternion.identity);
+                ParticleSystem p = InstantiateParticle(animSettings.dashLParticlePrefab);
+                p.Play();
 
-                float totalDuration = newParticles.main.duration + newParticles.main.startLifetime.constantMax;
-                Destroy(newParticles.gameObject, totalDuration);
+                float totalDuration = p.main.duration + p.main.startLifetime.constantMax;
+                Object.Destroy(p.gameObject, totalDuration);
 
                 hasPlayedDashParticles = true; // Mark as played
             }

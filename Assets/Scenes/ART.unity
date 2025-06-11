@@ -865,7 +865,6 @@ GameObject:
   - component: {fileID: 206922473}
   - component: {fileID: 206922472}
   - component: {fileID: 206922480}
-  - component: {fileID: 206922478}
   - component: {fileID: 206922479}
   m_Layer: 0
   m_Name: PlayerTest
@@ -1089,118 +1088,6 @@ Rigidbody:
   m_Interpolate: 1
   m_Constraints: 112
   m_CollisionDetection: 2
---- !u!114 &206922478
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 206922466}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9b70ef6cc127b7b498a643c64dc44775, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  inputActionAsset: {fileID: -944628639613478452, guid: 9740b7f8f03c4a749a2e93320c4985da, type: 3}
-  mode: 0
-  playerSettings:
-    movementState: 0
-    currentSurfaceState: 0
-    useRawInput: 1
-    snapDirectionsEnabled: 1
-    directionCountMovement: 16
-    directionCountSelection: 360
-    showDirectionLabels: 1
-    useCardinalLabels: 1
-  movementSettings:
-    stuckDurationWall: 1
-    stuckDurationCeiling: 1.5
-    jumpForce: 5
-    maxJumpDistance: 5
-    maxJumpSpeed: 10
-    bounceSpeed: 5
-    dashForce: 5
-    maxDashDistance: 5
-    airDashForce: 5
-    maxAirDashDistance: 5
-    defaultDamping: 0
-    movementForceMode: 0
-    jumpForceMode: 2
-    dashForceMode: 1
-    airDashForceMode: 1
-    gravityStrength: 9.81
-    useDynamicGravityStrenght: 0
-    wallGravityPercent: 10
-    gravityDir: {x: 0, y: -1, z: 0}
-    gravityDirectionGround: 0
-    gravityDirectionCeiling: 0
-    gravityDirectionLeftWall: 3
-    gravityDirectionRightWall: 2
-    lowJumpMultiplier: 4
-    fallMultiplier: 1
-    defaultDropMultiplier: 2
-    wallDropMultiplier: 2
-    maxFallSpeed: 40
-    dropAngleTolerance: 15
-    dropForceMode: 1
-    fallForceMode: 5
-    useHoverWobble: 1
-    hoverWobbleSpeed: 2
-    hoverWobbleHeight: 0.2
-    hoverStartDelay: 0.1
-    wobbleFadeInFactor: 0.25
-    hoverActivationRadius: 1.5
-    hoverDuration: 2
-    minHoverHeight: 2
-    minHoverLinearDamping: 0
-    hoverLinearDamping: 5
-    groundProximityCheckDistance: 1
-    minAirborneTimeBeforeIdle: 0.15
-    distanceToSurfaceThreshold: 0.05
-    checkDistance: 0
-    surfaceLayer:
-      serializedVersion: 2
-      m_Bits: 0
-    minStickHoldTime: 0.1
-    minStickMagnitude: 0.2
-    minButtonPressTime: 0.1
-    maxHoldTime: 0.5
-    gizmoScale: 2
-    directionLineLength: 1.5
-    baseDirectionColor: {r: 0, g: 0, b: 1, a: 1}
-    allowedJumpColor: {r: 0, g: 1, b: 0, a: 1}
-    dashDirectionColor: {r: 0, g: 1, b: 1, a: 1}
-    snappedInputColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-    jumpTargetColor: {r: 1, g: 0, b: 0, a: 1}
-    landingPointColor: {r: 0, g: 1, b: 0, a: 1}
-    groundCheckDistanceColor: {r: 0, g: 0, b: 0, a: 0}
-    arrivalRadius: 0.05
-    lerpAmount: 0.85
-    enableZLock: 1
-    useHandleActionForces: 1
-    isMovingThreshold: 0.2
-    forceCurveExponent: 1
-    allowAirDash: 0
-    landingBuffer: 0.1
-    fallTimer: 0.25
-    useAutoHover: 0
-    dotThreshold: 0.5
-    WallAheadCheckDistance: 0.5
-    TargetWallProximityRadius: 1
-  advancedMovementSettings:
-    bounceDelay: 0.15
-    bounceForce: 10
-    postBounceCooldown: 0.25
-  combatSettings:
-    centerResetDelay: 1
-    startHoldDelay: 1
-    stickMagnitudeThresh: 0.9
-  interactionSettings:
-    selectionRange: 5
-    launchDuration: 0.3
-    interactionRadius: 2
-    pullDuration: 0.2
-    groundBoundsCollider: {fileID: 0}
 --- !u!114 &206922479
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1215,6 +1102,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   animator: {fileID: 1708006738}
   animationController: {fileID: 206922479}
+  player: {fileID: 0}
   jumpParticlePrefab: {fileID: 608789622}
   jumpEParticlePrefab: {fileID: 898691705}
   jumpWParticlePrefab: {fileID: 881928105}
@@ -1222,6 +1110,9 @@ MonoBehaviour:
   dashLParticlePrefab: {fileID: 1592958301}
   stuckLParticlePrefab: {fileID: 1048856132}
   stuckRParticlePrefab: {fileID: 1565581108}
+  hasPlayedJumpParticles: 0
+  hasPlayedDashParticles: 0
+  hasPlayedStuckParticles: 0
   dashSprites:
   - {fileID: 0}
   dashEffectObject: {fileID: 608443219}
@@ -1338,6 +1229,24 @@ MonoBehaviour:
     interactionRadius: 2
     pullDuration: 0.2
     groundBoundsCollider: {fileID: 0}
+  animSettings:
+    jumpParticlePrefab: {fileID: 0}
+    jumpEParticlePrefab: {fileID: 0}
+    jumpWParticlePrefab: {fileID: 0}
+    dashRParticlePrefab: {fileID: 0}
+    dashLParticlePrefab: {fileID: 0}
+    stuckLParticlePrefab: {fileID: 0}
+    stuckRParticlePrefab: {fileID: 0}
+    jumpParticlePrefabName: 
+    jumpEParticlePrefabName: 
+    jumpWParticlePrefabName: 
+    dashRParticlePrefabName: 
+    dashLParticlePrefabName: 
+    stuckLParticlePrefabName: 
+    stuckRParticlePrefabName: 
+  rb: {fileID: 0}
+  col: {fileID: 0}
+  interacting: 0
 --- !u!1 &207902738
 GameObject:
   m_ObjectHideFlags: 0
