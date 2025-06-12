@@ -126,8 +126,8 @@ Material:
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
-    - _GlowIntensity: 2
-    - _GlowPower: 2
+    - _GlowIntensity: 14.02
+    - _GlowPower: 0.77
     - _Gradient_Edge: 1
     - _GrowAmount: 0.0005
     - _Metallic: 0

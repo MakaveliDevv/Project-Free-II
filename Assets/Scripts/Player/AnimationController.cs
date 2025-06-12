@@ -100,43 +100,85 @@ namespace Assets.Scripts.Player
         }
 
         private void TopToBottom_AttAnim()
-        { 
-            
+        {
+            animator.SetBool("Idle", false);
+            animator.SetBool("Charge", false);
+            animator.SetBool("JumpUp", false);
+            animator.SetBool("JumpNE", false);
+            animator.SetBool("JumpNW", false);
+            animator.SetBool("JumpE", false);
+            animator.SetBool("JumpW", false);
+            animator.SetBool("Hover", false);
+            animator.SetBool("Descent", false);
+            animator.SetBool("QuickDescent", false);
+            animator.SetBool("Landing", false);
+            animator.SetBool("DashR", false);
+            animator.SetBool("DashL", false);
+            animator.SetBool("StuckedR", false);
+            animator.SetBool("RWJumpA", false);
+            animator.SetBool("RWJumpH", false);
+            animator.SetBool("RWJumpD", false);
+            animator.SetBool("LWJumpA", false);
+            animator.SetBool("LWJumpH", false);
+            animator.SetBool("LWJumpD", false);
+            animator.SetBool("Interacting", false);
+            animator.SetBool("Launching", false);
+            animator.SetBool("NS", true);
+            animator.SetBool("SN", false);
+            animator.SetBool("EW", false);
+            animator.SetBool("We", false);
+            animator.SetBool("NeSw", false);
+            animator.SetBool("SwNe", false);
+            animator.SetBool("SeNw", false);
+            animator.SetBool("NwSe", false);
+
+
+
+
+
+
         }
 
         private void BottomToTop_AttAnim()
-        { 
-            
+        {
+            SetAllFalse();
+            animator.SetBool("SN", true);
         }
 
         private void LeftToRight_AttAnim()
-        { 
-            
+        {
+            SetAllFalse();
+            animator.SetBool("WE", true);
         }
 
         private void RightToLeft_AttAnim()
-        { 
-            
+        {
+            SetAllFalse();
+            animator.SetBool("EW", true);
         }
 
         private void BottomLeftToTopRight_AttAnim()
-        { 
-            
+        {
+            SetAllFalse();
+            animator.SetBool("SwNe", true);
         }
 
         private void TopRightToBottomLeft_AttAnim()
-        { 
-            
+        {
+            SetAllFalse();
+            animator.SetBool("NeSw", true);
         }
 
         private void BottomRightToTopLeft_AttAnim()
-        { 
-            
+        {
+            SetAllFalse();
+            animator.SetBool("SeNw", true);
         }
 
         private void TopLeftToBottomRight_AttAnim()
-        { 
-            
+        {
+            SetAllFalse();
+            animator.SetBool("NwSe", true);
         }
 
         private void HandleStateEntry(MovementState ms, SurfaceState ss)
@@ -239,7 +281,11 @@ namespace Assets.Scripts.Player
 
             if (player.mode == Mode.Combat)
             {
-                CombatModeAnim();
+                CombatModeAnimOn();
+            }
+            else
+            {
+                CombatModeAnimOff();
             }
         }
 
@@ -282,22 +328,73 @@ namespace Assets.Scripts.Player
                 IdleAnim();
                 animator.SetBool("Landing", true);
                 Debug.Log("No input detected, transition to Idle anim");
-            } 
+            }
         }
 
         private void OnInteractionAnim()
-        { 
+        {
+            animator.SetBool("Idle", false);
+            animator.SetBool("Charge", false);
+            animator.SetBool("JumpUp", false);
+            animator.SetBool("JumpNE", false);
+            animator.SetBool("JumpNW", false);
+            animator.SetBool("JumpE", false);
+            animator.SetBool("JumpW", false);
+            animator.SetBool("Hover", false);
+            animator.SetBool("Descent", false);
+            animator.SetBool("QuickDescent", false);
+            animator.SetBool("Landing", false);
+            animator.SetBool("DashR", false);
+            animator.SetBool("DashL", false);
+            animator.SetBool("StuckedR", false);
+            animator.SetBool("RWJumpA", false);
+            animator.SetBool("RWJumpH", false);
+            animator.SetBool("RWJumpD", false);
+            animator.SetBool("LWJumpA", false);
+            animator.SetBool("LWJumpH", false);
+            animator.SetBool("LWJumpD", false);
+            animator.SetBool("Interacting", true);
+            animator.SetBool("Launching", false);
+
 
         }
 
         private void OnLaunchAnim()
-        { 
-
+        {
+            animator.SetBool("Idle", false);
+            animator.SetBool("Charge", false);
+            animator.SetBool("JumpUp", false);
+            animator.SetBool("JumpNE", false);
+            animator.SetBool("JumpNW", false);
+            animator.SetBool("JumpE", false);
+            animator.SetBool("JumpW", false);
+            animator.SetBool("Hover", false);
+            animator.SetBool("Descent", false);
+            animator.SetBool("QuickDescent", false);
+            animator.SetBool("Landing", false);
+            animator.SetBool("DashR", false);
+            animator.SetBool("DashL", false);
+            animator.SetBool("StuckedR", false);
+            animator.SetBool("RWJumpA", false);
+            animator.SetBool("RWJumpH", false);
+            animator.SetBool("RWJumpD", false);
+            animator.SetBool("LWJumpA", false);
+            animator.SetBool("LWJumpH", false);
+            animator.SetBool("LWJumpD", false);
+            animator.SetBool("Interacting", false);
+            animator.SetBool("Launching", true);
         }
 
         // Combat
-        private void CombatModeAnim()
+        private void CombatModeAnimOn()
         {
+            animator.SetBool("Combat", true);
+
+        }
+
+        private void CombatModeAnimOff()
+        {
+            animator.SetBool("Combat", false);
 
         }
 
@@ -355,6 +452,17 @@ namespace Assets.Scripts.Player
             animator.SetBool("LWJumpA", false);
             animator.SetBool("LWJumpH", false);
             animator.SetBool("LWJumpD", false);
+            animator.SetBool("Interacting", false);
+            animator.SetBool("Launching", false);
+            animator.SetBool("NS", false);
+            animator.SetBool("SN", false);
+            animator.SetBool("EW", false);
+            animator.SetBool("We", false);
+            animator.SetBool("NeSw", false);
+            animator.SetBool("SwNe", false);
+            animator.SetBool("SeNw", false);
+            animator.SetBool("NwSe", false);
+
         }
 
         // --- Jump Animations (particles + flags) ---
@@ -516,37 +624,39 @@ namespace Assets.Scripts.Player
         }
 
         // --- Air Dash Animations ---
-        private void AirDashVerticalAscend() 
-        { 
-            Debug.Log("Invoke air dash straight up anim"); SetAllFalse(); }
-        
-        private void AirDashVerticalDescend() 
-        { 
-            Debug.Log("Invoke air dash straight down anim"); SetAllFalse(); 
+        private void AirDashVerticalAscend()
+        {
+            Debug.Log("Invoke air dash straight up anim"); SetAllFalse();
         }
-        private void AirDashHorizontalRight() 
-        { 
-            Debug.Log("Invoke air dash right anim (horizontal)"); SetAllFalse(); 
+
+        private void AirDashVerticalDescend()
+        {
+            Debug.Log("Invoke air dash straight down anim"); SetAllFalse();
         }
-        private void AirDashHorizontalLeft() 
-        { 
-            Debug.Log("Invoke air dash left anim (horizontal)"); SetAllFalse(); 
+        private void AirDashHorizontalRight()
+        {
+            Debug.Log("Invoke air dash right anim (horizontal)"); SetAllFalse();
         }
-        private void AirDashDiagonalRightUp() 
-        { 
-            Debug.Log("Invoke air dash up diagonally anim (right)"); SetAllFalse(); 
+        private void AirDashHorizontalLeft()
+        {
+            Debug.Log("Invoke air dash left anim (horizontal)"); SetAllFalse();
         }
-        private void AirDashDiagonalRightDown() 
-        { 
-            Debug.Log("Invoke air dash down diagonally anim (right)"); SetAllFalse(); }
-        
-        private void AirDashDiagonalLeftUp() 
-        { 
-            Debug.Log("Invoke air dash up diagonally anim (left)"); SetAllFalse(); 
+        private void AirDashDiagonalRightUp()
+        {
+            Debug.Log("Invoke air dash up diagonally anim (right)"); SetAllFalse();
         }
-        private void AirDashDiagonalLeftDown() 
-        { 
-            Debug.Log("Invoke air dash down diagonally anim (left)"); SetAllFalse(); 
+        private void AirDashDiagonalRightDown()
+        {
+            Debug.Log("Invoke air dash down diagonally anim (right)"); SetAllFalse();
+        }
+
+        private void AirDashDiagonalLeftUp()
+        {
+            Debug.Log("Invoke air dash up diagonally anim (left)"); SetAllFalse();
+        }
+        private void AirDashDiagonalLeftDown()
+        {
+            Debug.Log("Invoke air dash down diagonally anim (left)"); SetAllFalse();
         }
 
         // --- Stuck Animation ---
