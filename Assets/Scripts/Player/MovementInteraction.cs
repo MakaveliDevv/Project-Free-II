@@ -53,6 +53,16 @@ namespace Assets.Scripts.Player
                     player.rb.position,
                     player.interactionSettings.selectionRange);
 
+                if (best != null)
+                {
+                    Debug.Log($"Box Selected -> {best.gameObject.name}");
+
+                }
+                else
+                {
+                    Debug.Log("No box selected");
+                }
+
                 interactable.UpdateHighlight(best);
 
                 if (InputManager.LeftTriggerPressed && !InputManager.TriggerLock && best != null)
@@ -94,7 +104,8 @@ namespace Assets.Scripts.Player
         public BoxMover SelectTargetRay(Vector3 origin, float range)
         {
             if (snappedDir == Vector3.zero) return null;
-            int mask = LayerMask.GetMask("Interactable");
+            // else { Debug.Log($"SnappedDir -> {snappedDir}"); }
+            int mask = LayerMask.GetMask("SelectCol");
 
             // gather all hits along the ray
             RaycastHit[] hits = Physics.RaycastAll(origin, snappedDir, range, mask);
@@ -107,7 +118,10 @@ namespace Assets.Scripts.Player
             {
                 if (h.distance < bestDist)
                 {
-                    if (!h.collider.TryGetComponent<BoxMover>(out var bm)) continue;
+                    var parent = h.collider.transform.parent;
+                    if (parent == null) continue;
+
+                    if (!parent.TryGetComponent<BoxMover>(out var bm)) continue;
 
                     if (h.distance < bestDist)
                     {
@@ -154,14 +168,14 @@ namespace Assets.Scripts.Player
             {
                 t += Time.deltaTime;
                 float pct = Mathf.SmoothStep(0f, 1f, t / player.interactionSettings.launchDuration);
-                var b = target.transform.GetChild(0).GetComponent<Collider>().bounds;
+                var b = target.transform.GetChild(1).GetComponent<Collider>().bounds;
                 float h = player.col.bounds.extents.y;
                 Vector3 top = new(b.center.x, b.max.y + h, b.center.z);
                 player.rb.MovePosition(Vector3.Lerp(start, top, pct));
                 yield return null;
             }
 
-            var bf = target.transform.GetChild(0).GetComponent<Collider>().bounds;
+            var bf = target.transform.GetChild(1).GetComponent<Collider>().bounds;
             float hf = player.col.bounds.extents.y;
             player.rb.MovePosition(
                 new Vector3(bf.center.x, bf.max.y + hf, bf.center.z));

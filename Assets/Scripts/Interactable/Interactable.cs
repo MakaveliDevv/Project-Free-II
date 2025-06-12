@@ -21,17 +21,18 @@ public class Interactable : MonoBehaviour
         ClearHighlight();
         if (bm == null) return;
         selectedBox = bm;
-        if (bm.transform.GetChild(0).TryGetComponent<Renderer>(out var r))
+        if (bm.transform.GetChild(1).TryGetComponent<Renderer>(out var r))
         {
             selectedOriginalColor = r.material.color;
             r.material.color = Color.blue;
         }
+        else { Debug.Log("Couldn't feth the Renderer"); }
     }
 
     public void ClearHighlight()
     {
         if (selectedBox == null) return;
-        if (selectedBox.transform.GetChild(0).TryGetComponent<Renderer>(out var r)) r.material.color = selectedOriginalColor;
+        if (selectedBox.transform.GetChild(1).TryGetComponent<Renderer>(out var r)) r.material.color = selectedOriginalColor;
         selectedBox = null;
     }
 
