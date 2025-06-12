@@ -108,24 +108,6 @@ MonoBehaviour:
     - model: {fileID: 8926484042661618283}
       id: 0
       isStickyNote: 0
-    - model: {fileID: 8926484042661618195}
-      id: 0
-      isStickyNote: 0
-    - model: {fileID: 8926484042661618200}
-      id: 0
-      isStickyNote: 0
-    - model: {fileID: 8926484042661618204}
-      id: 0
-      isStickyNote: 0
-    - model: {fileID: 8926484042661618226}
-      id: 0
-      isStickyNote: 0
-    - model: {fileID: 8926484042661618266}
-      id: 0
-      isStickyNote: 0
-    - model: {fileID: 8926484042661618273}
-      id: 0
-      isStickyNote: 0
     - model: {fileID: 8926484042661618296}
       id: 0
       isStickyNote: 0
@@ -148,66 +130,6 @@ MonoBehaviour:
       id: 0
       isStickyNote: 0
     - model: {fileID: 8926484042661618351}
-      id: 0
-      isStickyNote: 0
-    - model: {fileID: 8926484042661617664}
-      id: 0
-      isStickyNote: 0
-    - model: {fileID: 8926484042661617900}
-      id: 0
-      isStickyNote: 0
-    - model: {fileID: 8926484042661617800}
-      id: 0
-      isStickyNote: 0
-    - model: {fileID: 8926484042661617876}
-      id: 0
-      isStickyNote: 0
-    - model: {fileID: 8926484042661617737}
-      id: 0
-      isStickyNote: 0
-    - model: {fileID: 8926484042661618150}
-      id: 0
-      isStickyNote: 0
-    - model: {fileID: 8926484042661617441}
-      id: 0
-      isStickyNote: 0
-    - model: {fileID: 8926484042661617452}
-      id: 0
-      isStickyNote: 0
-    - model: {fileID: 8926484042661617088}
-      id: 0
-      isStickyNote: 0
-    - model: {fileID: 8926484042661617460}
-      id: 0
-      isStickyNote: 0
-    - model: {fileID: 8926484042661618121}
-      id: 0
-      isStickyNote: 0
-    - model: {fileID: 8926484042661617260}
-      id: 0
-      isStickyNote: 0
-    - model: {fileID: 8926484042661617094}
-      id: 0
-      isStickyNote: 0
-    - model: {fileID: 8926484042661618314}
-      id: 0
-      isStickyNote: 0
-    - model: {fileID: 8926484042661618316}
-      id: 0
-      isStickyNote: 0
-    - model: {fileID: 8926484042661618324}
-      id: 0
-      isStickyNote: 0
-    - model: {fileID: 0}
-      id: 0
-      isStickyNote: 0
-    - model: {fileID: 8926484042661618331}
-      id: 0
-      isStickyNote: 0
-    - model: {fileID: 8926484042661618337}
-      id: 0
-      isStickyNote: 0
-    - model: {fileID: 8926484042661618340}
       id: 0
       isStickyNote: 0
     - model: {fileID: 8926484042661618393}
@@ -267,9 +189,6 @@ MonoBehaviour:
     - model: {fileID: 8926484042661618461}
       id: 0
       isStickyNote: 0
-    - model: {fileID: 8926484042661618467}
-      id: 0
-      isStickyNote: 0
   stickyNoteInfos: []
   categories:
   - name: Cone Shape Trail
@@ -278,10 +197,10 @@ MonoBehaviour:
     collapsed: 0
   uiBounds:
     serializedVersion: 2
-    x: -846
+    x: 332
     y: -2322
-    width: 5032
-    height: 2702
+    width: 3852
+    height: 2679
 --- !u!114 &114350483966674976
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -1067,9 +986,9 @@ MonoBehaviour:
   - {fileID: 8926484042661617061}
   - {fileID: 8926484042661617084}
   dataType: 1
-  capacity: 1600
-  stripCapacity: 16
-  particlePerStripCount: 100
+  capacity: 6400
+  stripCapacity: 32
+  particlePerStripCount: 200
   needsComputeBounds: 0
   boundsMode: 1
   m_Space: 1
@@ -2495,7 +2414,7 @@ MonoBehaviour:
   - {fileID: 8926484042661617668}
   - {fileID: 8926484042661617723}
   dataType: 0
-  capacity: 100
+  capacity: 1000
   stripCapacity: 16
   particlePerStripCount: 16
   needsComputeBounds: 0

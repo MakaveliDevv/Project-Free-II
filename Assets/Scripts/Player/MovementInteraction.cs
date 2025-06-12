@@ -1,7 +1,6 @@
 using System.Collections;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.LowLevel;
 
 namespace Assets.Scripts.Player
 {
@@ -9,8 +8,7 @@ namespace Assets.Scripts.Player
     {
         private readonly Player player;
         private Interactable interactable;
-        private BoxMover bm; // Remove later
-        // private BoxMover selectedBox;
+        // private BoxMover bm; // Remove later
         private Collider interactableCol;
         private Vector3 snappedDir = Vector3.zero;
 
@@ -81,14 +79,6 @@ namespace Assets.Scripts.Player
                 && Vector3.Distance(player.rb.position, firstInteractable.transform.position) <= player.interactionSettings.interactionRadius)
                     pullCoroutine = player.StartCoroutine(PullOntoBoxRoutine());
             }
-
-            // if (player.playerSettings.movementState == MovementState.Idle
-            //     && player.playerSettings.currentSurfaceState == SurfaceState.Ground)
-            // {
-            //     Debug.Log("Setting interacting to false");
-            //     interacting = false;
-            // }
-            // else { Debug.Log("movement state not idle and surface state not on ground"); }
         }
 
         public BoxMover SelectTargetRay(Vector3 origin, float range)
@@ -137,7 +127,7 @@ namespace Assets.Scripts.Player
                 player.rb.MovePosition(Vector3.Lerp(start, top, pct));
                 yield return null;
             }
-            if (bm != null) bm.enabled = false;
+            // if (bm != null) bm.enabled = false;
             pullCoroutine = null;
         }
 
@@ -191,8 +181,8 @@ namespace Assets.Scripts.Player
                 Collider col = collider.transform.GetChild(0).GetComponent<Collider>();
                 interactableCol = col;
 
-                BoxMover bm = collider.GetComponent<BoxMover>();
-                this.bm = bm;
+                // BoxMover bm = collider.GetComponent<BoxMover>();
+                // this.bm = bm;
 
                 Interactable interactable = collider.GetComponent<Interactable>();
                 this.interactable = interactable;
