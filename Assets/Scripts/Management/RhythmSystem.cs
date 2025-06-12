@@ -72,9 +72,41 @@ public class RhythmSystem : MonoBehaviour
         }
     }
 
-    private void SpawnBeat(Beat beat)
+    // private void SpawnBeat(Beat beat)
+    // {
+    //     Vector3 spawnPos = new Vector3(
+    //         UnityEngine.Random.Range(spawnRangeX.x, spawnRangeX.y),
+    //         UnityEngine.Random.Range(spawnRangeY.x, spawnRangeY.y),
+    //         spawnDistanceZ);
+
+    //     GameObject box = null;
+    //     switch (beat.type)
+    //     {
+    //         case BeatType.Attack:
+    //             box = Instantiate(attackBoxPrefab, spawnPos, Quaternion.identity);
+    //             var attackable = box.GetComponent<Attackable>();
+    //             if (attackable != null)
+    //                 attackable.attackDirection = beat.attackDirection;
+    //             break;
+
+    //         case BeatType.Interact:
+    //             var iBox = Instantiate(interactBoxPrefab, spawnPos, Quaternion.identity)
+    //                         .GetComponent<InteractableRhythmBox>();
+    //             if (iBox != null)
+    //                 iBox.beatTime = beat.time;
+    //             break;
+    //     }
+
+    //     if (box != null)
+    //     {
+    //         var mover = box.AddComponent<BoxMover>();
+    //         mover.speed = boxMoveSpeed;
+    //     }
+    // }`
+    
+     private void SpawnBeat(Beat beat)
     {
-        Vector3 spawnPos = new Vector3(
+        Vector3 spawnPos = new(
             UnityEngine.Random.Range(spawnRangeX.x, spawnRangeX.y),
             UnityEngine.Random.Range(spawnRangeY.x, spawnRangeY.y),
             spawnDistanceZ);
@@ -88,10 +120,10 @@ public class RhythmSystem : MonoBehaviour
                 if (attackable != null)
                     attackable.attackDirection = beat.attackDirection;
                 break;
-            
+
             case BeatType.Interact:
-                var iBox = Instantiate(interactBoxPrefab, spawnPos, Quaternion.identity)
-                            .GetComponent<InteractableRhythmBox>();
+                box = Instantiate(interactBoxPrefab, spawnPos, Quaternion.identity);
+                var iBox = box.GetComponent<InteractableRhythmBox>();
                 if (iBox != null)
                     iBox.beatTime = beat.time;
                 break;
@@ -99,7 +131,8 @@ public class RhythmSystem : MonoBehaviour
 
         if (box != null)
         {
-            var mover = box.AddComponent<BoxMover>();
+            if (!box.TryGetComponent<BoxMover>(out var mover))
+                mover = box.AddComponent<BoxMover>();
             mover.speed = boxMoveSpeed;
         }
     }

@@ -215,7 +215,6 @@ GameObject:
   - component: {fileID: 6425621150581870358}
   - component: {fileID: 3455882249445717002}
   - component: {fileID: 4431383511368942741}
-  - component: {fileID: 4272684983890979165}
   m_Layer: 0
   m_Name: AttackableBox
   m_TagString: Attackable
@@ -348,19 +347,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   gizmoColor: {r: 0, g: 0.4736843, b: 1, a: 0.2509804}
---- !u!114 &4272684983890979165
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5228556677760729320}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2b280e135548ffa4487a20780cddef7d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  speed: 1
 --- !u!1 &8308914038069154870
 GameObject:
   m_ObjectHideFlags: 0

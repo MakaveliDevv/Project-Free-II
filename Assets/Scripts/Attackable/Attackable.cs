@@ -35,7 +35,6 @@ public class Attackable : MonoBehaviour
 
     private GameObject player;
     private Player Player;
-    // private CombatController combatController;
 
     private int currentIndex = 0;
     private bool successTriggered = false;

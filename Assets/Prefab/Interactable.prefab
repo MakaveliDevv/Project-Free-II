@@ -11,8 +11,8 @@ GameObject:
   - component: {fileID: 2772656812895966471}
   - component: {fileID: 3410634895811408972}
   - component: {fileID: 8811624767533748073}
-  - component: {fileID: 5017769306477555701}
   - component: {fileID: 7420140186839965918}
+  - component: {fileID: -5754511682497812662}
   m_Layer: 10
   m_Name: Interactable
   m_TagString: Interactable
@@ -70,19 +70,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   gizmoColor: {r: 0, g: 1, b: 0, a: 0.09411765}
---- !u!114 &5017769306477555701
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6625527826709355917}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2b280e135548ffa4487a20780cddef7d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  speed: 0
 --- !u!114 &7420140186839965918
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -95,6 +82,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 104ae9d6fbcb42a4fa409a930f3e8e81, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &-5754511682497812662
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6625527826709355917}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4a276abce5c5cc0489e1821ac7cc95d6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  beatTime: 0
+  perfectWindow: 0.1
+  goodWindow: 0.25
+  earlyWindow: 0.5
 --- !u!1 &7229467877451132291
 GameObject:
   m_ObjectHideFlags: 0
