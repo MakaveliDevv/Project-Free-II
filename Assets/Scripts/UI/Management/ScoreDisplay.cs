@@ -1,6 +1,7 @@
 using TMPro;
 using UnityEngine;
 using System.Collections;
+using Assets.Scripts.Player;
 
 public class ScoreDisplay : MonoBehaviour
 {
@@ -121,6 +122,44 @@ public class ScoreDisplay : MonoBehaviour
 
         text.transform.localScale = originalScale;
         text.color = originalColor;
+    }
+
+    public void UpdateUI(InteractTiming timing)
+    {
+        // ── Update Score ──
+        int currentScore = rewardSystem.TotalScore;  // from your existing RewardSystem reference
+        if (currentScore > lastScore)
+        {
+            scoreValueText.text = currentScore.ToString();
+            StartCoroutine(AnimateTextPunch(scoreValueText));
+            lastScore = currentScore;
+        }
+
+        // ── Display Last Interaction Result ──
+        if (!hasHitOccurred)
+        {
+            lastHitText.alpha = 1;    // fade in on first interact
+            hasHitOccurred = true;
+        }
+        lastHitText.text = timing.ToString();
+
+        // ── Optional: color-code the result ──
+        switch (timing)
+        {
+            case InteractTiming.Perfect:
+                lastHitText.color = perfectComboColor;
+                break;
+            case InteractTiming.Good:
+                lastHitText.color = goodComboColor;
+                break;
+            case InteractTiming.Early:
+            case InteractTiming.Late:
+                lastHitText.color = warningPulseColor;
+                break;
+            default:
+                lastHitText.color = defaultComboColor;
+                break;
+        }
     }
 
     public void ResetUI()

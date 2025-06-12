@@ -32,6 +32,15 @@ namespace Assets.Scripts.Player
         BottomLeftToTopRight, TopRightToBottomLeft, BottomRightToTopLeft, TopLeftToBottomRight
     }
 
+    public enum InteractTiming
+    {
+        Miss,    // landed too early or too late
+        Early,   // a bit before perfect
+        Good,    // between Early/Late and Perfect
+        Perfect, // on the beat
+        Late     // a bit after perfect
+    }
+
     [RequireComponent(typeof(Rigidbody))]
     public class Player : MonoBehaviour
     {
@@ -40,7 +49,7 @@ namespace Assets.Scripts.Player
 
         // ─ Class References
         // settings
-        public PlayerSettings playerSettings;
+        [HideInInspector] public PlayerSettings playerSettings;
         public MovementSettings movementSettings;
         public AdvancedMovementSettings advancedMovementSettings;
         public CombatSettings combatSettings;
@@ -72,7 +81,6 @@ namespace Assets.Scripts.Player
             // Class instances
             moveContrl = new(this, movementSettings);
             combatContrl = new(this, combatSettings);
-            // moveInt = new(this);
             animContr = new(this, animSettings, animator);
 
             moveContrl?.Awake();

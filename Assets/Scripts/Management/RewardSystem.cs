@@ -1,4 +1,5 @@
 using UnityEngine;
+using Assets.Scripts.Player;
 
 public class RewardSystem : MonoBehaviour
 {
@@ -52,6 +53,36 @@ public class RewardSystem : MonoBehaviour
             scoreDisplay.UpdateUI(result);
 
         lastComboTime = Time.time;
+    }
+
+    public void ApplyScore(InteractTiming timing)
+    {
+        switch (timing)
+        {
+            case InteractTiming.Perfect:
+                AddPoints(100);
+                break;
+            case InteractTiming.Good:
+                AddPoints(70);
+                break;
+            case InteractTiming.Early:
+                AddPoints(50);
+                break;
+            case InteractTiming.Late:
+                AddPoints(-25);
+                break;
+            default:
+                AddPoints(0);
+                break;
+        }
+
+        if (scoreDisplay != null)
+            scoreDisplay.UpdateUI(timing);
+    }
+
+    private void AddPoints(int points)
+    {
+        TotalScore += points;
     }
 
     private int CalculateBasePoints(Attackable.HitResult result)
