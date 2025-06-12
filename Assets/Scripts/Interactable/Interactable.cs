@@ -6,10 +6,13 @@ public class Interactable : MonoBehaviour
     private BoxMover selectedBox;
     private Color selectedOriginalColor;
     private Player player;
+    private SphereCollider col;
 
     private void Awake()
     {
         player = FindAnyObjectByType<Player>();
+        col = GetComponent<SphereCollider>();
+        col.radius = player.interactionSettings.interactionRadius;
     }
 
     public void UpdateHighlight(BoxMover bm)

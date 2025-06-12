@@ -9,7 +9,7 @@ namespace Assets.Scripts.Player
         private readonly Player player;
         private Interactable interactable;
         // private BoxMover bm; // Remove later
-        private Collider interactableCol;
+        private Collider boxCol;
         private Vector3 snappedDir = Vector3.zero;
 
         public bool interacting = false;
@@ -26,6 +26,8 @@ namespace Assets.Scripts.Player
         public void Update()
         {
             Debug.Log("Activated");
+            player.interacting = interacting;
+
             snappedDir = InputManager.GetSnappedDirection(
                 InputManager.RightStickInput,
                 player.playerSettings.snapDirectionsEnabled,
@@ -77,8 +79,16 @@ namespace Assets.Scripts.Player
                 // pull onto this box
                 if (InputManager.NorthButtonPressed
                 && Vector3.Distance(player.rb.position, firstInteractable.transform.position) <= player.interactionSettings.interactionRadius)
+                {
                     pullCoroutine = player.StartCoroutine(PullOntoBoxRoutine());
+                    Debug.Log("Pulling..");
+                }
+                else
+                {
+                    Debug.Log("Player not close");
+                }
             }
+            else { Debug.Log("first interactable is null"); }
         }
 
         public BoxMover SelectTargetRay(Vector3 origin, float range)
@@ -121,7 +131,7 @@ namespace Assets.Scripts.Player
             {
                 t += Time.deltaTime;
                 float pct = Mathf.SmoothStep(0f, 1f, t / player.interactionSettings.pullDuration);
-                var b = interactableCol.bounds;
+                var b = boxCol.bounds;
                 float h = player.col.bounds.extents.y;
                 Vector3 top = new(b.center.x, b.max.y + h, b.center.z);
                 player.rb.MovePosition(Vector3.Lerp(start, top, pct));
@@ -178,8 +188,9 @@ namespace Assets.Scripts.Player
 
             if (collider.CompareTag("Interactable"))
             {
-                Collider col = collider.transform.GetChild(0).GetComponent<Collider>();
-                interactableCol = col;
+                Collider col = collider.transform.GetChild(1).GetComponent<Collider>();
+                boxCol = col;
+                Debug.Log($"boxCol -> {boxCol.gameObject.name}");
 
                 // BoxMover bm = collider.GetComponent<BoxMover>();
                 // this.bm = bm;

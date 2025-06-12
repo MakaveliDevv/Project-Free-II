@@ -52,7 +52,7 @@ namespace Assets.Scripts.Player
 
         public void OnCollisionExit(Collision collision)
         {
-            movementSystem?.OnCollisionExit(collision);
+            movementSystem?.OnCollisionExit();
         }
 
         public void OnTriggerEnter(Collider collider)

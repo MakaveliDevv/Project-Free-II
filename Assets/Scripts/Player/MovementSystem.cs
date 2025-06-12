@@ -262,7 +262,7 @@ namespace Assets.Scripts.Player
                 
                 // only enter Charging if we have a real Jump/Dash to queue
                 if (!isAirDash
-                    && playerSettings.movementState != MovementState.Charging
+                    || playerSettings.movementState != MovementState.Charging
                     && stickMoving
                     && (allowedToMove || isInAir))
                 {
@@ -349,6 +349,8 @@ namespace Assets.Scripts.Player
                     // Advanced‐Movement air‐dash still fires immediately on release
                     if (player.mode == Mode.AdvancedMovement && fetchedAction == "AirDash")
                     {
+                        allowedToMove = true; 
+
                         PerformMovementAction();
                         hasBurstDropped = false;
                         queuedActionPending = false;
@@ -417,10 +419,8 @@ namespace Assets.Scripts.Player
             if (playerSettings.movementState != MovementState.Hovering) ApplyCustomGravity();
             GetLastCollidedSurface();
 
-            // isInAir = !IsCollidingWithSurface();
             isInAir = !CheckSurfaces();
 
-            Debug.Log($"previous stick down drop -> {prevStickDownDrop}");
             if (settings.useHandleActionForces) { HandleActionForces(); }
             if (isDropping && !prevStickDownDrop && !hasBurstDropped) { ApplyBurstDropForce(); }
             prevStickDownDrop = isDropping;
@@ -476,7 +476,7 @@ namespace Assets.Scripts.Player
             }
         }
 
-        public void OnCollisionExit(Collision collision)
+        public void OnCollisionExit()
         {
             if (landingResetCoroutine != null)
             {
@@ -548,7 +548,19 @@ namespace Assets.Scripts.Player
         {
             actionSinceLastBounce = true;
 
-            if (!allowedToMove || string.IsNullOrEmpty(fetchedAction)) { return; }
+            // if (!allowedToMove || string.IsNullOrEmpty(fetchedAction)) { return; }
+            if (!allowedToMove || string.IsNullOrEmpty(fetchedAction))
+            {
+                Debug.LogWarning($"Aborted movement — allowedToMove: {allowedToMove}, action: {fetchedAction}");
+                return;
+            }
+
+            Debug.Log($"→ Starting {fetchedAction} | AllowedToMove: {allowedToMove}");
+
+            if (fetchedAction == "AirDash") {
+                Debug.Log("→ AirDash forceMagnitude: " + forceMagnitude + ", snappedDir: " + snappedDir);
+            }
+            else { Debug.Log($"Action fetched -> {fetchedAction}");  }
 
             float maxTravelDistance;
             float force;

@@ -197,20 +197,20 @@ namespace Assets.Scripts.Player
                     if (ss == SurfaceState.Ground)
                     {
                         IdleAnim();
-                        Debug.Log("Played idle pose");
+                        // Debug.Log("Played idle pose");
                     }
                     break;
 
                 case MovementState.Charging:
                     ChargingAnim();
-                    Debug.Log("Played charging pose");
+                    // Debug.Log("Played charging pose");
                     break;
 
                 case MovementState.Jumping:
                     if (player.moveContrl.movementSystem.isStraightJump) JumpStraightAnim();
                     else if (player.moveContrl.movementSystem.isDiagonalJumpRight) JumpDiagonalRightAnim();
                     else JumpDiagonalLeftAnim();
-                    Debug.Log("Played jump pose");
+                    // Debug.Log("Played jump pose");
                     break;
 
                 case MovementState.Dashing:
@@ -221,7 +221,7 @@ namespace Assets.Scripts.Player
                         case SurfaceState.RightWall: RightWallDashAnim(); break;
                         case SurfaceState.LeftWall: LeftWallDashAnim(); break;
                     }
-                    Debug.Log("Played dash pose");
+                    // Debug.Log("Played dash pose");
                     break;
 
                 case MovementState.WallJump:
@@ -229,13 +229,13 @@ namespace Assets.Scripts.Player
                     {
                         if (player.moveContrl.movementSystem.isWallJumpRight) InvokeRightWallJumpAnim();
                         else InvokeLeftWallJumpAnim();
-                        Debug.Log("Played wall-jump pose");
+                        // Debug.Log("Played wall-jump pose");
                     }
                     break;
 
                 case MovementState.Hovering:
                     HoverAnim();
-                    Debug.Log("Played hover pose");
+                    // Debug.Log("Played hover pose");
                     break;
 
                 case MovementState.Descending:
@@ -246,28 +246,28 @@ namespace Assets.Scripts.Player
                     else if (ss == SurfaceState.Air)
                     {
                         DescendingAnim();
-                        Debug.Log("Played descending pose");
+                        // Debug.Log("Played descending pose");
                     }
                     else if (ss == SurfaceState.RightWall)
                     {
                         RightWallDescendingAnim();
-                        Debug.Log("Played wall-descending pose (right)");
+                        // Debug.Log("Played wall-descending pose (right)");
                     }
                     else if (ss == SurfaceState.LeftWall)
                     {
                         LeftWallDescendingAnim();
-                        Debug.Log("Played wall-descending pose (left)");
+                        // Debug.Log("Played wall-descending pose (left)");
                     }
                     break;
 
                 case MovementState.AirDashing:
                     HandleAirDash(player.moveContrl.movementSystem);
-                    Debug.Log("Played air-dash pose");
+                    // Debug.Log("Played air-dash pose");
                     break;
 
                 case MovementState.Stucked:
                     StuckedAnim();
-                    Debug.Log("Played stucked pose");
+                    // Debug.Log("Played stucked pose");
                     break;
 
                 case MovementState.Interacting:
@@ -315,19 +315,19 @@ namespace Assets.Scripts.Player
 
         private void OnLandingAnim()
         {
-            Debug.Log("Invoke landing anim");
+            // Debug.Log("Invoke landing anim");
             // Clear all and set landing bool
 
             if (InputManager.ActionInputDetected())
             {
                 ChargingAnim();
-                Debug.Log("Invoked charging anim on landing");
+                // Debug.Log("Invoked charging anim on landing");
             }
             else
             {
                 IdleAnim();
                 animator.SetBool("Landing", true);
-                Debug.Log("No input detected, transition to Idle anim");
+                // Debug.Log("No input detected, transition to Idle anim");
             }
         }
 
@@ -594,13 +594,13 @@ namespace Assets.Scripts.Player
 
         private void UpRightWallDashAnim()
         {
-            Debug.Log("Invoke upward dash on the right wall");
+            // Debug.Log("Invoke upward dash on the right wall");
             SetAllFalse();
         }
 
         private void DownRightWallDashAnim()
         {
-            Debug.Log("Invoke downward dash on the right wall");
+            // Debug.Log("Invoke downward dash on the right wall");
             SetAllFalse();
         }
 
@@ -613,13 +613,13 @@ namespace Assets.Scripts.Player
 
         private void UpLeftWallDashAnim()
         {
-            Debug.Log("Invoke upward dash on the left wall");
+            // Debug.Log("Invoke upward dash on the left wall");
             SetAllFalse();
         }
 
         private void DownLeftWallDashAnim()
         {
-            Debug.Log("Invoke downward dash on the left wall");
+            // Debug.Log("Invoke downward dash on the left wall");
             SetAllFalse();
         }
 

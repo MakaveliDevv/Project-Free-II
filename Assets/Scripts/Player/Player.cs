@@ -49,7 +49,7 @@ namespace Assets.Scripts.Player
 
         // ─ Class References
         // settings
-        [HideInInspector] public PlayerSettings playerSettings;
+        public PlayerSettings playerSettings;
         public MovementSettings movementSettings;
         public AdvancedMovementSettings advancedMovementSettings;
         public CombatSettings combatSettings;
@@ -63,6 +63,8 @@ namespace Assets.Scripts.Player
         [HideInInspector] public Rigidbody rb;
         [HideInInspector] public Collider col;
         private Animator animator;
+
+        public bool interacting = false;
 
         void Awake()
         {
