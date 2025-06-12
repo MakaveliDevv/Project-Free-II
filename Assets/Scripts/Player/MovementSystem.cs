@@ -254,12 +254,33 @@ namespace Assets.Scripts.Player
                         canDrop &&
                         playerSettings.movementState != MovementState.Idle &&
                         !InputManager.ActionInputDetected();
+                        
+            if (isDropping && playerSettings.movementState == MovementState.Interacting)
+            {
+                if (Physics.Raycast(rb.position, Vector3.down, out RaycastHit hit, 1.5f))
+                {
+                    if (hit.collider.CompareTag("Interactable"))
+                    {
+                        // Try get the actual surface collider from the second child
+                        var realSurface = hit.collider.transform.GetChild(1).GetComponent<Collider>();
+                        if (realSurface != null)
+                        {
+                            Physics.IgnoreCollision(player.col, realSurface, true);
+                            Debug.Log("Ignoring collision to allow drop-through");
+
+                            // Optionally re-enable it after a short delay
+                            player.StartCoroutine(ReenableCollisionAfterDelay(realSurface, 0.5f));
+                        }
+                    }
+                }
+            }
+
 
             if (jumpHeld && buttonHoldTimer >= settings.minButtonPressTime && !buttonPressedLongEnough)
             {
                 buttonPressedLongEnough = true;
                 bool isAirDash = player.mode == Mode.AdvancedMovement && fetchedAction == "AirDash";
-                
+
                 // only enter Charging if we have a real Jump/Dash to queue
                 if (!isAirDash
                     || playerSettings.movementState != MovementState.Charging
@@ -1251,6 +1272,12 @@ namespace Assets.Scripts.Player
                 .5f,
                 settings.surfaceLayer
             );
+        }
+ 
+        IEnumerator ReenableCollisionAfterDelay(Collider target, float delay)
+        {
+            yield return new WaitForSeconds(delay);
+            Physics.IgnoreCollision(player.col, target, false);
         }
         #endregion
 

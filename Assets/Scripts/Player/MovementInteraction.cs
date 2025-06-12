@@ -25,7 +25,6 @@ namespace Assets.Scripts.Player
 
         public void Update()
         {
-            Debug.Log("Activated");
             player.interacting = interacting;
 
             snappedDir = InputManager.GetSnappedDirection(
@@ -93,18 +92,12 @@ namespace Assets.Scripts.Player
                     pullCoroutine = player.StartCoroutine(PullOntoBoxRoutine());
                     Debug.Log("Pulling..");
                 }
-                else
-                {
-                    Debug.Log("Player not close");
-                }
             }
-            else { Debug.Log("first interactable is null"); }
         }
 
-        public BoxMover SelectTargetRay(Vector3 origin, float range)
+        public Interactable SelectTargetRay(Vector3 origin, float range)
         {
             if (snappedDir == Vector3.zero) return null;
-            // else { Debug.Log($"SnappedDir -> {snappedDir}"); }
             int mask = LayerMask.GetMask("SelectCol");
 
             // gather all hits along the ray
@@ -113,7 +106,7 @@ namespace Assets.Scripts.Player
 
             // find the closest
             float bestDist = float.MaxValue;
-            BoxMover best = null;
+            Interactable best = null;
             foreach (var h in hits)
             {
                 if (h.distance < bestDist)
@@ -121,7 +114,7 @@ namespace Assets.Scripts.Player
                     var parent = h.collider.transform.parent;
                     if (parent == null) continue;
 
-                    if (!parent.TryGetComponent<BoxMover>(out var bm)) continue;
+                    if (!parent.TryGetComponent<Interactable>(out var bm)) continue;
 
                     if (h.distance < bestDist)
                     {
@@ -133,6 +126,7 @@ namespace Assets.Scripts.Player
             return best;
         }
 
+        Vector3 top = Vector3.zero;
         IEnumerator PullOntoBoxRoutine()
         {
             interacting = true;
@@ -147,15 +141,16 @@ namespace Assets.Scripts.Player
                 float pct = Mathf.SmoothStep(0f, 1f, t / player.interactionSettings.pullDuration);
                 var b = boxCol.bounds;
                 float h = player.col.bounds.extents.y;
-                Vector3 top = new(b.center.x, b.max.y + h, b.center.z);
+                top = new(b.center.x, b.max.y + h, b.center.z);
                 player.rb.MovePosition(Vector3.Lerp(start, top, pct));
                 yield return null;
             }
+
             // if (bm != null) bm.enabled = false;
             pullCoroutine = null;
         }
 
-        IEnumerator LaunchToBoxRoutine(BoxMover target)
+        IEnumerator LaunchToBoxRoutine(Interactable target)
         {
             isLaunching = true;
             interacting = false;
@@ -180,7 +175,7 @@ namespace Assets.Scripts.Player
             player.rb.MovePosition(
                 new Vector3(bf.center.x, bf.max.y + hf, bf.center.z));
 
-            if (target.TryGetComponent<BoxMover>(out var mv)) mv.enabled = false;
+            if (target.TryGetComponent<Interactable>(out var mv)) mv.enabled = false;
 
             interacting = true;
             player.playerSettings.movementState = MovementState.Interacting;

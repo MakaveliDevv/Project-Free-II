@@ -7,10 +7,10 @@ namespace Assets.Scripts.Player
         public readonly MovementSystem movementSystem;
         public AdvancedMovement advancedMovement;
 
-        public MovementSystemController(Player player, MovementSettings settings)
+        public MovementSystemController(Player player, MovementSettings settings, bool useBounce)
         {
             movementSystem = new(player, player.playerSettings, settings);
-            advancedMovement = new(player, movementSystem, player.advancedMovementSettings);
+            advancedMovement = new(player, movementSystem, player.advancedMovementSettings, useBounce);
         }
 
         public void Awake()

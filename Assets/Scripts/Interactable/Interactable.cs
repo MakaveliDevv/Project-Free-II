@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class Interactable : MonoBehaviour
 {
-    private BoxMover selectedBox;
+    private Interactable selectedBox;
     private Color selectedOriginalColor;
     private Player player;
     private SphereCollider col;
@@ -15,13 +15,13 @@ public class Interactable : MonoBehaviour
         col.radius = player.interactionSettings.interactionRadius;
     }
 
-    public void UpdateHighlight(BoxMover bm)
+    public void UpdateHighlight(Interactable interactable)
     {
-        if (selectedBox == bm) return;
+        if (selectedBox == interactable) return;
         ClearHighlight();
-        if (bm == null) return;
-        selectedBox = bm;
-        if (bm.transform.GetChild(1).TryGetComponent<Renderer>(out var r))
+        if (interactable == null) return;
+        selectedBox = interactable;
+        if (interactable.transform.GetChild(1).TryGetComponent<Renderer>(out var r))
         {
             selectedOriginalColor = r.material.color;
             r.material.color = Color.blue;

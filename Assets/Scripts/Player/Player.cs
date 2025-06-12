@@ -65,6 +65,7 @@ namespace Assets.Scripts.Player
         private Animator animator;
 
         public bool interacting = false;
+        public bool useBounce = true;
 
         void Awake()
         {
@@ -81,7 +82,7 @@ namespace Assets.Scripts.Player
             InputManager.Initialize(inputActionAsset, playerSettings.useRawInput, movementSettings.minStickMagnitude);
 
             // Class instances
-            moveContrl = new(this, movementSettings);
+            moveContrl = new(this, movementSettings, useBounce);
             combatContrl = new(this, combatSettings);
             animContr = new(this, animSettings, animator);
 

@@ -18,17 +18,20 @@ namespace Assets.Scripts.Player
 
         public bool IsBlockingInput() => postBounceTimer > 0f;
         private Collider lastBouncedCollider = null;
+        private readonly bool useBounce;
 
         public AdvancedMovement
         (
             Player player,
             MovementSystem movementSystem,
-            AdvancedMovementSettings advMoveSettings
+            AdvancedMovementSettings advMoveSettings,
+            bool useBounce
         )
         {
             this.player = player;
             this.movementSystem = movementSystem;
             this.advMoveSettings = advMoveSettings;
+            this.useBounce = useBounce;
 
             moveInt = new(player);
         }
@@ -44,7 +47,7 @@ namespace Assets.Scripts.Player
 
             if (InputManager.LeftShoulderPressed && !isAdvancedMovementActive) { player.mode = Mode.AdvancedMovement; }
 
-            if (player.mode == Mode.AdvancedMovement)
+            if (useBounce && player.mode == Mode.AdvancedMovement)
             {
                 if (bounceBufferActive)
                 {
@@ -71,8 +74,9 @@ namespace Assets.Scripts.Player
                     postBounceTimer -= Time.deltaTime;
                 }
 
-                moveInt.Update();
             }
+            
+            moveInt.Update();
         }
 
         private void ApplyBufferedBounce()

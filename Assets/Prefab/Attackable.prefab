@@ -79,7 +79,7 @@ GameObject:
   - component: {fileID: 1529017803230609383}
   - component: {fileID: 8641310482228129936}
   - component: {fileID: 4841870379662125362}
-  - component: {fileID: 7716030101390876732}
+  - component: {fileID: -1987534185452798969}
   m_Layer: 0
   m_Name: Attackable
   m_TagString: AttackableBox
@@ -181,7 +181,7 @@ SphereCollider:
   serializedVersion: 3
   m_Radius: 1.5
   m_Center: {x: 0, y: 0, z: -2}
---- !u!114 &7716030101390876732
+--- !u!114 &-1987534185452798969
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -190,17 +190,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 2971473722018508600}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5b871fff75a65114982365fd67ff96c5, type: 3}
+  m_Script: {fileID: 11500000, guid: 5880f013ac2ca664ca2b038488e20507, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  attackDirection: 0
-  colSize: {x: 2, y: 2, z: 2}
-  colOffset: {x: 0, y: 0, z: -1.5}
-  colliders:
-  - {fileID: 2079038636043667802}
-  - {fileID: 4268130242270239398}
-  - {fileID: 5674815248097831927}
-  - {fileID: 4616076900556991324}
+  requiredDirection: 0
+  perfectThreshold: 0.05
+  goodThreshold: 0.1
+  earlyLateThreshold: 0.2
 --- !u!1 &4855973974771026805
 GameObject:
   m_ObjectHideFlags: 0
