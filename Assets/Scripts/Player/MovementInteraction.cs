@@ -52,15 +52,15 @@ namespace Assets.Scripts.Player
                     player.rb.position,
                     player.interactionSettings.selectionRange);
 
-                if (best != null)
-                {
-                    Debug.Log($"Box Selected -> {best.gameObject.name}");
+                // if (best != null)
+                // {
+                //     Debug.Log($"Box Selected -> {best.gameObject.name}");
 
-                }
-                else
-                {
-                    Debug.Log("No box selected");
-                }
+                // }
+                // else
+                // {
+                //     Debug.Log("No box selected");
+                // }
 
                 interactable.UpdateHighlight(best);
 
@@ -132,6 +132,7 @@ namespace Assets.Scripts.Player
             interacting = true;
             player.playerSettings.movementState = MovementState.Interacting;
             player.playerSettings.currentSurfaceState = SurfaceState.Nothing;
+            boxCol.enabled = true;
 
             Vector3 start = player.rb.position;
             float t = 0f;
@@ -155,6 +156,7 @@ namespace Assets.Scripts.Player
             isLaunching = true;
             interacting = false;
             InputManager.TriggerLock = false;
+            boxCol.enabled = false;
             player.playerSettings.movementState = MovementState.Launching;
 
             Vector3 start = player.rb.position;
@@ -175,9 +177,10 @@ namespace Assets.Scripts.Player
             player.rb.MovePosition(
                 new Vector3(bf.center.x, bf.max.y + hf, bf.center.z));
 
-            if (target.TryGetComponent<Interactable>(out var mv)) mv.enabled = false;
+            if (target.TryGetComponent<Interactable>(out var i)) i.enabled = false;
 
             interacting = true;
+            boxCol.enabled = true;
             player.playerSettings.movementState = MovementState.Interacting;
             player.playerSettings.currentSurfaceState = SurfaceState.Nothing;
             isLaunching = false;
@@ -192,20 +195,27 @@ namespace Assets.Scripts.Player
             && collider.CompareTag("Interactable"))
             {
                 firstInteractable = collider.gameObject;
-                Debug.Log($"First Interactable => {firstInteractable} ");
             }
 
             if (collider.CompareTag("Interactable"))
             {
                 Collider col = collider.transform.GetChild(1).GetComponent<Collider>();
                 boxCol = col;
-                Debug.Log($"boxCol -> {boxCol.gameObject.name}");
 
                 // BoxMover bm = collider.GetComponent<BoxMover>();
                 // this.bm = bm;
 
                 Interactable interactable = collider.GetComponent<Interactable>();
                 this.interactable = interactable;
+            }
+        }
+
+        public void OnTriggerExit(Collider collider)
+        {
+            if (isLaunching && collider.CompareTag("Interactable"))
+            {
+                Object.Destroy(collider.gameObject);
+                Debug.Log("interactable destroyed");
             }
         }
 

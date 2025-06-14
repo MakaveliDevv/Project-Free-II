@@ -107,43 +107,46 @@ using Assets.Scripts.Player;
 //     }
 // }
 
-public class InteractableRhythmBox : MonoBehaviour
+public class InteractableRhythmBox 
 {
-    [Tooltip("Target time (s) in song when landing should happen")]
-    public float beatTime;
+    private readonly RewardSystem rewardSystem;
+    private readonly ShrinkOverTime shrinker;
 
-    [Header("Windows (s) around ideal size")]
-    public float perfectThreshold = 0.05f;
-    public float goodThreshold = 0.1f;
-    public float earlyLateThreshold = 0.2f;
-
+    private readonly float perfectThreshold;
+    private readonly float goodThreshold;
+    private readonly float earlyLateThreshold;
     private bool hasLanded = false;
-    private RewardSystem rewardSystem;
-    private ShrinkOverTime shrinker;
     private bool isPlayerOnBox = false;
 
-    void Awake()
+    public InteractableRhythmBox
+    (
+        RewardSystem rewardSystem,
+        ShrinkOverTime shrinker,
+        float perfectThreshold,
+        float goodThreshold,
+        float earlyLateThreshold
+    )
     {
-        rewardSystem = FindFirstObjectByType<RewardSystem>();
+        this.rewardSystem = rewardSystem;
+        this.shrinker = shrinker;
+        this.perfectThreshold = perfectThreshold;
+        this.goodThreshold = goodThreshold;
+        this.earlyLateThreshold = earlyLateThreshold;
     }
 
-    void Start()
+    public void OnTriggerEnter(Collider collider)
     {
-        shrinker = GetComponent<ShrinkOverTime>();
-    }
+        if (hasLanded || collider.CompareTag("Player") == false) return;
 
-    void OnTriggerEnter(Collider other)
-    {
-        if (hasLanded || other.CompareTag("Player") == false) return;
+        bool p = collider.TryGetComponent<Player>(out var _p) && _p.playerSettings.movementState == MovementState.Interacting;
+        if (!p) return;
 
         hasLanded = true;
         isPlayerOnBox = true;
-
-        // Stop shrinking to visually show the player is standing on the box
         shrinker.isShrinking = false;
 
         float sizeRatio = shrinker.GetCurrentSizeRatio();
-        float distanceFromIdeal = Mathf.Abs(sizeRatio - 0.5f); // 0.5 is the sweet spot
+        float distanceFromIdeal = Mathf.Abs(sizeRatio - 0.5f);
 
         InteractTiming timing;
         if (distanceFromIdeal <= perfectThreshold)
@@ -160,10 +163,23 @@ public class InteractableRhythmBox : MonoBehaviour
         rewardSystem.ApplyScore(timing);
     }
 
-    void OnTriggerExit(Collider other)
+
+    public void OnTriggerExit(Collider other)
     {
         if (!isPlayerOnBox || other.CompareTag("Player") == false) return;
         isPlayerOnBox = false;
-        Destroy(gameObject, 0.2f); // optional fade can be triggered here too
+        shrinker.isShrinking = true;
+    }
+
+    public void OnTriggerStay(Collider collider)
+    {
+        if (hasLanded || collider.CompareTag("Player") == false) return;
+
+        if (!collider.TryGetComponent<Player>(out var _p)) return;
+
+        if (_p.playerSettings.movementState == MovementState.Interacting)
+        {
+            shrinker.isShrinking = false;
+        }
     }
 }

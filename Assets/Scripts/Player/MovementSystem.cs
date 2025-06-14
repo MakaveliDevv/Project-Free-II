@@ -572,16 +572,16 @@ namespace Assets.Scripts.Player
             // if (!allowedToMove || string.IsNullOrEmpty(fetchedAction)) { return; }
             if (!allowedToMove || string.IsNullOrEmpty(fetchedAction))
             {
-                Debug.LogWarning($"Aborted movement — allowedToMove: {allowedToMove}, action: {fetchedAction}");
+                // Debug.LogWarning($"Aborted movement — allowedToMove: {allowedToMove}, action: {fetchedAction}");
                 return;
             }
 
-            Debug.Log($"→ Starting {fetchedAction} | AllowedToMove: {allowedToMove}");
+            // Debug.Log($"→ Starting {fetchedAction} | AllowedToMove: {allowedToMove}");
 
-            if (fetchedAction == "AirDash") {
-                Debug.Log("→ AirDash forceMagnitude: " + forceMagnitude + ", snappedDir: " + snappedDir);
-            }
-            else { Debug.Log($"Action fetched -> {fetchedAction}");  }
+            // if (fetchedAction == "AirDash") {
+            //     Debug.Log("→ AirDash forceMagnitude: " + forceMagnitude + ", snappedDir: " + snappedDir);
+            // }
+            // else { Debug.Log($"Action fetched -> {fetchedAction}");  }
 
             float maxTravelDistance;
             float force;
@@ -1087,7 +1087,6 @@ namespace Assets.Scripts.Player
             predictedTargetPoint = rb.position;
             ResetActionState();
 
-            // switch to the appropriate descending state
             if (playerSettings.currentSurfaceState == SurfaceState.LeftWall ||
                 playerSettings.currentSurfaceState == SurfaceState.RightWall) { playerSettings.movementState = MovementState.WallDescending; }
             else { playerSettings.movementState = MovementState.Descending; }

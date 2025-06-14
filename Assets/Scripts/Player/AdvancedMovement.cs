@@ -47,36 +47,39 @@ namespace Assets.Scripts.Player
 
             if (InputManager.LeftShoulderPressed && !isAdvancedMovementActive) { player.mode = Mode.AdvancedMovement; }
 
-            if (useBounce && player.mode == Mode.AdvancedMovement)
+            if (player.mode == Mode.AdvancedMovement)
             {
-                if (bounceBufferActive)
-                {
-                    bounceBufferTimer -= Time.deltaTime;
-
-                    if (InputManager.LeftStickInput.magnitude > 0.1f)
-                        bufferedDirection = InputManager.LeftStickInput.normalized;
-
-                    if (bounceBufferTimer <= 0f && !hasBounced)
+                if (useBounce)
+                { 
+                    if (bounceBufferActive)
                     {
-                        ApplyBufferedBounce();
-                        hasBounced = true;
-                        bounceBufferActive = false;
+                        bounceBufferTimer -= Time.deltaTime;
+
+                        if (InputManager.LeftStickInput.magnitude > 0.1f)
+                            bufferedDirection = InputManager.LeftStickInput.normalized;
+
+                        if (bounceBufferTimer <= 0f && !hasBounced)
+                        {
+                            ApplyBufferedBounce();
+                            hasBounced = true;
+                            bounceBufferActive = false;
+                        }
                     }
+
+                    if (hasBounced && player.playerSettings.movementState != MovementState.Bouncing)
+                    {
+                        hasBounced = false;
+                    }
+
+                    if (postBounceTimer > 0f)
+                    {
+                        postBounceTimer -= Time.deltaTime;
+                    }    
                 }
 
-                if (hasBounced && player.playerSettings.movementState != MovementState.Bouncing)
-                {
-                    hasBounced = false;
-                }
-
-                if (postBounceTimer > 0f)
-                {
-                    postBounceTimer -= Time.deltaTime;
-                }
-
+                moveInt.Update();
             }
             
-            moveInt.Update();
         }
 
         private void ApplyBufferedBounce()
@@ -142,6 +145,11 @@ namespace Assets.Scripts.Player
         public void OnTriggerEnter(Collider collider)
         {
             moveInt.OnTriggerEnter(collider);
+        }
+
+        public void OnTriggerExit(Collider collider)
+        { 
+            moveInt.OnTriggerExit(collider);
         }
 
         public void OnDrawGizmos(Vector3 origin, float range)

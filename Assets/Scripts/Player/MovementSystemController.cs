@@ -60,6 +60,11 @@ namespace Assets.Scripts.Player
             advancedMovement?.OnTriggerEnter(collider);
         }
 
+        public void OnTriggerExit(Collider collider)
+        { 
+            advancedMovement?.OnTriggerExit(collider);
+        }
+
         public void OnDrawGizmos(Vector3 origin, float range)
         {
             if (Application.isPlaying)
