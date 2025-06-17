@@ -74,9 +74,9 @@ public class RhythmSystem : MonoBehaviour
         {
             case BeatType.Attack:
                 box = Instantiate(attackBoxPrefab, spawnPos, Quaternion.identity);
-                var attack = box.GetComponent<AttackableRhythmBox>();
+                var attack = box.GetComponent<Attackable>();
                 if (attack != null)
-                    attack.requiredDirection = beat.attackDirection;
+                    attack.attackDirection = beat.attackDirection;
                 break;
 
             case BeatType.Interact:

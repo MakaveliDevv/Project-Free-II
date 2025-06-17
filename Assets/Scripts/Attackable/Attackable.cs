@@ -8,20 +8,22 @@ public class Attackable : MonoBehaviour
 
     public enum HitResult
     {
-        None, Early, Good, Perfect, Late
+        Miss, Good, Perfect, Late
     }
 
     // === Public Variables ===
-    public AttackDirection attackDirection;
-    public Vector3 colSize = new(1, 1, 1);
-    public Vector3 colOffset = Vector3.zero;
-    public HitResult LatestHitResult { get; private set; } = HitResult.None;
+    [HideInInspector] public AttackDirection attackDirection;
+    public HitResult LatestHitResult { get; private set; } = HitResult.Miss;
 
-    // === Serialized Private Variables ===
-    [SerializeField] private List<BoxCollider> colliders = new();
+    [Header("Shrink Ratio Thresholds")]
+    public HitRange perfectRange = new() { max = 1f, min = 0.7f };
+    public HitRange goodRange = new() { max = 0.7f, min = 0.4f };
+    public HitRange lateRange = new() { max = 0.4f, min = 0.2f };
+
 
     // === Private Variables ===
-    public readonly Dictionary<string, AttackDirection> directions = new()
+    private ShrinkOverTime shrinker;
+    public Dictionary<string, AttackDirection> directions = new()
     {
         { "N-S", AttackDirection.TopToBottom },
         { "S-N", AttackDirection.BottomToTop },
@@ -36,9 +38,7 @@ public class Attackable : MonoBehaviour
     private GameObject player;
     private Player Player;
 
-    private int currentIndex = 0;
     private bool successTriggered = false;
-    private bool isPlayerInside = false;
 
     void Awake()
     {
@@ -46,81 +46,59 @@ public class Attackable : MonoBehaviour
         {
             player = GameObject.FindGameObjectWithTag("Player");
             Player = player.GetComponent<Player>();
-            rewardSystem = FindFirstObjectByType <RewardSystem>(); 
+            rewardSystem = FindFirstObjectByType<RewardSystem>();
         }
+    }
+
+    void Start()
+    {
+        shrinker = GetComponent<ShrinkOverTime>();
     }
 
     void Update()
     {
-        if (successTriggered || currentIndex >= colliders.Count || player == null)
-            return;
+        if (successTriggered || player == null || shrinker == null) return;
 
-        var activeCollider = colliders[currentIndex];
-
-        if (!activeCollider.enabled) return;
-
-        if (IsPlayerInside(activeCollider))
+        if (Player.combatContrl.attacked && Player.combatContrl.success)
         {
-            isPlayerInside = true;
+            float ratio = shrinker.GetCurrentSizeRatio();
+            LatestHitResult = DetermineHitResult(ratio);
 
-            if (Player.combatContrl.attacked && Player.combatContrl.success)
-            {
-                LatestHitResult = DetermineHitResult(currentIndex);
-                Debug.Log($"✅ {LatestHitResult} hit in collider {currentIndex + 1}");
-                rewardSystem.ApplyScore(LatestHitResult);
+            Debug.Log($"✅ {LatestHitResult} hit at size ratio {ratio:F2}");
+            rewardSystem.ApplyScore(LatestHitResult);
 
-                DisableAllOtherColliders();
-                successTriggered = true;
-                Player.combatContrl.attacked = false;
-                Player.combatContrl.success = false;
-            }
-        }
-        else if (isPlayerInside)
-        {
-            Debug.Log($"❌ Failed in collider {currentIndex + 1}");
+            successTriggered = true;
+            Player.combatContrl.attacked = false;
+            Player.combatContrl.success = false;
 
-            activeCollider.enabled = false;
-            currentIndex++;
-            isPlayerInside = false;
+            Destroy(gameObject, 0.2f);
         }
     }
 
-    private HitResult DetermineHitResult(int index)
+    private HitResult DetermineHitResult(float ratio)
     {
-        return index switch
-        {
-            0 => HitResult.Early,
-            1 => HitResult.Good,
-            2 => HitResult.Perfect,
-            3 => HitResult.Late,
-            _ => HitResult.None
-        };
+        if (perfectRange.InRange(ratio))
+            return HitResult.Perfect;
+        else if (goodRange.InRange(ratio))
+            return HitResult.Good;
+        else if (lateRange.InRange(ratio))
+            return HitResult.Late;
+        else
+            return HitResult.Miss;
     }
 
-    private bool IsPlayerInside(BoxCollider col)
-    {
-        return col.bounds.Contains(player.transform.position);
-    }
+    // private HitResult DetermineHitResult(float ratio)
+    // {
+    //     // Divide the range (1 → minScale) into 3 equal segments
+    //     float perfectThreshold = Mathf.Lerp(1f, shrinker.minScale, 1f / 3f);
+    //     float goodThreshold = Mathf.Lerp(1f, shrinker.minScale, 2f / 3f);
 
-    private void DisableAllOtherColliders()
-    {
-        for (int i = 0; i < colliders.Count; i++)
-        {
-            if (i != currentIndex)
-            {
-                colliders[i].enabled = false;
-            }
-        }
-    }
-
-    void OnDrawGizmos()
-    {
-        Gizmos.color = Color.cyan;
-        foreach (var col in colliders)
-        {
-            if (col != null)
-                Gizmos.DrawWireCube(col.transform.position + col.center, col.size);
-        }
-    }
+    //     if (ratio >= goodThreshold)
+    //         return HitResult.Perfect; // Box is still large
+    //     else if (ratio >= perfectThreshold)
+    //         return HitResult.Good;    // Mid-size
+    //     else
+    //         return HitResult.Late;    // Box is small
+    // }
 }
 

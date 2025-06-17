@@ -107,91 +107,91 @@ using Assets.Scripts.Player;
 //     }
 // }
 
-public class InteractableRhythmBox 
-{
-    private readonly RewardSystem rewardSystem;
-    private readonly ShrinkOverTime shrinker;
+// public class InteractableRhythmBox 
+// {
+//     private readonly RewardSystem rewardSystem;
+//     private readonly ShrinkOverTime shrinker;
 
-    private readonly float perfectThreshold;
-    private readonly float goodThreshold;
-    private readonly float earlyLateThreshold;
-    private bool hasLanded = false;
-    private bool isPlayerOnBox = false;
+//     private readonly float perfectThreshold;
+//     private readonly float goodThreshold;
+//     private readonly float earlyLateThreshold;
+//     private bool hasLanded = false;
+//     private bool isPlayerOnBox = false;
 
-    public InteractableRhythmBox
-    (
-        RewardSystem rewardSystem,
-        ShrinkOverTime shrinker,
-        float perfectThreshold,
-        float goodThreshold,
-        float earlyLateThreshold
-    )
-    {
-        this.rewardSystem = rewardSystem;
-        this.shrinker = shrinker;
-        this.perfectThreshold = perfectThreshold;
-        this.goodThreshold = goodThreshold;
-        this.earlyLateThreshold = earlyLateThreshold;
-    }
+//     public InteractableRhythmBox
+//     (
+//         RewardSystem rewardSystem,
+//         ShrinkOverTime shrinker,
+//         float perfectThreshold,
+//         float goodThreshold,
+//         float earlyLateThreshold
+//     )
+//     {
+//         this.rewardSystem = rewardSystem;
+//         this.shrinker = shrinker;
+//         this.perfectThreshold = perfectThreshold;
+//         this.goodThreshold = goodThreshold;
+//         this.earlyLateThreshold = earlyLateThreshold;
+//     }
 
-    public void OnTriggerEnter(Collider collider)
-    {
-        if (hasLanded || collider.CompareTag("Player") == false) return;
-        if (!collider.TryGetComponent<Player>(out var p)) return;
+//     public void OnTriggerEnter(Collider collider)
+//     {
+//         if (hasLanded || collider.CompareTag("Player") == false) return;
+//         if (!collider.TryGetComponent<Player>(out var p)) return;
 
-        var owner = shrinker.GetComponent<Interactable>();
-        if (p.moveContrl.advancedMovement.moveInt.interactable != owner) return;
+//         var owner = shrinker.GetComponent<Interactable>();
+//         if (p.moveContrl.advancedMovement.moveInt.interactable != owner) return;
 
-        if (p.playerSettings.movementState != MovementState.Interacting) return;
+//         if (p.playerSettings.movementState != MovementState.Interacting) return;
 
-        hasLanded = true;
-        isPlayerOnBox = true;
-        shrinker.isShrinking = false;
+//         hasLanded = true;
+//         isPlayerOnBox = true;
+//         shrinker.isShrinking = false;
 
-        float sizeRatio = shrinker.GetCurrentSizeRatio();
-        float distanceFromIdeal = Mathf.Abs(sizeRatio - 0.5f);
+//         float sizeRatio = shrinker.GetCurrentSizeRatio();
+//         float distanceFromIdeal = Mathf.Abs(sizeRatio - 0.5f);
 
-        InteractTiming timing;
-        if (distanceFromIdeal <= perfectThreshold)
-            timing = InteractTiming.Perfect;
-        else if (distanceFromIdeal <= goodThreshold)
-            timing = InteractTiming.Good;
-        else if (sizeRatio > 0.5f && distanceFromIdeal <= earlyLateThreshold)
-            timing = InteractTiming.Early;
-        else if (sizeRatio < 0.5f && distanceFromIdeal <= earlyLateThreshold)
-            timing = InteractTiming.Late;
-        else
-            timing = InteractTiming.Miss;
+//         InteractTiming timing;
+//         if (distanceFromIdeal <= perfectThreshold)
+//             timing = InteractTiming.Perfect;
+//         else if (distanceFromIdeal <= goodThreshold)
+//             timing = InteractTiming.Good;
+//         else if (sizeRatio > 0.5f && distanceFromIdeal <= earlyLateThreshold)
+//             timing = InteractTiming.Early;
+//         else if (sizeRatio < 0.5f && distanceFromIdeal <= earlyLateThreshold)
+//             timing = InteractTiming.Late;
+//         else
+//             timing = InteractTiming.Miss;
 
-        rewardSystem.ApplyScore(timing);
-    }
+//         rewardSystem.ApplyScore(timing);
+//     }
 
-    public void OnTriggerStay(Collider collider)
-    {
-        if (hasLanded || collider.CompareTag("Player") == false || !collider.TryGetComponent<Player>(out var p)) return;
+//     public void OnTriggerStay(Collider collider)
+//     {
+//         if (hasLanded || collider.CompareTag("Player") == false || !collider.TryGetComponent<Player>(out var p)) return;
 
-        var assignedBox = p.moveContrl.advancedMovement.moveInt.interactable;
-        var thisBox = shrinker.GetComponent<Interactable>();
+//         var assignedBox = p.moveContrl.advancedMovement.moveInt.interactable;
+//         var thisBox = shrinker.GetComponent<Interactable>();
 
-        // ✅ Only stop shrinking if the player is on THIS specific box and not just nearby
-        bool isSameBox = assignedBox == thisBox;
-        bool isInteracting = p.playerSettings.movementState == MovementState.Interacting;
+//         // ✅ Only stop shrinking if the player is on THIS specific box and not just nearby
+//         bool isSameBox = assignedBox == thisBox;
+//         bool isInteracting = p.playerSettings.movementState == MovementState.Interacting;
 
-        if (isInteracting && isSameBox)
-        {
-            shrinker.isShrinking = false;
-        }
-        else
-        {
-            shrinker.isShrinking = true;
-        }
-    }
+//         if (isInteracting && isSameBox)
+//         {
+//             shrinker.isShrinking = false;
+//         }
+//         else
+//         {
+//             shrinker.isShrinking = true;
+//         }
+//     }
 
-    public void OnTriggerExit(Collider other)
-    {
-        if (!isPlayerOnBox || other.CompareTag("Player") == false) return;
-        isPlayerOnBox = false;
-        shrinker.isShrinking = true;
-    }
+//     public void OnTriggerExit(Collider other)
+//     {
+//         if (!isPlayerOnBox || other.CompareTag("Player") == false) return;
+//         isPlayerOnBox = false;
+//         shrinker.isShrinking = true;
+//     }
 
-}
+// }

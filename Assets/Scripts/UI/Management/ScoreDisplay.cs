@@ -152,7 +152,6 @@ public class ScoreDisplay : MonoBehaviour
             case InteractTiming.Good:
                 lastHitText.color = goodComboColor;
                 break;
-            case InteractTiming.Early:
             case InteractTiming.Late:
                 lastHitText.color = warningPulseColor;
                 break;

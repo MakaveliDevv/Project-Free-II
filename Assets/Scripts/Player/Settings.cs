@@ -345,11 +345,20 @@ namespace Assets.Scripts.Player
     }
 
     public static class HitResults
-    { 
+    {
         public enum HitResult
         {
             None, Early, Good, Perfect, Late
         }
+    }
+    
+    [System.Serializable]
+    public struct HitRange
+    {
+        [Range(0f, 1f)] public float max;
+        [Range(0f, 1f)] public float min;
+
+        public bool InRange(float value) => value <= max && value >= min;
     }
 }
 

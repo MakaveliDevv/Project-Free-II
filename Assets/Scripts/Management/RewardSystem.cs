@@ -45,7 +45,7 @@ public class RewardSystem : MonoBehaviour
         int basePoints = CalculateBasePoints(result);
         TotalScore += basePoints;
 
-        HandleComboLogic(result);
+        ApplyComboScoringFromAttack(result);
 
         Debug.Log($"🎯 Hit: {result} | +{basePoints} | Score: {TotalScore} | Good x{GoodComboCount} | Perfect x{PerfectComboCount}");
 
@@ -57,27 +57,24 @@ public class RewardSystem : MonoBehaviour
 
     public void ApplyScore(InteractTiming timing)
     {
-        switch (timing)
+        int basePoints = timing switch
         {
-            case InteractTiming.Perfect:
-                AddPoints(100);
-                break;
-            case InteractTiming.Good:
-                AddPoints(70);
-                break;
-            case InteractTiming.Early:
-                AddPoints(50);
-                break;
-            case InteractTiming.Late:
-                AddPoints(-25);
-                break;
-            default:
-                AddPoints(0);
-                break;
-        }
+            InteractTiming.Perfect => 100,
+            InteractTiming.Good    => 70,
+            InteractTiming.Late    => 50,
+            _                      => 0
+        };
+
+        TotalScore += basePoints;
+
+        ApplyComboScoringFromInteraction(timing);
+
+        Debug.Log($"🎯 Landed: {timing} | +{basePoints} | Score: {TotalScore} | Good x{GoodComboCount} | Perfect x{PerfectComboCount}");
 
         if (scoreDisplay != null)
             scoreDisplay.UpdateUI(timing);
+
+        lastComboTime = Time.time;
     }
 
     private void AddPoints(int points)
@@ -91,13 +88,99 @@ public class RewardSystem : MonoBehaviour
         {
             Attackable.HitResult.Perfect => 100,
             Attackable.HitResult.Good => 75,
-            Attackable.HitResult.Early => 50,
-            Attackable.HitResult.Late => 10,
+            Attackable.HitResult.Late => 50,
             _ => 0
         };
     }
 
-    private void HandleComboLogic(Attackable.HitResult result)
+    private void ApplyComboScoringFromInteraction(InteractTiming timing)
+    {
+        switch (timing)
+        {
+            case InteractTiming.Perfect:
+                if (perfectComboActive)
+                {
+                    PerfectComboCount++;
+                    Debug.Log($"<color=magenta>🔥 Perfect combo continued! Count: {PerfectComboCount}</color>");
+                    UpdateHighestCombo();
+                }
+                else if (pendingPerfect == 1)
+                {
+                    Debug.Log("<color=magenta>🔥 Perfect combo started! Count: 2</color>");
+                    perfectComboActive = true;
+                    PerfectComboCount = 2;
+                    pendingPerfect = 0;
+
+                    goodComboActive = false;
+                    goodComboPaused = false;
+                    pendingGood = 0;
+                    GoodComboCount = 0;
+                }
+                else
+                {
+                    pendingPerfect = 1;
+                    if (goodComboActive)
+                        goodComboPaused = true;
+                }
+                break;
+
+            case InteractTiming.Good:
+                if (perfectComboActive)
+                {
+                    Debug.Log($"<color=cyan>💥 Good combo continued! Count: {GoodComboCount}</color>");
+                    Debug.Log("<color=red>❌ Perfect combo ended.</color>");
+                    perfectComboActive = false;
+
+                    pendingPerfect = 0;
+                    PerfectComboCount = 0;
+
+                    if (goodComboPaused)
+                    {
+                        goodComboPaused = false;
+                        goodComboActive = true;
+                        GoodComboCount++;
+                        UpdateHighestCombo();
+                    }
+                    else
+                    {
+                        pendingGood = 1;
+                        goodComboActive = false;
+                        GoodComboCount = 0;
+                    }
+                }
+                else if (goodComboActive)
+                {
+                    GoodComboCount++;
+                    UpdateHighestCombo();
+                }
+                else if (pendingGood == 1)
+                {
+                    Debug.Log("<color=cyan>💥 Good combo started! Count: 2</color>");
+                    goodComboActive = true;
+                    GoodComboCount = 2;
+                    pendingGood = 0;
+                }
+                else
+                {
+                    pendingGood = 1;
+                    if (goodComboPaused)
+                    {
+                        goodComboPaused = false;
+                        goodComboActive = true;
+                        GoodComboCount = 1;
+                    }
+                }
+
+                pendingPerfect = 0;
+                break;
+
+            case InteractTiming.Late:
+                ResetCombos();
+                break;
+        }
+    }
+
+    private void ApplyComboScoringFromAttack(Attackable.HitResult result)
     {
         switch (result)
         {
@@ -193,9 +276,7 @@ public class RewardSystem : MonoBehaviour
                 pendingPerfect = 0;
                 break;
 
-            case Attackable.HitResult.Early:
-            case Attackable.HitResult.Late:
-            case Attackable.HitResult.None:
+            case Attackable.HitResult.Miss:
                 ResetCombos();
                 break;
         }
@@ -212,7 +293,7 @@ public class RewardSystem : MonoBehaviour
 
         GoodComboCount = 0;
         PerfectComboCount = 0;
-        
+
         if (goodComboActive) Debug.Log("<color=red>❌ Good combo ended.</color>");
         if (perfectComboActive) Debug.Log("<color=red>❌ Perfect combo ended.</color>");
     }

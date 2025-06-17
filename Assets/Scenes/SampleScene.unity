@@ -1696,7 +1696,7 @@ MonoBehaviour:
   interactBoxPrefab: {fileID: 6625527826709355917, guid: 3e8454d4a445b4a4699b31d7b0694a8a, type: 3}
   spawnRangeX: {x: -10, y: 10}
   spawnRangeY: {x: 3, y: 8}
-  boxShrinkDuration: 6
+  boxShrinkDuration: 20
   boxMinScale: 0.2
 --- !u!1 &2214047481091581442
 GameObject:

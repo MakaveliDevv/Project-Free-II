@@ -34,11 +34,10 @@ namespace Assets.Scripts.Player
 
     public enum InteractTiming
     {
-        Miss,    // landed too early or too late
-        Early,   // a bit before perfect
-        Good,    // between Early/Late and Perfect
-        Perfect, // on the beat
-        Late     // a bit after perfect
+        Miss,   
+        Good,    
+        Perfect, 
+        Late     
     }
 
     [RequireComponent(typeof(Rigidbody))]
