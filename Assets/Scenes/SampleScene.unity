@@ -1090,6 +1090,10 @@ PrefabInstance:
       value: 20
       objectReference: {fileID: 0}
     - target: {fileID: 5921356270601905466, guid: 57e3acd3e58f58c44bc2e599e5235ea7, type: 3}
+      propertyPath: interactionSettings.interactionRadius
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5921356270601905466, guid: 57e3acd3e58f58c44bc2e599e5235ea7, type: 3}
       propertyPath: interactionSettings.groundBoundsCollider
       value: 
       objectReference: {fileID: 1129858585}

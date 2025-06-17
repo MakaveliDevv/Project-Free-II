@@ -66,7 +66,6 @@ namespace Assets.Scripts.Player
 
         public bool interacting = false;
         public bool useBounce = true;
-        public Interactable currentInteractable = null;
 
         void Awake()
         {

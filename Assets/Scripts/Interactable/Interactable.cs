@@ -21,6 +21,9 @@ public class Interactable : MonoBehaviour
     private SphereCollider sphereCol;
     private BoxCollider childBoxCol;
 
+    private float originalRadius;
+    private bool hasCheckedInteraction = false;
+    public bool isMarkedForDestruction = false;
 
     private void Awake()
     {
@@ -28,50 +31,49 @@ public class Interactable : MonoBehaviour
         sphereCol = GetComponent<SphereCollider>();
         childBoxCol = transform.GetChild(1).GetComponent<BoxCollider>();
         childBoxCol.enabled = false;
-        sphereCol.radius = player.interactionSettings.interactionRadius;
 
-
+        originalRadius = player.interactionSettings.interactionRadius;
+        sphereCol.radius = originalRadius;
     }
 
     private void Start()
     { 
         rewardSystem = FindFirstObjectByType<RewardSystem>();
         shrinker = GetComponent<ShrinkOverTime>();
-
-        bool s = shrinker;
-        bool r = rewardSystem;
-        Debug.Log($"shrinker -> {s}, rewardsystem -> {r}");
         rhythmBox = new(rewardSystem, shrinker, perfectThreshold, goodThreshold, earlyLateThreshold);
+    }
+
+    private void Update()
+    {
+        if (player == null) return;
+
+        bool playerIsBusy = player.moveContrl.advancedMovement.moveInt.interactable != null && player.moveContrl.advancedMovement.moveInt.interactable != this;
+
+        if (playerIsBusy && !hasCheckedInteraction)
+        {
+            sphereCol.radius = 0.1f;
+            hasCheckedInteraction = true;
+        }
+        else if (!playerIsBusy && hasCheckedInteraction)
+        {
+            sphereCol.radius = originalRadius;
+            hasCheckedInteraction = false;
+        }
     }
 
     private void OnTriggerEnter(Collider collider)
     {
-        if (!collider.TryGetComponent<Player>(out var p)) return;
-
-        // If the player is already inside another Interactable, skip
-        if (p.currentInteractable != null && p.currentInteractable != this)
-            return;
-
-        // Mark this interactable as the one the player is in
-        p.currentInteractable = this;
         rhythmBox?.OnTriggerEnter(collider);
     }
 
-    private void OnTriggerExit(Collider collider)
-    { 
-        if (collider.TryGetComponent<Player>(out var p))
-        {
-            // Only clear if *this* is the current interactable
-            if (p.currentInteractable == this)
-                p.currentInteractable = null;
-        }
-
-        rhythmBox?.OnTriggerExit(collider);
+    private void OnTriggerStay(Collider collider)
+    {
+        rhythmBox?.OnTriggerStay(collider);
     }
 
-    private void OnTriggerStay(Collider collider)
-    { 
-        rhythmBox?.OnTriggerStay(collider);
+    private void OnTriggerExit(Collider collider)
+    {
+        rhythmBox?.OnTriggerExit(collider);   
     }
 
     public void UpdateHighlight(Interactable interactable)

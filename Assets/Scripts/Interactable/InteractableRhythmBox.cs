@@ -137,9 +137,12 @@ public class InteractableRhythmBox
     public void OnTriggerEnter(Collider collider)
     {
         if (hasLanded || collider.CompareTag("Player") == false) return;
+        if (!collider.TryGetComponent<Player>(out var p)) return;
 
-        bool p = collider.TryGetComponent<Player>(out var _p) && _p.playerSettings.movementState == MovementState.Interacting;
-        if (!p) return;
+        var owner = shrinker.GetComponent<Interactable>();
+        if (p.moveContrl.advancedMovement.moveInt.interactable != owner) return;
+
+        if (p.playerSettings.movementState != MovementState.Interacting) return;
 
         hasLanded = true;
         isPlayerOnBox = true;
@@ -163,6 +166,26 @@ public class InteractableRhythmBox
         rewardSystem.ApplyScore(timing);
     }
 
+    public void OnTriggerStay(Collider collider)
+    {
+        if (hasLanded || collider.CompareTag("Player") == false || !collider.TryGetComponent<Player>(out var p)) return;
+
+        var assignedBox = p.moveContrl.advancedMovement.moveInt.interactable;
+        var thisBox = shrinker.GetComponent<Interactable>();
+
+        // ✅ Only stop shrinking if the player is on THIS specific box and not just nearby
+        bool isSameBox = assignedBox == thisBox;
+        bool isInteracting = p.playerSettings.movementState == MovementState.Interacting;
+
+        if (isInteracting && isSameBox)
+        {
+            shrinker.isShrinking = false;
+        }
+        else
+        {
+            shrinker.isShrinking = true;
+        }
+    }
 
     public void OnTriggerExit(Collider other)
     {
@@ -171,15 +194,4 @@ public class InteractableRhythmBox
         shrinker.isShrinking = true;
     }
 
-    public void OnTriggerStay(Collider collider)
-    {
-        if (hasLanded || collider.CompareTag("Player") == false) return;
-
-        if (!collider.TryGetComponent<Player>(out var _p)) return;
-
-        if (_p.playerSettings.movementState == MovementState.Interacting)
-        {
-            shrinker.isShrinking = false;
-        }
-    }
 }
