@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4970832376575310420}
   m_Layer: 0
-  m_Name: Target
+  m_Name: Attackable_VFXModel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

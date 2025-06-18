@@ -216,7 +216,7 @@ GameObject:
   - component: {fileID: 3455882249445717002}
   - component: {fileID: 4431383511368942741}
   m_Layer: 0
-  m_Name: AttackableBox
+  m_Name: AttackableBox (outdated)
   m_TagString: Attackable
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
