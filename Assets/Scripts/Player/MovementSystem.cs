@@ -74,6 +74,7 @@ namespace Assets.Scripts.Player
         private bool isLandingBuffered = false;
         public bool hasBounced = false;
         private bool buttonPressedLongEnough = false;
+        private Vector3 finalHoverLiftTarget;
 
         // ─ Timers & Counters
         // private float stateTimer = 0f;
@@ -98,7 +99,7 @@ namespace Assets.Scripts.Player
         private string queuedFetchedAction = "";
         private Vector2 queuedSnappedDir = Vector2.zero;
         private bool queuedActionPending = false;
-        private Attackable targetAttackable = null;
+        public Attackable targetAttackable = null;
 
         private Vector3 ConvertToVector(GravityDirection dir)
         {
@@ -319,16 +320,18 @@ namespace Assets.Scripts.Player
                 CheckArrivalAtTarget();
             }
 
-            if (!settings.useAutoHover && (playerSettings.movementState == MovementState.Jumping || playerSettings.movementState == MovementState.WallJump || playerSettings.movementState == MovementState.AirDashing))
-            {
-                if (hasReachedTarget)
-                {
-                    rb.linearDamping = 0;
-                    player.StartCoroutine(FallDelay());
-                    playerSettings.movementState = MovementState.Descending;
-                }
-            }
-            else if (playerSettings.movementState == MovementState.Dashing)
+            // if (!settings.useAutoHover && (playerSettings.movementState == MovementState.Jumping || playerSettings.movementState == MovementState.WallJump || playerSettings.movementState == MovementState.AirDashing))
+            // {
+            //     if (hasReachedTarget)
+            //     {
+            //         Debug.Log("Fall Delay start...");
+            //         rb.linearDamping = 0;
+            //         player.StartCoroutine(FallDelay());
+            //         playerSettings.movementState = MovementState.Descending;
+            //     }
+            // }
+            // else
+            if (playerSettings.movementState == MovementState.Dashing)
             {
                 float traveled = Vector3.Distance(rb.position, dashStartPos);
 
@@ -516,18 +519,25 @@ namespace Assets.Scripts.Player
                 other.CompareTag("Attackable") &&
                 other.TryGetComponent(out Attackable atk))
             {
-                targetAttackable = atk;
+                if (targetAttackable == null && !hasReachedTarget)
+                { 
+                    targetAttackable = atk;
 
-                // Move player in front of the box
-                Vector3 forward = atk.transform.forward;
-                Vector3 offset = forward * 1.25f; // Adjust the distance as needed
-                predictedTargetPoint = atk.transform.position - offset;
+                    Vector3 forward2D = new Vector3(atk.transform.forward.x, atk.transform.forward.y, 0f).normalized;
+                    Vector3 offset = forward2D * player.playerSettings.offset;
 
-                hasReachedTarget = false; // prevent early hover
-                Debug.Log("➡ Triggered combat alignment movement");
+                    predictedTargetPoint = new Vector3(
+                        atk.transform.position.x - offset.x,
+                        atk.transform.position.y - offset.y,
+                        player.rb.position.z 
+                    );
+
+
+                    hasReachedTarget = false;
+                    Debug.Log("➡ Triggered combat alignment movement");
+                }       
             }
         }
-
         #endregion
 
         // ─────────────────────────────────────────────────────────────────────────
@@ -814,13 +824,38 @@ namespace Assets.Scripts.Player
         /// </summary>
         private void CheckArrivalAtTarget()
         {
-            if (Vector3.Distance(rb.position, predictedTargetPoint) < settings.arrivalRadius
-            && !isDropping && player.mode != Mode.AdvancedMovement)
+            if (HasReachedTargetPoint())
             {
-                Debug.Log($"hasReachedTarget = {hasReachedTarget}");
+                rb.position = predictedTargetPoint;
+                rb.linearVelocity = Vector3.zero;
+
                 hasReachedTarget = true;
+                Debug.Log("✔ Target point reached.");
             }
         }
+
+        public bool HasReachedTargetPoint()
+        {
+            if (hasWallBounce) return false;
+            if (!isInAir || isDropping || fastFalling) return false;
+
+            // Cancel if too close to a wall
+            if (IsWallAhead() || IsTargetNearWall())
+                return false;
+
+            Vector3 toTarget = predictedTargetPoint - rb.position;
+            float forwardDot = Vector3.Dot(rb.linearVelocity.normalized, toTarget.normalized);
+            float distanceToTarget = toTarget.magnitude;
+            float hoverTriggerRadius = settings.hoverActivationRadius;
+            float hoverForgivenessDistance = 2.5f;
+
+            bool isCloseEnough = distanceToTarget <= hoverTriggerRadius;
+            bool hasPassedTarget = forwardDot < 0f;
+            bool isInForgivenessZone = hasPassedTarget && distanceToTarget <= hoverForgivenessDistance;
+
+            return isCloseEnough || isInForgivenessZone;
+        }
+
 
         private void SnapToGround(Vector3 contactPoint)
         {
@@ -867,10 +902,24 @@ namespace Assets.Scripts.Player
             Vector3 toTarget = predictedTargetPoint - rb.position;
             float remaining = toTarget.magnitude;
 
+            // if (remaining <= settings.arrivalRadius && !isDropping)
+            // {
+            //     rb.position = predictedTargetPoint;
+            //     rb.linearVelocity = Vector3.zero;
+            //     return;
+            // }
+
             if (remaining <= settings.arrivalRadius && !isDropping)
             {
                 rb.position = predictedTargetPoint;
                 rb.linearVelocity = Vector3.zero;
+
+                if (!hasReachedTarget)
+                {
+                    hasReachedTarget = true;
+                    Debug.Log("✔ Target snapped.");
+                }
+
                 return;
             }
 
@@ -938,62 +987,36 @@ namespace Assets.Scripts.Player
         /// </summary>
         private bool TryStartHoverEffect()
         {
-            // Block hover if recently bounced
-            if (hasWallBounce) return false;
-
-            // Only attempt hover in correct states
-            if (!isInAir || 
-                playerSettings.movementState == MovementState.Hovering ||
-                hasTriggeredHover || 
-                isDropping || 
-                fastFalling)
+            if (hasWallBounce || !isInAir || isDropping || fastFalling || 
+                playerSettings.movementState == MovementState.Hovering || hasTriggeredHover)
                 return false;
 
-         
-            if (targetAttackable != null)
-            {
-                if (Vector3.Distance(rb.position, predictedTargetPoint) > settings.arrivalRadius)
-                    return false;
+            // if (targetAttackable != null)
+            // {
+            //     if (!hasReachedTarget) return false;
 
-                Debug.Log("✅ Combat alignment complete – hover is now allowed");
-                targetAttackable = null; 
-            }
+            //     Debug.Log("✅ Combat alignment complete – hover is now allowed");
+            //     targetAttackable = null;
+            // }
 
-            // Cancel hover if too close to walls
-            if (IsWallAhead() || IsTargetNearWall())
+            if (!HasReachedTargetPoint())
                 return false;
 
-            // Check if we're in a position to hover
-            Vector3 toTarget = predictedTargetPoint - rb.position;
-            float forwardDot = Vector3.Dot(rb.linearVelocity.normalized, toTarget.normalized);
-            float distanceToTarget = toTarget.magnitude;
-            float hoverTriggerRadius = settings.hoverActivationRadius;
-            float hoverForgivenessDistance = 2.5f;
-
-            bool isCloseEnough = distanceToTarget <= hoverTriggerRadius;
-            bool hasPassedTarget = forwardDot < 0f;
-            bool isInForgivenessZone = hasPassedTarget && distanceToTarget <= hoverForgivenessDistance;
-
-            if (!(isCloseEnough || isInForgivenessZone))
-                return false;
-
-            // ⬇ Initiate hover
             Hover();
 
-            if (Gamepad.current.buttonWest.IsPressed() && !settings.useAutoHover)
-            {
-                Hover();
-                return true;
-            }
-            else if (settings.useAutoHover)
-            {
-                Hover();
-                return true;
-            }
+            // if (Gamepad.current.buttonWest.IsPressed() && !settings.useAutoHover)
+            // {
+            //     Hover();
+            //     return true;
+            // }
+            // else if (settings.useAutoHover)
+            // {
+            //     Hover();
+            //     return true;
+            // }
 
             return false;
         }
-
 
         private void Hover()
         {
@@ -1005,6 +1028,8 @@ namespace Assets.Scripts.Player
             originalHoverPosition = rb.position;
             hasTriggeredHover = true;
 
+            finalHoverLiftTarget = originalHoverPosition + Vector3.up * settings.hoverLiftHeight;
+
             player.StartCoroutine(SmoothHoverTransition());
         }
 
@@ -1014,15 +1039,21 @@ namespace Assets.Scripts.Player
         /// </summary>
         private void WobbleEffect()
         {
-            if (settings.useHoverWobble && hoverTimer < (settings.hoverDuration - settings.hoverStartDelay)
-            && hasReachedTarget)
+            if (hoverTimer < (settings.hoverDuration - settings.hoverStartDelay) && hasReachedTarget)
             {
-                rb.linearDamping = 0f;
                 hoverWobbleTimer += Time.fixedDeltaTime;
-                float wobbleFadeIn = Mathf.Clamp01(hoverWobbleTimer / settings.wobbleFadeInFactor);
-                float wobbleOffset = Mathf.Sin(hoverWobbleTimer * settings.hoverWobbleSpeed) * settings.hoverWobbleHeight * wobbleFadeIn;
-                Vector3 velChange = new(0f, wobbleOffset / Time.fixedDeltaTime, 0f);
-                rb.AddForce(velChange, ForceMode.Acceleration);
+
+                float t = Mathf.Clamp01(hoverWobbleTimer / settings.hoverLiftFadeIn);
+                float eased = Mathf.SmoothStep(0, 1, t);
+
+                Vector3 currentPos = rb.position;
+
+                // Final Y value is fixed; interpolation only affects speed
+                float targetY = Mathf.Lerp(currentPos.y, finalHoverLiftTarget.y, eased);
+                float desiredY = Mathf.Max(currentPos.y, targetY); 
+
+                Vector3 targetPos = new(currentPos.x, desiredY, currentPos.z);
+                rb.position = Vector3.MoveTowards(currentPos, targetPos, settings.hoverLiftSpeed * Time.fixedDeltaTime);
             }
 
             UpdateHoverTimer();

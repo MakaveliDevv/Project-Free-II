@@ -133,7 +133,6 @@ namespace Assets.Scripts.Player
                 Debug.Log($"[Attackable] ❌ FAILURE: {startLabel} → {snapped} (expected {opposite})");
 
             previousEndLabel = snapped;
-            // LastDirectionKey = key;
 
             Reset();
             OnSwipePerformed?.Invoke(key, pass);
@@ -195,12 +194,9 @@ namespace Assets.Scripts.Player
         {
             if (collider.CompareTag("Attackable") && !inRangeForCombat)
             {
-                Debug.Log("In range for combat");
                 inRangeForCombat = true;
                 if (collider.TryGetComponent<Attackable>(out var attackable))
                     this.attackable = attackable;
-
-                Debug.Log("Swag");
             }
         }
 
@@ -208,7 +204,6 @@ namespace Assets.Scripts.Player
         {
             if (collider.CompareTag("Attackable"))
             {
-                Debug.Log("Out of range for combat");
                 inRangeForCombat = false;
                 this.attackable = null;
             }

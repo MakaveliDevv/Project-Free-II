@@ -20,6 +20,7 @@ public class Attackable : MonoBehaviour
     public HitRange goodRange = new() { max = 0.7f, min = 0.4f };
     public HitRange lateRange = new() { max = 0.4f, min = 0.2f };
 
+    private Collider childTriggerCollider;
 
     // === Private Variables ===
     private ShrinkOverTime shrinker;
@@ -40,6 +41,10 @@ public class Attackable : MonoBehaviour
 
     private bool successTriggered = false;
 
+    private bool hasReachedTarget = false;
+    private bool hasExitedAfterTarget = false;
+
+
     void Awake()
     {
         if (Application.isPlaying)
@@ -53,18 +58,36 @@ public class Attackable : MonoBehaviour
     void Start()
     {
         shrinker = GetComponent<ShrinkOverTime>();
+        childTriggerCollider = GetComponent<Collider>();
     }
 
     void Update()
     {
         if (successTriggered || player == null || shrinker == null) return;
 
+        var target = Player.moveContrl.movementSystem.targetAttackable;
+
+        if (!hasReachedTarget && target == this && Player.moveContrl.movementSystem.HasReachedTargetPoint())
+        {
+            hasReachedTarget = true;
+            Debug.Log("✅ Target point reached");
+        }
+
+        if (hasReachedTarget && hasExitedAfterTarget)
+        {
+            Debug.Log("💥 Destroying box after exit");
+            Destroy(gameObject);
+            hasExitedAfterTarget = false;
+        }
+
         if (Player.combatContrl.attacked && Player.combatContrl.success)
         {
+            bool swag = target == this;
+            Debug.Log($"same attackable -> {swag}");
+            if (target != this) return;
+            
             float ratio = shrinker.GetCurrentSizeRatio();
             LatestHitResult = DetermineHitResult(ratio);
-
-            Debug.Log($"✅ {LatestHitResult} hit at size ratio {ratio:F2}");
             rewardSystem.ApplyScore(LatestHitResult);
 
             successTriggered = true;
@@ -72,6 +95,19 @@ public class Attackable : MonoBehaviour
             Player.combatContrl.success = false;
 
             Destroy(gameObject, 0.2f);
+        }
+    }
+
+    private void OnTriggerStay(Collider other)
+    {
+        if (other.CompareTag("Player"))
+        {
+            bool isInside = childTriggerCollider.bounds.Contains(other.transform.position);
+
+            if (!isInside && hasReachedTarget && !hasExitedAfterTarget)
+            {
+                hasExitedAfterTarget = true;
+            }
         }
     }
 
@@ -86,19 +122,5 @@ public class Attackable : MonoBehaviour
         else
             return HitResult.Miss;
     }
-
-    // private HitResult DetermineHitResult(float ratio)
-    // {
-    //     // Divide the range (1 → minScale) into 3 equal segments
-    //     float perfectThreshold = Mathf.Lerp(1f, shrinker.minScale, 1f / 3f);
-    //     float goodThreshold = Mathf.Lerp(1f, shrinker.minScale, 2f / 3f);
-
-    //     if (ratio >= goodThreshold)
-    //         return HitResult.Perfect; // Box is still large
-    //     else if (ratio >= perfectThreshold)
-    //         return HitResult.Good;    // Mid-size
-    //     else
-    //         return HitResult.Late;    // Box is small
-    // }
 }
 

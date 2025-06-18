@@ -29,15 +29,24 @@ public class RhythmSystem : MonoBehaviour
     [SerializeField] private GameObject interactBoxPrefab;
 
     [Header("Spawn Range (XY)")]
-    [SerializeField] private Vector2 spawnRangeX = new Vector2(-5f, 5f);
-    [SerializeField] private Vector2 spawnRangeY = new Vector2(-3f, 3f);
+    [SerializeField] private Vector2 spawnRangeX = new (-5f, 5f);
+    [SerializeField] private Vector2 spawnRangeY = new (-3f, 3f);
 
     [Header("Shrink Settings")]
     [SerializeField] private float boxShrinkDuration = 2f;
     [SerializeField] private float boxMinScale = 0.2f;
 
+    [SerializeField] private float spawnOffsetZ = 1f;
+
+    private GameObject player;
+
     private double songStartDSP;
     public static double SongStartDSP { get; private set; }
+
+    void Awake()
+    {
+        player = GameObject.FindGameObjectWithTag("Player");
+    }
 
     void Start()
     {
@@ -66,14 +75,19 @@ public class RhythmSystem : MonoBehaviour
         Vector3 spawnPos = new(
             UnityEngine.Random.Range(spawnRangeX.x, spawnRangeX.y),
             UnityEngine.Random.Range(spawnRangeY.x, spawnRangeY.y),
-            0f);
+            player.transform.position.z);
+        
+        Vector3 spawnPosAttackable = new(
+            UnityEngine.Random.Range(spawnRangeX.x, spawnRangeX.y),
+            UnityEngine.Random.Range(spawnRangeY.x, spawnRangeY.y),
+            player.transform.position.z + spawnOffsetZ);
 
         GameObject box = null;
 
         switch (beat.type)
         {
             case BeatType.Attack:
-                box = Instantiate(attackBoxPrefab, spawnPos, Quaternion.identity);
+                box = Instantiate(attackBoxPrefab, spawnPosAttackable, Quaternion.identity);
                 var attack = box.GetComponent<Attackable>();
                 if (attack != null)
                     attack.attackDirection = beat.attackDirection;

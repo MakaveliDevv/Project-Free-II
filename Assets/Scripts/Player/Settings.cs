@@ -24,6 +24,7 @@ namespace Assets.Scripts.Player
 
         /*[HideInInspector]*/
         public bool useCardinalLabels = true;
+        public float offset = 2f;
     }
 
     [System.Serializable]
@@ -69,6 +70,8 @@ namespace Assets.Scripts.Player
 
         [Tooltip("Default linear damping applied to the Rigidbody when no jump or dash is active")]
         public float defaultDamping = 0f;
+
+        public float alignmentApproachSpeed = 1f;
 
         // ─ Force Modes
         [Header("Force Modes")]
@@ -142,17 +145,17 @@ namespace Assets.Scripts.Player
         [Tooltip("Enable vertical wobble effect during hover")]
         public bool useHoverWobble = true;
 
-        [Tooltip("Speed of vertical wobble when hovering; only used if useHoverWobble is true")]
-        public float hoverWobbleSpeed = 2f;
+        [Tooltip("Height amplitude of vertical lift during hover; only used if useHoverWobble is true")]
+        public float hoverLiftHeight = 1f;
 
-        [Tooltip("Height amplitude of vertical wobble during hover; only used if useHoverWobble is true")]
-        public float hoverWobbleHeight = 0.2f;
+        [Tooltip("Speed of vertical lift when hovering; only used if useHoverWobble is true")]
+        public float hoverLiftSpeed = 2f;
+
+        [Tooltip("Fade-in factor for lift effect at hover start; between 0 (no fade) and 1 (full fade)")]
+        public float hoverLiftFadeIn = 0.5f;
 
         [Tooltip("Delay before allowing hover")]
         public float hoverStartDelay = 0.1f;
-
-        [Tooltip("Fade-in factor for wobble effect at hover start; between 0 (no fade) and 1 (full fade)")]
-        public float wobbleFadeInFactor = 0.25f;
 
         [Tooltip("Radius around calculated flight target in which hover activates; ensures hover only near peak")]
         public float hoverActivationRadius = 1.5f;
