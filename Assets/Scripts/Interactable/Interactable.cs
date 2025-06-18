@@ -73,17 +73,6 @@ public class Interactable : MonoBehaviour
         shrinker.isShrinking = false;
 
         float ratio = shrinker.GetCurrentSizeRatio();
-
-        // float perfectThreshold = Mathf.Lerp(1f, shrinker.minScale, 1f / 3f);
-        // float goodThreshold = Mathf.Lerp(1f, shrinker.minScale, 2f / 3f);
-        // InteractTiming timing;
-        // if (ratio >= goodThreshold)
-        //     timing = InteractTiming.Perfect;
-        // else if (ratio >= perfectThreshold)
-        //     timing = InteractTiming.Good;
-        // else
-        //     timing = InteractTiming.Late;
-
         var timing = DetermineLandResult(ratio);
         rewardSystem.ApplyScore(timing);
 

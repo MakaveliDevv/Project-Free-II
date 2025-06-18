@@ -263,14 +263,11 @@ namespace Assets.Scripts.Player
                 {
                     if (hit.collider.CompareTag("Interactable"))
                     {
-                        // Try get the actual surface collider from the second child
-                        var realSurface = hit.collider.transform.GetChild(1).GetComponent<Collider>();
-                        if (realSurface != null)
+                        if (hit.collider.transform.GetChild(1).TryGetComponent<Collider>(out var realSurface))
                         {
                             Physics.IgnoreCollision(player.col, realSurface, true);
                             Debug.Log("Ignoring collision to allow drop-through");
 
-                            // Optionally re-enable it after a short delay
                             player.StartCoroutine(ReenableCollisionAfterDelay(realSurface, 0.5f));
                         }
                     }
@@ -294,7 +291,7 @@ namespace Assets.Scripts.Player
                     {
                         actionToQueue = fetchedAction;
                     }
-                    else // mid‐air queue: infer Jump vs Dash from the stick
+                    else // mid‐air queue: Jump vs Dash from the stick
                     {
                         var label = GetClosestDirectionLabel(snappedDir);
                         if (IsDashDirectionAllowed(label)) actionToQueue = "Dash";
@@ -366,12 +363,10 @@ namespace Assets.Scripts.Player
 
                 if (playerSettings.movementState == MovementState.Charging && queuedActionPending)
                 {
-                    // restore what we queued
                     fetchedAction = queuedFetchedAction;
                     snappedDir = queuedSnappedDir;
                     allowedToMove = true;
 
-                    // Advanced‐Movement air‐dash still fires immediately on release
                     if (player.mode == Mode.AdvancedMovement && fetchedAction == "AirDash")
                     {
                         allowedToMove = true; 
@@ -381,14 +376,12 @@ namespace Assets.Scripts.Player
                         queuedActionPending = false;
                         ResetPhysicsSettings(true, true);
                     }
-                    // ground Jump/Dash only if landed
                     else if (!isInAir)
                     {
                         PerformMovementAction();
                         hasBurstDropped = false;
                         queuedActionPending = false;
                     }
-                    // otherwise stay in Charging and wait for collision
                 }
                 else
                 {

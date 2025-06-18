@@ -31,7 +31,6 @@ public class ScoreDisplay : MonoBehaviour
     [SerializeField] private Color perfectComboColor = Color.green;
     [SerializeField] private Color warningPulseColor = Color.red;
 
-
     void Start()
     {
         rewardSystem = FindFirstObjectByType<RewardSystem>();
@@ -59,7 +58,20 @@ public class ScoreDisplay : MonoBehaviour
 
     public void UpdateUI(Attackable.HitResult hitResult)
     {
-        // Update Score
+        UpdateScore();
+        UpdateCombo();
+        UpdateLastHit(hitResult.ToString(), hitResult);
+    }
+
+    public void UpdateUI(InteractTiming timing)
+    {
+        UpdateScore();
+        UpdateCombo();
+        UpdateLastHit(timing.ToString(), timing);
+    }
+
+    private void UpdateScore()
+    {
         int currentScore = rewardSystem.TotalScore;
         if (currentScore > lastScore)
         {
@@ -67,8 +79,10 @@ public class ScoreDisplay : MonoBehaviour
             StartCoroutine(AnimateTextPunch(scoreValueText));
             lastScore = currentScore;
         }
+    }
 
-        // Update Combo Display
+    private void UpdateCombo()
+    {
         int currentCombo = Mathf.Max(rewardSystem.GoodComboCount, rewardSystem.PerfectComboCount);
         bool isPerfect = rewardSystem.PerfectComboCount > 0;
 
@@ -79,10 +93,7 @@ public class ScoreDisplay : MonoBehaviour
             comboLabelText.color = comboValueText.color;
 
             if (currentCombo > Mathf.Max(lastGoodCombo, lastPerfectCombo))
-            {
-                // StartCoroutine(AnimateTextPunch(comboLabelText));
                 StartCoroutine(AnimateTextPunch(comboValueText));
-            }
         }
         else
         {
@@ -93,15 +104,54 @@ public class ScoreDisplay : MonoBehaviour
 
         lastGoodCombo = rewardSystem.GoodComboCount;
         lastPerfectCombo = rewardSystem.PerfectComboCount;
+    }
 
-        // Update Last Hit
+    private void UpdateLastHit(string label, object resultType)
+    {
         if (!hasHitOccurred)
         {
             lastHitText.alpha = 1;
             hasHitOccurred = true;
         }
 
-        lastHitText.text = hitResult.ToString();
+        lastHitText.text = label;
+
+        if (resultType is Attackable.HitResult hit)
+        {
+            switch (hit)
+            {
+                case Attackable.HitResult.Perfect:
+                    lastHitText.color = perfectComboColor;
+                    break;
+                case Attackable.HitResult.Good:
+                    lastHitText.color = goodComboColor;
+                    break;
+                case Attackable.HitResult.Late:
+                    lastHitText.color = warningPulseColor;
+                    break;
+                default:
+                    lastHitText.color = defaultComboColor;
+                    break;
+            }
+        }
+        else if (resultType is InteractTiming timing)
+        {
+            switch (timing)
+            {
+                case InteractTiming.Perfect:
+                    lastHitText.color = perfectComboColor;
+                    break;
+                case InteractTiming.Good:
+                    lastHitText.color = goodComboColor;
+                    break;
+                case InteractTiming.Late:
+                    lastHitText.color = warningPulseColor;
+                    break;
+                default:
+                    lastHitText.color = defaultComboColor;
+                    break;
+            }
+        }
     }
 
     private IEnumerator AnimateTextPunch(TMP_Text text)
@@ -122,43 +172,6 @@ public class ScoreDisplay : MonoBehaviour
 
         text.transform.localScale = originalScale;
         text.color = originalColor;
-    }
-
-    public void UpdateUI(InteractTiming timing)
-    {
-        // ── Update Score ──
-        int currentScore = rewardSystem.TotalScore;  // from your existing RewardSystem reference
-        if (currentScore > lastScore)
-        {
-            scoreValueText.text = currentScore.ToString();
-            StartCoroutine(AnimateTextPunch(scoreValueText));
-            lastScore = currentScore;
-        }
-
-        // ── Display Last Interaction Result ──
-        if (!hasHitOccurred)
-        {
-            lastHitText.alpha = 1;    // fade in on first interact
-            hasHitOccurred = true;
-        }
-        lastHitText.text = timing.ToString();
-
-        // ── Optional: color-code the result ──
-        switch (timing)
-        {
-            case InteractTiming.Perfect:
-                lastHitText.color = perfectComboColor;
-                break;
-            case InteractTiming.Good:
-                lastHitText.color = goodComboColor;
-                break;
-            case InteractTiming.Late:
-                lastHitText.color = warningPulseColor;
-                break;
-            default:
-                lastHitText.color = defaultComboColor;
-                break;
-        }
     }
 
     public void ResetUI()
