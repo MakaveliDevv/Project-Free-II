@@ -57,6 +57,7 @@ namespace Assets.Scripts.Player
 
         public void OnTriggerEnter(Collider collider)
         { 
+            movementSystem?.OnTriggerEnter(collider);
             advancedMovement?.OnTriggerEnter(collider);
         }
 

@@ -98,6 +98,7 @@ namespace Assets.Scripts.Player
         private string queuedFetchedAction = "";
         private Vector2 queuedSnappedDir = Vector2.zero;
         private bool queuedActionPending = false;
+        private Attackable targetAttackable = null;
 
         private Vector3 ConvertToVector(GravityDirection dir)
         {
@@ -507,6 +508,26 @@ namespace Assets.Scripts.Player
 
             lastContactTime = Time.time;
         }
+
+        public void OnTriggerEnter(Collider other)
+        {
+            if (player.mode == Mode.Combat &&
+                playerSettings.movementState == MovementState.Jumping &&
+                other.CompareTag("Attackable") &&
+                other.TryGetComponent(out Attackable atk))
+            {
+                targetAttackable = atk;
+
+                // Move player in front of the box
+                Vector3 forward = atk.transform.forward;
+                Vector3 offset = forward * 1.25f; // Adjust the distance as needed
+                predictedTargetPoint = atk.transform.position - offset;
+
+                hasReachedTarget = false; // prevent early hover
+                Debug.Log("➡ Triggered combat alignment movement");
+            }
+        }
+
         #endregion
 
         // ─────────────────────────────────────────────────────────────────────────
@@ -796,8 +817,8 @@ namespace Assets.Scripts.Player
             if (Vector3.Distance(rb.position, predictedTargetPoint) < settings.arrivalRadius
             && !isDropping && player.mode != Mode.AdvancedMovement)
             {
-                hasReachedTarget = true;
                 Debug.Log($"hasReachedTarget = {hasReachedTarget}");
+                hasReachedTarget = true;
             }
         }
 
@@ -917,15 +938,32 @@ namespace Assets.Scripts.Player
         /// </summary>
         private bool TryStartHoverEffect()
         {
-            // if(player.mode == Mode.AdvancedMovement && isInAir) return false;
-            if (hasWallBounce) return false; // NEW: prevent hover right after a bounce
+            // Block hover if recently bounced
+            if (hasWallBounce) return false;
 
-            if (!isInAir || playerSettings.movementState == MovementState.Hovering ||
-                hasTriggeredHover || isDropping || fastFalling) { return false; }
+            // Only attempt hover in correct states
+            if (!isInAir || 
+                playerSettings.movementState == MovementState.Hovering ||
+                hasTriggeredHover || 
+                isDropping || 
+                fastFalling)
+                return false;
 
+         
+            if (targetAttackable != null)
+            {
+                if (Vector3.Distance(rb.position, predictedTargetPoint) > settings.arrivalRadius)
+                    return false;
+
+                Debug.Log("✅ Combat alignment complete – hover is now allowed");
+                targetAttackable = null; 
+            }
+
+            // Cancel hover if too close to walls
             if (IsWallAhead() || IsTargetNearWall())
                 return false;
 
+            // Check if we're in a position to hover
             Vector3 toTarget = predictedTargetPoint - rb.position;
             float forwardDot = Vector3.Dot(rb.linearVelocity.normalized, toTarget.normalized);
             float distanceToTarget = toTarget.magnitude;
@@ -936,8 +974,10 @@ namespace Assets.Scripts.Player
             bool hasPassedTarget = forwardDot < 0f;
             bool isInForgivenessZone = hasPassedTarget && distanceToTarget <= hoverForgivenessDistance;
 
-            if (!(isCloseEnough || isInForgivenessZone)) { return false; }
+            if (!(isCloseEnough || isInForgivenessZone))
+                return false;
 
+            // ⬇ Initiate hover
             Hover();
 
             if (Gamepad.current.buttonWest.IsPressed() && !settings.useAutoHover)
@@ -953,6 +993,7 @@ namespace Assets.Scripts.Player
 
             return false;
         }
+
 
         private void Hover()
         {

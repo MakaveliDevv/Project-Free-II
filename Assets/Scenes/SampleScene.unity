@@ -1599,10 +1599,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   musicSource: {fileID: 8743958598424274974}
   beats:
-  - type: 1
+  - type: 0
     time: 1
     attackDirection: 0
-  - type: 1
+  - type: 0
     time: 3
     attackDirection: 0
   - type: 1
