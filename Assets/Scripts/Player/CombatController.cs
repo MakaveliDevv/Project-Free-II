@@ -138,25 +138,105 @@ namespace Assets.Scripts.Player
             OnSwipePerformed?.Invoke(key, pass);
         }
 
+        // private IEnumerator Processing(string key, bool pass)
+        // {
+        //     if (attackable == null)
+        //     {
+        //         Debug.LogWarning("⚠️ Attackable reference lost before processing.");
+        //         yield break;
+        //     }
+
+        //     attacked = true;
+
+        //     if (attackable.directions.TryGetValue(key, out var performed)
+        //         && performed == attackable.attackDirection && pass)
+        //     {
+        //         Debug.Log($"[Attackable] ▶️ SUCCESS {key} → {performed}");
+        //         success = true;
+        //     }
+        //     else
+        //     {
+        //         Debug.Log($"[Attackable] ▶️ ❌ FAILURE {key} → mapped " +
+        //                 $"{(attackable.directions.TryGetValue(key, out performed) ? performed : (AttackDirection)(-1))}, " +
+        //                 $"expected {attackable.attackDirection}");
+        //     }
+        // }
+
+        // private IEnumerator Processing(string key, bool pass)
+        // {
+        //     Debug.Log("🧪 Entered Processing()");
+
+        //     var target = attackable; 
+
+        //     if (target == null)
+        //     {
+        //         Debug.LogWarning("⚠️ Local cached attackable is null.");
+        //         yield break;
+        //     }
+
+        //     attacked = true;
+
+        //     if (target.directions.TryGetValue(key, out var performed)
+        //         && performed == target.attackDirection && pass)
+        //     {
+        //         Debug.Log($"[Attackable] ▶️ SUCCESS {key} → {performed}");
+        //         success = true;
+        //     }
+        //     else
+        //     {
+        //         Debug.Log($"[Attackable] ▶️ ❌ FAILURE {key} → mapped " +
+        //                 $"{(target.directions.TryGetValue(key, out performed) ? performed : (AttackDirection)(-1))}, " +
+        //                 $"expected {target.attackDirection}");
+        //     }
+
+        //     Debug.Log("🧪 Exiting Processing()");
+        // }
+
         private IEnumerator Processing(string key, bool pass)
         {
-            Debug.Log("Processing...");
-            if (attackable == null) yield break;
+            Debug.Log("🧪 Entered Processing()");
+
+            var target = attackable;
+            if (target == null)
+            {
+                Debug.LogWarning("⚠️ Local cached attackable is null.");
+                yield break;
+            }
 
             attacked = true;
 
-            if (attackable.directions.TryGetValue(key, out var performed)
-                && performed == attackable.attackDirection && pass)
+            target.directions.TryGetValue(key, out var performed);
+            if (performed == target.attackDirection && pass)
             {
                 Debug.Log($"[Attackable] ▶️ SUCCESS {key} → {performed}");
                 success = true;
             }
             else
             {
-                Debug.Log($"[Attackable] ▶️ ❌ FAILURE {key} → mapped " +
-                        $"{(attackable.directions.TryGetValue(key, out performed) ? performed : (AttackDirection)(-1))}, " +
-                        $"expected {attackable.attackDirection}");
+                Debug.Log($"[Attackable] ▶️ ❌ FAILURE {key} → mapped {performed}, expected {target.attackDirection}");
+                success = false;
             }
+
+            // if (target.directions.TryGetValue(key, out var performed)
+            //     && performed == target.attackDirection && pass)
+            // {
+            //     Debug.Log($"[Attackable] ▶️ SUCCESS {key} → {performed}");
+            //     success = true;
+            // }
+            // else
+            // {
+            //     Debug.Log($"[Attackable] ▶️ ❌ FAILURE {key} → mapped " +
+            //             $"{(target.directions.TryGetValue(key, out performed) ? performed : (AttackDirection)(-1))}, " +
+            //             $"expected {target.attackDirection}");
+            //     success = false;
+            // }
+
+            yield return new WaitForSeconds(0.05f);
+
+            attacked = false;
+            success = false;
+
+            Debug.Log("🧪 Exiting Processing()");
         }
 
         private void Reset()
@@ -192,7 +272,7 @@ namespace Assets.Scripts.Player
 
         public void OnTriggerEnter(Collider collider)
         {
-            if (collider.CompareTag("Attackable") && !inRangeForCombat)
+            if (collider.CompareTag("Attackable"))
             {
                 inRangeForCombat = true;
                 if (collider.TryGetComponent<Attackable>(out var attackable))
@@ -200,13 +280,39 @@ namespace Assets.Scripts.Player
             }
         }
 
+        // public void OnTriggerExit(Collider collider)
+        // {
+        //     if (collider.CompareTag("Attackable"))
+        //     {
+        //         inRangeForCombat = false;
+        //         this.attackable = null;
+        //     }
+        // }
+
         public void OnTriggerExit(Collider collider)
         {
+            // if (collider.CompareTag("Attackable"))
+            // {
+            //     if (collider.TryGetComponent<Attackable>(out var exitingAtk))
+            //     {
+            //         if (this.attackable == exitingAtk)
+            //         {
+            //             inRangeForCombat = false;
+            //             this.attackable = null;
+            //         }
+            //     }
+            // }
+
             if (collider.CompareTag("Attackable"))
             {
-                inRangeForCombat = false;
-                this.attackable = null;
+                if (collider.TryGetComponent<Attackable>(out var exitingAtk) && exitingAtk == this.attackable)
+                {
+                    this.attackable = null;
+                    inRangeForCombat = false;
+                    Debug.Log("🔴 Exited current attackable");
+                }
             }
+
         }
     }
 }

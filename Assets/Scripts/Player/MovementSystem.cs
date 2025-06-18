@@ -531,6 +531,17 @@ namespace Assets.Scripts.Player
                 }       
             }
         }
+
+        public void OnTriggerExit(Collider other)
+        {
+            if (other.CompareTag("Attackable"))
+            {
+                if (targetAttackable == other.GetComponent<Attackable>())
+                {
+                    targetAttackable = null;
+                }
+            }
+        }
         #endregion
 
         // ─────────────────────────────────────────────────────────────────────────

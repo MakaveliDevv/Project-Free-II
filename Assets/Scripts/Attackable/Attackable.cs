@@ -39,7 +39,7 @@ public class Attackable : MonoBehaviour
     private GameObject player;
     private Player Player;
 
-    private bool successTriggered = false;
+    // private bool successTriggered = false;
 
     private bool hasReachedTarget = false;
     private bool hasExitedAfterTarget = false;
@@ -63,7 +63,7 @@ public class Attackable : MonoBehaviour
 
     void Update()
     {
-        if (successTriggered || player == null || shrinker == null) return;
+        if (player == null || shrinker == null) return;
 
         var target = Player.moveContrl.movementSystem.targetAttackable;
 
@@ -73,24 +73,26 @@ public class Attackable : MonoBehaviour
             Debug.Log("✅ Target point reached");
         }
 
-        if (hasReachedTarget && hasExitedAfterTarget)
-        {
-            Debug.Log("💥 Destroying box after exit");
-            Destroy(gameObject);
-            hasExitedAfterTarget = false;
-        }
+        // if (hasReachedTarget && hasExitedAfterTarget)
+        // {
+        //     Debug.Log("💥 Destroying box after exit");
+        //     Destroy(gameObject);
+        //     hasExitedAfterTarget = false;
+        // }
 
         if (Player.combatContrl.attacked && Player.combatContrl.success)
         {
             bool swag = target == this;
             Debug.Log($"same attackable -> {swag}");
             if (target != this) return;
+
+            Player.moveContrl.movementSystem.targetAttackable = null;
             
             float ratio = shrinker.GetCurrentSizeRatio();
             LatestHitResult = DetermineHitResult(ratio);
             rewardSystem.ApplyScore(LatestHitResult);
 
-            successTriggered = true;
+            // successTriggered = true;
             Player.combatContrl.attacked = false;
             Player.combatContrl.success = false;
 
