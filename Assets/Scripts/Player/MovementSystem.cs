@@ -73,7 +73,7 @@ namespace Assets.Scripts.Player
         private bool isStuckFrozen = false;
         private bool isLandingBuffered = false;
         public bool hasBounced = false;
-        private bool buttonPressedLongEnough = false;
+        // private bool buttonPressedLongEnough = false;
         private Vector3 finalHoverLiftTarget;
 
         // ─ Timers & Counters
@@ -96,9 +96,9 @@ namespace Assets.Scripts.Player
         private float initialBounciness = 0;
 
         // ─── queued action & direction for deferred jumps/dashes ────────────────
-        private string queuedFetchedAction = "";
-        private Vector2 queuedSnappedDir = Vector2.zero;
-        private bool queuedActionPending = false;
+        // private string queuedFetchedAction = "";
+        // private Vector2 queuedSnappedDir = Vector2.zero;
+        // private bool queuedActionPending = false;
         public Attackable targetAttackable = null;
 
         private Vector3 ConvertToVector(GravityDirection dir)
@@ -223,11 +223,11 @@ namespace Assets.Scripts.Player
         {
             InputManager.buttonHoldTimer = buttonHoldTimer;
 
-            if (!queuedActionPending)
+            // if (!queuedActionPending)
                 FetchActionType();
 
             bool stickMoving = InputManager.HasLeftStickMovement();
-            bool jumpHeld = InputManager.SouthButtonPressed;
+            // bool jumpHeld = InputManager.SouthButtonPressed;
 
             // Determine downward stick angle
             bool canDrop = playerSettings.currentSurfaceState == SurfaceState.Air || playerSettings.movementState == MovementState.Stucked;
@@ -274,40 +274,40 @@ namespace Assets.Scripts.Player
                 }
             }
 
+            // FIRST INSTANCE OF QUEUEING ACTION
+            // if (jumpHeld && buttonHoldTimer >= settings.minButtonPressTime /*&& !buttonPressedLongEnough*/)
+            // {
+            //     // buttonPressedLongEnough = true;
+            //     bool isAirDash = player.mode == Mode.AdvancedMovement && fetchedAction == "AirDash";
 
-            if (jumpHeld && buttonHoldTimer >= settings.minButtonPressTime && !buttonPressedLongEnough)
-            {
-                buttonPressedLongEnough = true;
-                bool isAirDash = player.mode == Mode.AdvancedMovement && fetchedAction == "AirDash";
+            //     // only enter Charging if we have a real Jump/Dash to queue
+            //     if (!isAirDash
+            //         || playerSettings.movementState != MovementState.Charging
+            //         && stickMoving
+            //         && (allowedToMove || isInAir))
+            //     {
+            //         string actionToQueue = "";
+            //         if (allowedToMove)
+            //         {
+            //             actionToQueue = fetchedAction;
+            //         }
+            //         else // mid‐air queue: Jump vs Dash from the stick
+            //         {
+            //             var label = GetClosestDirectionLabel(snappedDir);
+            //             if (IsDashDirectionAllowed(label)) actionToQueue = "Dash";
+            //             else if (IsJumpDirectionAllowed(label)) actionToQueue = "Jump";
+            //         }
 
-                // only enter Charging if we have a real Jump/Dash to queue
-                if (!isAirDash
-                    || playerSettings.movementState != MovementState.Charging
-                    && stickMoving
-                    && (allowedToMove || isInAir))
-                {
-                    string actionToQueue = "";
-                    if (allowedToMove)
-                    {
-                        actionToQueue = fetchedAction;
-                    }
-                    else // mid‐air queue: Jump vs Dash from the stick
-                    {
-                        var label = GetClosestDirectionLabel(snappedDir);
-                        if (IsDashDirectionAllowed(label)) actionToQueue = "Dash";
-                        else if (IsJumpDirectionAllowed(label)) actionToQueue = "Jump";
-                    }
-
-                    if (!string.IsNullOrEmpty(actionToQueue))
-                    {
-                        // latch state
-                        playerSettings.movementState = MovementState.Charging;
-                        queuedFetchedAction = actionToQueue;
-                        queuedSnappedDir = snappedDir;
-                        queuedActionPending = true;
-                    }
-                }
-            }
+            //         if (!string.IsNullOrEmpty(actionToQueue))
+            //         {
+            //             // latch state
+            //             playerSettings.movementState = MovementState.Charging;
+            //             queuedFetchedAction = actionToQueue;
+            //             queuedSnappedDir = snappedDir;
+            //             queuedActionPending = true;
+            //         }
+            //     }
+            // }
 
             if (playerSettings.movementState == MovementState.Jumping
             || playerSettings.movementState == MovementState.WallJump
@@ -342,16 +342,22 @@ namespace Assets.Scripts.Player
 
             if (isInAir) playerSettings.currentSurfaceState = SurfaceState.Air;
 
-            if (jumpHeld)
+            if (InputManager.ActionInputDetected())
+            {
+                playerSettings.movementState = MovementState.Charging;
+            }
+
+            if (playerSettings.movementState == MovementState.Charging)
             {
                 buttonHoldTimer += Time.deltaTime;
-                if (actionReady && !actionInProgress && buttonHoldTimer >= settings.maxHoldTime && buttonPressedLongEnough)
+                if (actionReady && !actionInProgress && buttonHoldTimer >= settings.maxHoldTime /*&& buttonPressedLongEnough*/)
                 {
                     if (playerSettings.currentSurfaceState == SurfaceState.LeftWall || playerSettings.currentSurfaceState == SurfaceState.RightWall)
                     {
                         fetchedAction = "WallJump";
                         allowedToMove = true;
                     }
+
                     PerformMovementAction();
                     actionReady = false;
                 }
@@ -359,37 +365,60 @@ namespace Assets.Scripts.Player
 
             if (InputManager.SouthButtonReleased)
             {
-                buttonPressedLongEnough = false;
-
-                if (playerSettings.movementState == MovementState.Charging && queuedActionPending)
+                if (playerSettings.movementState == MovementState.Charging)
                 {
-                    fetchedAction = queuedFetchedAction;
-                    snappedDir = queuedSnappedDir;
+                    if (playerSettings.currentSurfaceState == SurfaceState.LeftWall || playerSettings.currentSurfaceState == SurfaceState.RightWall)
+                    {
+                        fetchedAction = "WallJump";
+                        allowedToMove = true;
+                    }
+
                     allowedToMove = true;
-
-                    if (player.mode == Mode.AdvancedMovement && fetchedAction == "AirDash")
-                    {
-                        allowedToMove = true; 
-
-                        PerformMovementAction();
-                        hasBurstDropped = false;
-                        queuedActionPending = false;
-                        ResetPhysicsSettings(true, true);
-                    }
-                    else if (!isInAir)
-                    {
-                        PerformMovementAction();
-                        hasBurstDropped = false;
-                        queuedActionPending = false;
-                    }
+                    PerformMovementAction();
+                    // ResetPhysicsSettings(true, true);
                 }
                 else
                 {
                     ResetActionState();
+                    ResetPhysicsSettings(true, true);
                 }
 
                 actionReady = true;
             }
+
+            // if (InputManager.SouthButtonReleased)
+            // {
+            //     // buttonPressedLongEnough = false;
+
+            //     if (playerSettings.movementState == MovementState.Charging && queuedActionPending)
+            //     {
+            //         fetchedAction = queuedFetchedAction;
+            //         snappedDir = queuedSnappedDir;
+            //         allowedToMove = true;
+
+            //         if (player.mode == Mode.AdvancedMovement && fetchedAction == "AirDash")
+            //         {
+            //             allowedToMove = true;
+
+            //             PerformMovementAction();
+            //             hasBurstDropped = false;
+            //             queuedActionPending = false;
+            //             ResetPhysicsSettings(true, true);
+            //         }
+            //         else if (!isInAir)
+            //         {
+            //             PerformMovementAction();
+            //             hasBurstDropped = false;
+            //             queuedActionPending = false;
+            //         }
+            //     }
+            //     else
+            //     {
+            //         ResetActionState();
+            //     }
+
+            //     actionReady = true;
+            // }
 
             if (playerSettings.movementState == MovementState.Idle || playerSettings.movementState == MovementState.Dashing || playerSettings.movementState == MovementState.WallDescending)
                 col.material.bounciness = initialBounciness;
@@ -464,20 +493,20 @@ namespace Assets.Scripts.Player
             if (player.mode != Mode.AdvancedMovement) { StopMovementUponCollision(); }
 
             // dequeue the queued Jump/Dash as soon as we hit any surface
-            if (playerSettings.movementState == MovementState.Charging
-                && playerSettings.currentSurfaceState != SurfaceState.Air
-                && queuedActionPending)
-            {
-                // restore what we latched
-                fetchedAction = queuedFetchedAction;
-                snappedDir = queuedSnappedDir;
-                allowedToMove = true;
+            // if (playerSettings.movementState == MovementState.Charging
+            //     && playerSettings.currentSurfaceState != SurfaceState.Air
+            //     && queuedActionPending)
+            // {
+            //     // restore what we latched
+            //     fetchedAction = queuedFetchedAction;
+            //     snappedDir = queuedSnappedDir;
+            //     allowedToMove = true;
 
-                PerformMovementAction();
-                hasBurstDropped = false;
-                queuedActionPending = false;
-                ResetPhysicsSettings(true, true);
-            }
+            //     PerformMovementAction();
+            //     hasBurstDropped = false;
+            //     queuedActionPending = false;
+            //     ResetPhysicsSettings(true, true);
+            // }
 
             player.Invoke(nameof(ResetActionState), .1f);
 
@@ -549,13 +578,12 @@ namespace Assets.Scripts.Player
         // ─────────────────────────────────────────────────────────────────────────
         #region ACTION HANDLING
 
-        private void FetchActionType()
+        private string FetchActionType()
         {
             if (player.mode == Mode.AdvancedMovement && player.moveContrl.advancedMovement.IsBlockingInput())
             {
-                fetchedAction = "";
                 allowedToMove = false;
-                return;
+                return fetchedAction = "";
             }
 
             allowedToMove = false;
@@ -598,6 +626,8 @@ namespace Assets.Scripts.Player
                 fetchedAction = "AirDash";
                 allowedToMove = true;
             }
+
+            return fetchedAction;
         }
 
         public void PerformMovementAction()
@@ -1482,9 +1512,9 @@ namespace Assets.Scripts.Player
             snappedDir = Vector2.zero;
 
             // clear any queued Jump/Dash
-            queuedFetchedAction = "";
-            queuedSnappedDir = Vector2.zero;
-            queuedActionPending = false;
+            // queuedFetchedAction = "";
+            // queuedSnappedDir = Vector2.zero;
+            // queuedActionPending = false;
 
             // advanced movement
             hasWallBounce = false;
