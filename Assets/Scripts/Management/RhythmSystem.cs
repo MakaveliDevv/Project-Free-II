@@ -75,12 +75,12 @@ public class RhythmSystem : MonoBehaviour
         Vector3 spawnPos = new(
             UnityEngine.Random.Range(spawnRangeX.x, spawnRangeX.y),
             UnityEngine.Random.Range(spawnRangeY.x, spawnRangeY.y),
-            player.transform.position.z);
+            spawnOffsetZ);
         
         Vector3 spawnPosAttackable = new(
             UnityEngine.Random.Range(spawnRangeX.x, spawnRangeX.y),
             UnityEngine.Random.Range(spawnRangeY.x, spawnRangeY.y),
-            player.transform.position.z + spawnOffsetZ);
+            spawnOffsetZ);
 
         GameObject box = null;
 
