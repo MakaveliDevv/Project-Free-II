@@ -78,6 +78,9 @@ namespace Assets.Scripts.Player
                 player.CombatCamera.SetActive(false);
                 Reset();   
             }
+            
+            if (player.mode == Mode.Combat) { ProcessRightStickSwipe(); }
+
         }
 
 

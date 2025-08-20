@@ -29,8 +29,8 @@ public class RhythmSystem : MonoBehaviour
     [SerializeField] private GameObject interactBoxPrefab;
 
     [Header("Spawn Range (XY)")]
-    [SerializeField] private Vector2 spawnRangeX = new (-5f, 5f);
-    [SerializeField] private Vector2 spawnRangeY = new (-3f, 3f);
+    [SerializeField] private Vector2 spawnRangeX = new(-5f, 5f);
+    [SerializeField] private Vector2 spawnRangeY = new(-3f, 3f);
 
     [Header("Shrink Settings")]
     [SerializeField] private float boxShrinkDuration = 2f;
@@ -76,7 +76,7 @@ public class RhythmSystem : MonoBehaviour
             UnityEngine.Random.Range(spawnRangeX.x, spawnRangeX.y),
             UnityEngine.Random.Range(spawnRangeY.x, spawnRangeY.y),
             spawnOffsetZ);
-        
+
         Vector3 spawnPosAttackable = new(
             UnityEngine.Random.Range(spawnRangeX.x, spawnRangeX.y),
             UnityEngine.Random.Range(spawnRangeY.x, spawnRangeY.y),
@@ -91,6 +91,11 @@ public class RhythmSystem : MonoBehaviour
                 var attack = box.GetComponent<Attackable>();
                 if (attack != null)
                     attack.attackDirection = beat.attackDirection;
+                // Rotate object towards the attack
+                Vector3 upDir = AttackDirectionToUp(beat.attackDirection);
+                if (upDir.sqrMagnitude < 1e-6f) upDir = Vector3.up;
+
+                box.transform.rotation = Quaternion.LookRotation(Vector3.forward, upDir);
                 break;
 
             case BeatType.Interact:
@@ -109,4 +114,21 @@ public class RhythmSystem : MonoBehaviour
             shrink.minScale = boxMinScale;
         }
     }
+    
+    private static Vector3 AttackDirectionToUp(AttackDirection dir)
+    {
+        return dir switch
+        {
+            AttackDirection.TopToBottom => Vector3.down,// A is Bottom, B is Top
+            AttackDirection.BottomToTop => Vector3.up,// A is Top,    B is Bottom
+            AttackDirection.LeftToRight => Vector3.right,// A is Right,  B is Left
+            AttackDirection.RightToLeft => Vector3.left,// A is Left,   B is Right
+            AttackDirection.BottomLeftToTopRight => (Vector3.up + Vector3.right).normalized,// NE
+            AttackDirection.TopRightToBottomLeft => (Vector3.down + Vector3.left).normalized,// SW
+            AttackDirection.BottomRightToTopLeft => (Vector3.up + Vector3.left).normalized,// NW
+            AttackDirection.TopLeftToBottomRight => (Vector3.down + Vector3.right).normalized,// SE
+            _ => Vector3.up,
+        };
+    }
+
 }

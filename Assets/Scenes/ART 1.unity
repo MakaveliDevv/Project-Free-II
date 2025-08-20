@@ -5868,7 +5868,23 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8011131225125342428, guid: 1154fdc0bfa85564e873ef6370de9095, type: 3}
       propertyPath: spawnOffsetZ
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 8011131225125342428, guid: 1154fdc0bfa85564e873ef6370de9095, type: 3}
+      propertyPath: beats.Array.data[2].type
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8011131225125342428, guid: 1154fdc0bfa85564e873ef6370de9095, type: 3}
+      propertyPath: beats.Array.data[1].attackDirection
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8011131225125342428, guid: 1154fdc0bfa85564e873ef6370de9095, type: 3}
+      propertyPath: beats.Array.data[2].attackDirection
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8011131225125342428, guid: 1154fdc0bfa85564e873ef6370de9095, type: 3}
+      propertyPath: beats.Array.data[3].attackDirection
+      value: 3
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
