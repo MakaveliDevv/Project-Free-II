@@ -39,22 +39,47 @@ namespace Assets.Scripts.Player
             this.settings = settings;
         }
 
+        // public void Update()
+        // {
+        //     if (InputManager.RightShoulderDoublePressed)
+        //     {
+        //         InputManager.RightShoulderPressed = false;
+        //         player.mode = Mode.Normal;
+        //         return;
+        //     }
+
+        //     if (InputManager.RightShoulderPressed && !isCombatModeActive)
+        //     {
+        //         player.mode = Mode.Combat;
+        //     }
+
+        //     if (player.mode == Mode.Combat) { ProcessRightStickSwipe(); }
+
+        //     // if (player.mode == Mode.Combat && success)
+        //     // {
+        //     //     player.movementSettings.allowAirDash = true;
+        //     // }
+        // }
+
         public void Update()
         {
-            if (InputManager.RightShoulderDoublePressed)
-            {
-                InputManager.RightShoulderPressed = false;
-                player.mode = Mode.Normal;
-                return;
-            }
-
             if (InputManager.RightShoulderPressed && !isCombatModeActive)
             {
                 player.mode = Mode.Combat;
+                ProcessRightStickSwipe(); 
+                return;
             }
 
-            if (player.mode == Mode.Combat) { ProcessRightStickSwipe(); }
+            // Released (or not held) → exit Combat immediately
+            if (player.mode == Mode.Combat)
+            {
+                player.movementSettings.allowAirDash = false; 
+                Reset();
+            }
+
+            player.mode = Mode.Normal;
         }
+
 
         private void ProcessRightStickSwipe()
         {
@@ -138,60 +163,6 @@ namespace Assets.Scripts.Player
             OnSwipePerformed?.Invoke(key, pass);
         }
 
-        // private IEnumerator Processing(string key, bool pass)
-        // {
-        //     if (attackable == null)
-        //     {
-        //         Debug.LogWarning("⚠️ Attackable reference lost before processing.");
-        //         yield break;
-        //     }
-
-        //     attacked = true;
-
-        //     if (attackable.directions.TryGetValue(key, out var performed)
-        //         && performed == attackable.attackDirection && pass)
-        //     {
-        //         Debug.Log($"[Attackable] ▶️ SUCCESS {key} → {performed}");
-        //         success = true;
-        //     }
-        //     else
-        //     {
-        //         Debug.Log($"[Attackable] ▶️ ❌ FAILURE {key} → mapped " +
-        //                 $"{(attackable.directions.TryGetValue(key, out performed) ? performed : (AttackDirection)(-1))}, " +
-        //                 $"expected {attackable.attackDirection}");
-        //     }
-        // }
-
-        // private IEnumerator Processing(string key, bool pass)
-        // {
-        //     Debug.Log("🧪 Entered Processing()");
-
-        //     var target = attackable; 
-
-        //     if (target == null)
-        //     {
-        //         Debug.LogWarning("⚠️ Local cached attackable is null.");
-        //         yield break;
-        //     }
-
-        //     attacked = true;
-
-        //     if (target.directions.TryGetValue(key, out var performed)
-        //         && performed == target.attackDirection && pass)
-        //     {
-        //         Debug.Log($"[Attackable] ▶️ SUCCESS {key} → {performed}");
-        //         success = true;
-        //     }
-        //     else
-        //     {
-        //         Debug.Log($"[Attackable] ▶️ ❌ FAILURE {key} → mapped " +
-        //                 $"{(target.directions.TryGetValue(key, out performed) ? performed : (AttackDirection)(-1))}, " +
-        //                 $"expected {target.attackDirection}");
-        //     }
-
-        //     Debug.Log("🧪 Exiting Processing()");
-        // }
-
         private IEnumerator Processing(string key, bool pass)
         {
             Debug.Log("🧪 Entered Processing()");
@@ -210,11 +181,13 @@ namespace Assets.Scripts.Player
             {
                 Debug.Log($"[Attackable] ▶️ SUCCESS {key} → {performed}");
                 success = true;
+                player.movementSettings.allowAirDash = true;
             }
             else
             {
                 Debug.Log($"[Attackable] ▶️ ❌ FAILURE {key} → mapped {performed}, expected {target.attackDirection}");
                 success = false;
+                player.movementSettings.allowAirDash = false;
             }
 
             // if (target.directions.TryGetValue(key, out var performed)
