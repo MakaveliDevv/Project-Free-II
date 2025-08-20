@@ -9,6 +9,7 @@ namespace Assets.Scripts.Player
         private readonly Animator animator;
 
         private bool hasPlayedJumpParticles = false;
+        private bool hasPlayedHitParticles = false;
         private bool hasPlayedDashParticles = false;
         private bool hasPlayedStuckParticles = false;
 
@@ -695,6 +696,22 @@ namespace Assets.Scripts.Player
             p.Play();
             Object.Destroy(p.gameObject, p.main.duration + p.main.startLifetime.constantMax);
         }
+
+        public void PlayHitParticles(ParticleSystem prefab)
+        {
+            var p = Object.Instantiate(prefab, player.transform.position, Quaternion.identity) as ParticleSystem;
+            p.Play();
+            Object.Destroy(p.gameObject, p.main.duration + p.main.startLifetime.constantMax);
+        }
+
+        public void PlayMissParticles(ParticleSystem prefab)
+        {
+            var p = Object.Instantiate(prefab, player.transform.position, Quaternion.identity) as ParticleSystem;
+            p.Play();
+            Object.Destroy(p.gameObject, p.main.duration + p.main.startLifetime.constantMax);
+        }
+
+
 
         private void RightWallDescendingAnim()
         {

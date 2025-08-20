@@ -66,7 +66,8 @@ namespace Assets.Scripts.Player
             if (InputManager.RightShoulderPressed && !isCombatModeActive)
             {
                 player.mode = Mode.Combat;
-                ProcessRightStickSwipe(); 
+                ProcessRightStickSwipe();
+                player.CombatCamera.SetActive(true);
                 return;
             }
 
@@ -74,6 +75,7 @@ namespace Assets.Scripts.Player
             {
                 player.movementSettings.allowAirDash = false;
                 player.mode = Mode.Normal;
+                player.CombatCamera.SetActive(false);
                 Reset();   
             }
         }
@@ -180,12 +182,14 @@ namespace Assets.Scripts.Player
                 Debug.Log($"[Attackable] ▶️ SUCCESS {key} → {performed}");
                 success = true;
                 player.movementSettings.allowAirDash = true;
+                player.animContr.PlayHitParticles(player.Hit);
             }
             else
             {
                 Debug.Log($"[Attackable] ▶️ ❌ FAILURE {key} → mapped {performed}, expected {target.attackDirection}");
                 success = false;
                 player.movementSettings.allowAirDash = false;
+                 player.animContr.PlayMissParticles(player.Miss);
             }
 
             // if (target.directions.TryGetValue(key, out var performed)

@@ -38,19 +38,30 @@ namespace Assets.Scripts.Player
 
         public void Update()
         {
-            if (InputManager.LeftShoulderDoublePressed)
+            // if (InputManager.LeftShoulderDoublePressed)
+            // {
+            //     InputManager.LeftShoulderPressed = false;
+            //     player.mode = Mode.Normal;
+            //     return;
+            // }
+
+            // if (InputManager.LeftShoulderPressed && !isAdvancedMovementActive) { player.mode = Mode.AdvancedMovement; }
+
+
+if (InputManager.LeftShoulderPressed) 
             {
-                InputManager.LeftShoulderPressed = false;
-                player.mode = Mode.Normal;
-                return;
+                player.mode = Mode.AdvancedMovement;
             }
 
-            if (InputManager.LeftShoulderPressed && !isAdvancedMovementActive) { player.mode = Mode.AdvancedMovement; }
-
+            if (InputManager.LeftShoulderReleased)
+            {
+                player.mode = Mode.Normal;
+            }
+            
             if (player.mode == Mode.AdvancedMovement)
             {
                 if (useBounce)
-                { 
+                {
                     if (bounceBufferActive)
                     {
                         bounceBufferTimer -= Time.deltaTime;
@@ -74,7 +85,7 @@ namespace Assets.Scripts.Player
                     if (postBounceTimer > 0f)
                     {
                         postBounceTimer -= Time.deltaTime;
-                    }    
+                    }
                 }
 
                 moveInt.Update();

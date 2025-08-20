@@ -57,7 +57,7 @@ namespace Assets.Scripts.Player
 
         public MovementSystemController moveContrl;
         public CombatController combatContrl;
-        private AnimationController animContr;
+        public AnimationController animContr;
 
         [HideInInspector] public Rigidbody rb;
         [HideInInspector] public Collider col;
@@ -65,9 +65,12 @@ namespace Assets.Scripts.Player
 
         public bool interacting = false;
         public bool useBounce = true;
+        public GameObject CombatCamera;
+        public ParticleSystem Hit, Miss;
 
         void Awake()
         {
+            
             rb = GetComponent<Rigidbody>();
             col = GetComponent<Collider>();
             animator = transform.GetChild(0).GetComponent<Animator>();
