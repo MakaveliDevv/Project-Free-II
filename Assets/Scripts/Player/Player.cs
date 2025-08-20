@@ -132,7 +132,7 @@ namespace Assets.Scripts.Player
                     break;
                 case Mode.Combat:
                     moveContrl.advancedMovement.isAdvancedMovementActive = false;
-                    movementSettings.allowAirDash = false;
+                    // movementSettings.allowAirDash = false;
                     combatContrl.isCombatModeActive = true;
 
                     break;

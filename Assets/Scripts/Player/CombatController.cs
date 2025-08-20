@@ -74,7 +74,7 @@ namespace Assets.Scripts.Player
 
             if (InputManager.RightShoulderReleased && isCombatModeActive)
             {
-                player.movementSettings.allowAirDash = false;
+                // player.movementSettings.allowAirDash = false;
                 player.mode = Mode.Normal;
                 player.CombatCamera.SetActive(false);
                 Reset();   
