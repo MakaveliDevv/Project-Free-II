@@ -70,14 +70,12 @@ namespace Assets.Scripts.Player
                 return;
             }
 
-            // Released (or not held) → exit Combat immediately
-            if (player.mode == Mode.Combat)
+            if (InputManager.RightShoulderReleased && isCombatModeActive)
             {
-                player.movementSettings.allowAirDash = false; 
-                Reset();
+                player.movementSettings.allowAirDash = false;
+                player.mode = Mode.Normal;
+                Reset();   
             }
-
-            player.mode = Mode.Normal;
         }
 
 
