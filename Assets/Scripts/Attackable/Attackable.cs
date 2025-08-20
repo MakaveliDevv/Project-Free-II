@@ -87,7 +87,7 @@ public class Attackable : MonoBehaviour
             if (target != this) return;
 
             Player.moveContrl.movementSystem.targetAttackable = null;
-            
+
             float ratio = shrinker.GetCurrentSizeRatio();
             LatestHitResult = DetermineHitResult(ratio);
             rewardSystem.ApplyScore(LatestHitResult);
@@ -96,6 +96,7 @@ public class Attackable : MonoBehaviour
             Player.combatContrl.attacked = false;
             Player.combatContrl.success = false;
 
+            Debug.Log("Success from Attackable script");
             Destroy(gameObject, 0.2f);
         }
     }
