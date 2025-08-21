@@ -5819,7 +5819,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8011131225125342428, guid: 1154fdc0bfa85564e873ef6370de9095, type: 3}
       propertyPath: minSpawnSeparation
-      value: 4
+      value: 4.5
       objectReference: {fileID: 0}
     - target: {fileID: 8011131225125342428, guid: 1154fdc0bfa85564e873ef6370de9095, type: 3}
       propertyPath: beats.Array.data[1].time
