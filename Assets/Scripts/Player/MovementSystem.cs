@@ -1626,122 +1626,122 @@ namespace Assets.Scripts.Player
         // DIRECTION & LABEL MAPPING
         // ─────────────────────────────────────────────────────────────────────────
         #region GIZMOS
-        public void OnDrawGizmos()
-        {
-            if (playerSettings.snapDirectionsEnabled)
-            {
-                Gizmos.color = settings.baseDirectionColor;
-                float angleStep = 360f / playerSettings.directionCountMovement;
+        // public void OnDrawGizmos()
+        // {
+        //     if (playerSettings.snapDirectionsEnabled)
+        //     {
+        //         Gizmos.color = settings.baseDirectionColor;
+        //         float angleStep = 360f / playerSettings.directionCountMovement;
 
-                for (int i = 0; i < playerSettings.directionCountMovement; i++)
-                {
-                    float angle = i * angleStep;
-                    float angleRad = angle * Mathf.Deg2Rad;
-                    Vector3 dir = new(Mathf.Cos(angleRad), Mathf.Sin(angleRad), 0f);
-                    Vector3 endPt = player.transform.position + dir * settings.directionLineLength;
+        //         for (int i = 0; i < playerSettings.directionCountMovement; i++)
+        //         {
+        //             float angle = i * angleStep;
+        //             float angleRad = angle * Mathf.Deg2Rad;
+        //             Vector3 dir = new(Mathf.Cos(angleRad), Mathf.Sin(angleRad), 0f);
+        //             Vector3 endPt = player.transform.position + dir * settings.directionLineLength;
 
-                    Gizmos.DrawLine(player.transform.position, endPt);
-
-
-                    if (playerSettings.showDirectionLabels && !Application.isPlaying)
-                    {
-                        UnityEditor.Handles.color = Color.white;
-                        UnityEditor.Handles.Label(endPt + Vector3.up * 0.1f, GetDirectionLabel(i));
-                    }
-                }
-            }
+        //             Gizmos.DrawLine(player.transform.position, endPt);
 
 
-            if (Application.isPlaying && predictedTargetPoint != Vector3.zero)
-            {
-                if (rb == null)
-                {
-                    rb = player.GetComponent<Rigidbody>();
-                    if (rb == null) return;
-                }
-
-                Gizmos.color = hasReachedTarget ? settings.jumpTargetColor : settings.landingPointColor;
-                Gizmos.DrawSphere(predictedTargetPoint, 0.25f);
-            }
+        //             if (playerSettings.showDirectionLabels && !Application.isPlaying)
+        //             {
+        //                 UnityEditor.Handles.color = Color.white;
+        //                 UnityEditor.Handles.Label(endPt + Vector3.up * 0.1f, GetDirectionLabel(i));
+        //             }
+        //         }
+        //     }
 
 
-            if (Application.isPlaying && labelToAngle != null && allowedMoveLabels.ContainsKey(playerSettings.currentSurfaceState))
-            {
-                string[] labels = allowedMoveLabels[playerSettings.currentSurfaceState];
+        //     if (Application.isPlaying && predictedTargetPoint != Vector3.zero)
+        //     {
+        //         if (rb == null)
+        //         {
+        //             rb = player.GetComponent<Rigidbody>();
+        //             if (rb == null) return;
+        //         }
 
-                foreach (var label in labels)
-                {
-                    if (labelToAngle.TryGetValue(label, out float angle))
-                    {
-                        float angleRad = angle * Mathf.Deg2Rad;
-                        Vector3 dir = new(Mathf.Cos(angleRad), Mathf.Sin(angleRad), 0f);
-
-                        Gizmos.color = settings.allowedJumpColor;
-                        Gizmos.DrawLine(rb.position, rb.position + dir.normalized * settings.directionLineLength);
-
-                        if (playerSettings.showDirectionLabels)
-                        {
-                            UnityEditor.Handles.color = settings.allowedJumpColor;
-                            UnityEditor.Handles.Label(rb.position + dir.normalized * (settings.directionLineLength + 0.1f), label);
-                        }
-                    }
-                }
-            }
+        //         Gizmos.color = hasReachedTarget ? settings.jumpTargetColor : settings.landingPointColor;
+        //         Gizmos.DrawSphere(predictedTargetPoint, 0.25f);
+        //     }
 
 
-            if (Application.isPlaying && labelToAngle != null)
-            {
-                foreach (var pair in labelToAngle)
-                {
-                    string label = pair.Key;
-                    float angle = pair.Value;
+        //     if (Application.isPlaying && labelToAngle != null && allowedMoveLabels.ContainsKey(playerSettings.currentSurfaceState))
+        //     {
+        //         string[] labels = allowedMoveLabels[playerSettings.currentSurfaceState];
 
-                    if (!IsDashDirectionAllowed(label)) continue;
+        //         foreach (var label in labels)
+        //         {
+        //             if (labelToAngle.TryGetValue(label, out float angle))
+        //             {
+        //                 float angleRad = angle * Mathf.Deg2Rad;
+        //                 Vector3 dir = new(Mathf.Cos(angleRad), Mathf.Sin(angleRad), 0f);
 
-                    float angleRad = angle * Mathf.Deg2Rad;
-                    Vector3 dir = new(Mathf.Cos(angleRad), Mathf.Sin(angleRad), 0f);
+        //                 Gizmos.color = settings.allowedJumpColor;
+        //                 Gizmos.DrawLine(rb.position, rb.position + dir.normalized * settings.directionLineLength);
 
-                    Gizmos.color = settings.dashDirectionColor;
-                    Gizmos.DrawLine(rb.position, rb.position + dir.normalized * settings.directionLineLength);
-
-                    if (playerSettings.showDirectionLabels)
-                    {
-                        UnityEditor.Handles.color = settings.dashDirectionColor;
-                        UnityEditor.Handles.Label(rb.position + dir.normalized * (settings.directionLineLength + 0.1f), $"D:{label}");
-                    }
-                }
-            }
-
-
-            if (Application.isPlaying && InputManager.HasLeftStickMovement())
-            {
-                Gizmos.color = settings.snappedInputColor;
-                Vector3 start = rb.position;
-                Vector3 end = start + (Vector3)snappedDir.normalized * settings.directionLineLength;
+        //                 if (playerSettings.showDirectionLabels)
+        //                 {
+        //                     UnityEditor.Handles.color = settings.allowedJumpColor;
+        //                     UnityEditor.Handles.Label(rb.position + dir.normalized * (settings.directionLineLength + 0.1f), label);
+        //                 }
+        //             }
+        //         }
+        //     }
 
 
-                Gizmos.DrawLine(start, end);
+        //     if (Application.isPlaying && labelToAngle != null)
+        //     {
+        //         foreach (var pair in labelToAngle)
+        //         {
+        //             string label = pair.Key;
+        //             float angle = pair.Value;
+
+        //             if (!IsDashDirectionAllowed(label)) continue;
+
+        //             float angleRad = angle * Mathf.Deg2Rad;
+        //             Vector3 dir = new(Mathf.Cos(angleRad), Mathf.Sin(angleRad), 0f);
+
+        //             Gizmos.color = settings.dashDirectionColor;
+        //             Gizmos.DrawLine(rb.position, rb.position + dir.normalized * settings.directionLineLength);
+
+        //             if (playerSettings.showDirectionLabels)
+        //             {
+        //                 UnityEditor.Handles.color = settings.dashDirectionColor;
+        //                 UnityEditor.Handles.Label(rb.position + dir.normalized * (settings.directionLineLength + 0.1f), $"D:{label}");
+        //             }
+        //         }
+        //     }
 
 
-                float headAng = 20f, headLen = 0.25f;
-                Quaternion look = Quaternion.LookRotation(Vector3.forward, end - start);
-                Vector3 right = look * Quaternion.Euler(0, 0, headAng) * Vector3.up;
-                Vector3 left = look * Quaternion.Euler(0, 0, -headAng) * Vector3.up;
-                Gizmos.DrawLine(end, end - right * headLen);
-                Gizmos.DrawLine(end, end - left * headLen);
-
-                if (playerSettings.showDirectionLabels)
-                {
-
-                    var style = new GUIStyle();
-                    style.normal.textColor = Color.red;
+        //     if (Application.isPlaying && InputManager.HasLeftStickMovement())
+        //     {
+        //         Gizmos.color = settings.snappedInputColor;
+        //         Vector3 start = rb.position;
+        //         Vector3 end = start + (Vector3)snappedDir.normalized * settings.directionLineLength;
 
 
-                    string lbl = GetClosestDirectionLabel(snappedDir);
-                    UnityEditor.Handles.Label(end + Vector3.up * 0.1f, $"Input: {lbl}", style);
-                }
-            }
-        }
+        //         Gizmos.DrawLine(start, end);
+
+
+        //         float headAng = 20f, headLen = 0.25f;
+        //         Quaternion look = Quaternion.LookRotation(Vector3.forward, end - start);
+        //         Vector3 right = look * Quaternion.Euler(0, 0, headAng) * Vector3.up;
+        //         Vector3 left = look * Quaternion.Euler(0, 0, -headAng) * Vector3.up;
+        //         Gizmos.DrawLine(end, end - right * headLen);
+        //         Gizmos.DrawLine(end, end - left * headLen);
+
+        //         if (playerSettings.showDirectionLabels)
+        //         {
+
+        //             var style = new GUIStyle();
+        //             style.normal.textColor = Color.red;
+
+
+        //             string lbl = GetClosestDirectionLabel(snappedDir);
+        //             UnityEditor.Handles.Label(end + Vector3.up * 0.1f, $"Input: {lbl}", style);
+        //         }
+        //     }
+        // }
         #endregion
     }
 

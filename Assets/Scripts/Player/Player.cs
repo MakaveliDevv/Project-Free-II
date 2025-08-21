@@ -184,9 +184,9 @@ namespace Assets.Scripts.Player
         }
 
 
-        void OnDrawGizmos()
-        {
-            moveContrl?.OnDrawGizmos(transform.position, interactionSettings.selectionRange);
-        }
+        // void OnDrawGizmos()
+        // {
+        //     moveContrl?.OnDrawGizmos(transform.position, interactionSettings.selectionRange);
+        // }
     }   
 }

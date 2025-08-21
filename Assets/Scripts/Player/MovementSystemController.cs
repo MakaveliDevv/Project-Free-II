@@ -66,13 +66,13 @@ namespace Assets.Scripts.Player
             advancedMovement?.OnTriggerExit(collider);
         }
 
-        public void OnDrawGizmos(Vector3 origin, float range)
-        {
-            if (Application.isPlaying)
-            {
-                movementSystem?.OnDrawGizmos();
-                advancedMovement?.OnDrawGizmos(origin, range);
-            }
-        }
+        // public void OnDrawGizmos(Vector3 origin, float range)
+        // {
+        //     if (Application.isPlaying)
+        //     {
+        //         movementSystem?.OnDrawGizmos();
+        //         advancedMovement?.OnDrawGizmos(origin, range);
+        //     }
+        // }
     }
 }

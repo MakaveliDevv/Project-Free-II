@@ -111,7 +111,7 @@ namespace Assets.Scripts.Player
             animator.SetBool("JumpW", false);
             animator.SetBool("Hover", false);
             animator.SetBool("Descent", false);
-            animator.SetBool("QuickDescent", false);
+            // animator.SetBool("QuickDescent", false);
             animator.SetBool("Landing", false);
             animator.SetBool("DashR", false);
             animator.SetBool("DashL", false);
@@ -343,7 +343,7 @@ namespace Assets.Scripts.Player
             animator.SetBool("JumpW", false);
             animator.SetBool("Hover", false);
             animator.SetBool("Descent", false);
-            animator.SetBool("QuickDescent", false);
+            // animator.SetBool("QuickDescent", false);
             animator.SetBool("Landing", false);
             animator.SetBool("DashR", false);
             animator.SetBool("DashL", false);
@@ -371,7 +371,7 @@ namespace Assets.Scripts.Player
             animator.SetBool("JumpW", false);
             animator.SetBool("Hover", false);
             animator.SetBool("Descent", false);
-            animator.SetBool("QuickDescent", false);
+            // animator.SetBool("QuickDescent", false);
             animator.SetBool("Landing", false);
             animator.SetBool("DashR", false);
             animator.SetBool("DashL", false);
@@ -442,7 +442,7 @@ namespace Assets.Scripts.Player
             animator.SetBool("JumpW", false);
             animator.SetBool("Hover", false);
             animator.SetBool("Descent", false);
-            animator.SetBool("QuickDescent", false);
+            // animator.SetBool("QuickDescent", false);
             animator.SetBool("Landing", false);
             animator.SetBool("DashR", false);
             animator.SetBool("DashL", false);
